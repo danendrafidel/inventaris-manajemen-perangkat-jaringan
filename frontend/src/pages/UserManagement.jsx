@@ -44,7 +44,6 @@ export default function UserManagement() {
     email: "",
     nik: "",
     role: "",
-    division: "",
     area: "",
   });
   const [newPassword, setNewPassword] = useState("");
@@ -524,25 +523,6 @@ export default function UserManagement() {
                     {options.roles.map((r) => (
                       <option key={r} value={r}>
                         {r.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-1">
-                    DIVISI
-                  </label>
-                  <select
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
-                    value={formData.division}
-                    onChange={(e) =>
-                      setFormData({ ...formData, division: e.target.value })
-                    }
-                  >
-                    <option value="">Pilih Divisi</option>
-                    {options.divisions.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
                       </option>
                     ))}
                   </select>

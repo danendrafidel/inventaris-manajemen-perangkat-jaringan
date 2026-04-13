@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import {
   fetchAllAreas,
-  fetchAllDivisions,
   createArea,
   updateArea,
   deleteArea,
@@ -31,17 +30,14 @@ import CloseIcon from "@mui/icons-material/Close";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import MapIcon from "@mui/icons-material/Map";
-import PublicIcon from "@mui/icons-material/Public";
 
 export default function MappingArea() {
   const user = getStoredUser();
   const [areas, setAreas] = useState([]);
-  const [divisions, setDivisions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
-  const [formData, setFormData] = useState({ name: "", division_id: "", latitude: "", longitude: "" });
+  const [formData, setFormData] = useState({ name: "", latitude: "", longitude: "" });
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
@@ -73,9 +69,8 @@ export default function MappingArea() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [areaData, divisionData] = await Promise.all([fetchAllAreas(), fetchAllDivisions()]);
+      const areaData = await fetchAllAreas();
       setAreas(areaData);
-      setDivisions(divisionData);
     } catch (err) {
       showNotify(err.message, "error");
     } finally {
@@ -137,7 +132,7 @@ export default function MappingArea() {
               <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">Pengelola Area</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => { setSelectedArea(null); setFormData({ name: "", division_id: "", latitude: "", longitude: "" }); setShowModal(true); }} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+              <button onClick={() => { setSelectedArea(null); setFormData({ name: "", latitude: "", longitude: "" }); setShowModal(true); }} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
                 <AddIcon sx={{ fontSize: 18 }} /> TAMBAH AREA
               </button>
               <Link to="/profile" className="h-9 w-9 rounded-xl bg-linear-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 uppercase hover:scale-110 transition-transform text-sm" title="Lihat Profil">
@@ -149,14 +144,12 @@ export default function MappingArea() {
 
         <main className="p-4 md:p-8">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">NAMA AREA</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">DIVISI</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">STATISTIK</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KOORDINAT</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">STATUS</th>
@@ -165,9 +158,9 @@ export default function MappingArea() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr><td colSpan={7} className="px-6 py-10 text-center animate-pulse text-slate-400 font-bold">Memuat data...</td></tr>
+                    <tr><td colSpan={6} className="px-6 py-10 text-center animate-pulse text-slate-400 font-bold">Memuat data...</td></tr>
                   ) : areas.length === 0 ? (
-                    <tr><td colSpan={7} className="px-6 py-10 text-center text-slate-400 font-bold">Belum ada data Area</td></tr>
+                    <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-400 font-bold">Belum ada data Area</td></tr>
                   ) : (
                     areas.map((c) => (
                       <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
@@ -178,7 +171,6 @@ export default function MappingArea() {
                             <span className="text-sm font-bold text-slate-900">{c.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4"><span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-widest border border-blue-100">{c.division_name}</span></td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex flex-col items-center gap-1 text-[10px] font-black text-slate-500">
                             <span title="Users">👤 {c.active_user_count}</span>
@@ -190,7 +182,7 @@ export default function MappingArea() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button onClick={() => handleToggleStatus(c.id)} className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${c.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`} title={c.status === "active" ? "Nonaktifkan" : "Aktifkan"}>{c.status === "active" ? <BlockIcon sx={{ fontSize: 16 }} /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}</button>
-                            <button onClick={() => { setSelectedArea(c); setFormData({ name: c.name, division_id: c.division_id, latitude: c.latitude || "", longitude: c.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all" title="Edit"><EditIcon sx={{ fontSize: 16 }} /></button>
+                            <button onClick={() => { setSelectedArea(c); setFormData({ name: c.name, latitude: c.latitude || "", longitude: c.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all" title="Edit"><EditIcon sx={{ fontSize: 16 }} /></button>
                             <button onClick={() => handleDelete(c.id)} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all" title="Hapus"><DeleteIcon sx={{ fontSize: 16 }} /></button>
                           </div>
                         </td>
@@ -200,7 +192,7 @@ export default function MappingArea() {
                 </tbody>
               </table>
             </div>
-
+            
             {/* Mobile View */}
             <div className="md:hidden divide-y divide-slate-100">
               {areas.map((c) => (
@@ -216,7 +208,6 @@ export default function MappingArea() {
                     <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase ${c.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{c.status}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
-                    <p><span className="font-black text-slate-400 uppercase">Div:</span> {c.division_name}</p>
                     <p><span className="font-black text-slate-400 uppercase">Users:</span> {c.active_user_count}</p>
                     <p><span className="font-black text-slate-400 uppercase">STOs:</span> {c.sto_count}</p>
                     <p><span className="font-black text-slate-400 uppercase">Coord:</span> {c.latitude ? `${c.latitude}, ${c.longitude}` : "-"}</p>
@@ -225,7 +216,7 @@ export default function MappingArea() {
                     <button onClick={() => handleToggleStatus(c.id)} className={`h-8 w-8 rounded-lg border flex items-center justify-center ${c.status === 'active' ? 'text-rose-600 border-rose-200' : 'text-emerald-600 border-emerald-200'}`}>
                       {c.status === "active" ? <BlockIcon sx={{ fontSize: 16 }} /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}
                     </button>
-                    <button onClick={() => { setSelectedArea(c); setFormData({ name: c.name, division_id: c.division_id, latitude: c.latitude || "", longitude: c.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600">
+                    <button onClick={() => { setSelectedArea(c); setFormData({ name: c.name, latitude: c.latitude || "", longitude: c.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600">
                       <EditIcon sx={{ fontSize: 16 }} />
                     </button>
                     <button onClick={() => handleDelete(c.id)} className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600">
@@ -266,20 +257,10 @@ export default function MappingArea() {
                   <button type="button" onClick={handleGeocode} className="px-4 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all">{isGeocoding ? "..." : "CARI"}</button>
                 </div>
               </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">PILIH DIVISI</label>
-                <select required className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none" value={formData.division_id} onChange={e => setFormData({...formData, division_id: e.target.value})}>
-                  <option value="">-- Pilih Divisi --</option>
-                  {divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">LATITUDE</label><input type="number" step="any" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} /></div>
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">LONGITUDE</label><input type="number" step="any" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} /></div>
               </div>
-              
               {formData.latitude && formData.longitude && (
                 <div className="h-48 rounded-2xl overflow-hidden border border-slate-200">
                   <MapContainer key={`${formData.latitude}-${formData.longitude}`} center={[formData.latitude, formData.longitude]} zoom={13} style={{ height: "100%", width: "100%" }}>

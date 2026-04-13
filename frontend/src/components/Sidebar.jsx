@@ -115,17 +115,6 @@ export default function Sidebar() {
                   {isAreaOpen && (
                     <div className="ml-9 flex flex-col gap-1 border-l-2 border-slate-100 pl-2">
                       <Link
-                        to="/mapping/division"
-                        onClick={() => setIsOpen(false)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                          isActive("/mapping/division")
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
-                        }`}
-                      >
-                        Witel/Divisi
-                      </Link>
-                      <Link
                         to="/mapping/area"
                         onClick={() => setIsOpen(false)}
                         className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${

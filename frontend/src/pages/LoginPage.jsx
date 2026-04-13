@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, persistUser } from "../services/authService";
+import telkomLogo from "../assets/Logo Telkom.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -38,8 +39,8 @@ export default function LoginPage() {
           <div className="p-10">
             {/* Header / Brand */}
             <div className="flex flex-col items-center mb-8">
-              <div className="w-20 h-20 rounded-[1.75rem] bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-3xl shadow-xl shadow-blue-200 animate-float">
-                🛡️
+              <div className="w-40 h-20 flex items-center justify-center animate-float">
+                <img src={telkomLogo} alt="Telkom Logo" className="object-contain" />
               </div>
               <h1 className="mt-6 text-3xl font-black text-slate-900 tracking-tight text-center">
                 System Login

@@ -122,7 +122,6 @@ export default function Dashboard() {
     // Apply role-based filtering for stats
     const params = new URLSearchParams();
     if (user.role !== 'admin') {
-        params.set('division', user.division);
         params.set('area', user.area);
     }
     

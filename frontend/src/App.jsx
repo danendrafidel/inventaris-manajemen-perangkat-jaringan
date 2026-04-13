@@ -3,10 +3,9 @@ import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import InventoryDashboard from './pages/InventoryDashboard'
 import UserManagement from './pages/UserManagement'
-import Profile from './pages/Profile'
-import MappingDivision from './pages/MappingDivision'
-import MappingArea from './pages/MappingArea'
-import MappingSto from './pages/MappingSto'
+import Profile from "./pages/Profile";
+import MappingArea from "./pages/MappingArea";
+import MappingSto from "./pages/MappingSto";
 import FormPMR from './pages/FormPMR'
 import LogPMR from './pages/LogPMR'
 import { getStoredUser } from './services/authService'
@@ -64,14 +63,6 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin', 'officer']}>
               <UserManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/mapping/division"
-          element={
-            <ProtectedRoute allowedRoles={['admin', 'officer']}>
-              <MappingDivision />
             </ProtectedRoute>
           }
         />

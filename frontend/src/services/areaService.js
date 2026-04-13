@@ -1,53 +1,5 @@
 import { API_BASE } from "../constants";
 
-// DIVISION (Sebelumnya Witel)
-export async function fetchAllDivisions() {
-  const response = await fetch(`${API_BASE}/api/area/divisions`);
-  const data = await response.json();
-  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal memuat Divisi');
-  return data.data;
-}
-
-export async function toggleDivisionStatus(id) {
-  const response = await fetch(`${API_BASE}/api/area/divisions/${id}/status`, {
-    method: 'PATCH',
-  });
-  const data = await response.json();
-  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal mengubah status Divisi');
-  return data.data;
-}
-
-export async function createDivision(divisionData) {
-  const response = await fetch(`${API_BASE}/api/area/divisions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(divisionData),
-  });
-  const data = await response.json();
-  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal membuat Divisi');
-  return data.data;
-}
-
-export async function updateDivision(id, divisionData) {
-  const response = await fetch(`${API_BASE}/api/area/divisions/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(divisionData),
-  });
-  const data = await response.json();
-  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal memperbarui Divisi');
-  return data.data;
-}
-
-export async function deleteDivision(id) {
-  const response = await fetch(`${API_BASE}/api/area/divisions/${id}`, {
-    method: 'DELETE',
-  });
-  const data = await response.json();
-  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal menghapus Divisi');
-  return data.data;
-}
-
 // AREA (Sebelumnya Kota)
 export async function fetchAllAreas() {
   const response = await fetch(`${API_BASE}/api/area/areas`);

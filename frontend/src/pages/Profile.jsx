@@ -64,7 +64,6 @@ export default function Profile() {
         name: p.name,
         email: p.email,
         nik: p.nik || "",
-        division: p.division,
         area: p.area,
       });
       setOptions(o);
@@ -238,46 +237,25 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-5 md:space-y-6">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <BusinessIcon sx={{ fontSize: 14 }} /> Divisi
-                    </label>
-                    <select
-                      disabled={!isEditing}
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
-                      value={formData.division}
-                      onChange={(e) =>
-                        setFormData({ ...formData, division: e.target.value })
-                      }
-                    >
-                      {options.divisions.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <MapIcon sx={{ fontSize: 14 }} /> Area
-                    </label>
-                    <select
-                      disabled={!isEditing}
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
-                      value={formData.area}
-                      onChange={(e) =>
-                        setFormData({ ...formData, area: e.target.value })
-                      }
-                    >
-                      {options.areas.map((a) => (
-                        <option key={a} value={a}>
-                          {a}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <MapIcon sx={{ fontSize: 14 }} /> Area
+                  </label>
+                  <select
+                    disabled={!isEditing}
+                    className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
+                    value={formData.area}
+                    onChange={(e) =>
+                      setFormData({ ...formData, area: e.target.value })
+                    }
+                  >
+                    {options.areas.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                   {isEditing && (
                     <div className="pt-4">
                       <button

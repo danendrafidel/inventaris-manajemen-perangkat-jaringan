@@ -5,7 +5,6 @@ const handleError = (res, error, message = "Internal Server Error") => {
   console.error(error);
   res.status(500).json({ success: false, message });
 };
-
 // Helper to map DB row to Frontend object
 const mapDeviceFromDB = (row) => ({
   id: row.id,
@@ -18,7 +17,6 @@ const mapDeviceFromDB = (row) => ({
   status: row.status,
   room: row.room,
   kind: row.kind,
-  division: row.division,
   area: row.area,
   sto: row.sto,
   totalPort: row.total_port,
@@ -74,14 +72,10 @@ exports.login = async (req, res) => {
 // Inventory Device Logic
 exports.getStats = async (req, res) => {
   try {
-    const { division, area } = req.query;
+    const { area } = req.query;
     let whereClause = "WHERE 1=1";
     const params = [];
 
-    if (division) {
-      params.push(division);
-      whereClause += ` AND division = $${params.length}`;
-    }
     if (area) {
       params.push(area);
       whereClause += ` AND area = $${params.length}`;
@@ -124,13 +118,6 @@ exports.getOptions = async (req, res) => {
   try {
     // Queries to aggregate master data + existing usage data
     const queries = {
-      divisions: `
-        SELECT name as val FROM map_divisions 
-        UNION 
-        SELECT DISTINCT division FROM inventory_devices WHERE division IS NOT NULL AND division != '' 
-        UNION 
-        SELECT DISTINCT division FROM users WHERE division IS NOT NULL AND division != ''
-      `,
       areas: `
         SELECT name as val FROM areas 
         UNION 
@@ -187,17 +174,13 @@ exports.getOptions = async (req, res) => {
 
 exports.getDevices = async (req, res) => {
   try {
-    const { search, division, sto, area, status } = req.query || {};
+    const { search, sto, area, status } = req.query || {};
     let query = "SELECT * FROM inventory_devices WHERE 1=1";
     const params = [];
 
     if (search) {
       params.push(`%${search.toLowerCase()}%`);
       query += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(device_id) LIKE $${params.length} OR LOWER(serial_number) LIKE $${params.length})`;
-    }
-    if (division) {
-      params.push(division);
-      query += ` AND division = $${params.length}`;
     }
     if (sto) {
       params.push(sto);
@@ -236,7 +219,6 @@ exports.createDevice = async (req, res) => {
       status,
       room,
       kind,
-      division,
       area,
       sto,
       totalPort,
@@ -246,9 +228,9 @@ exports.createDevice = async (req, res) => {
     const query = `
       INSERT INTO inventory_devices (
         device_id, ip, name, device_type, storage_location, 
-        serial_number, status, room, kind, division, area, sto, 
+        serial_number, status, room, kind, area, sto, 
         total_port, idle_port
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -262,7 +244,6 @@ exports.createDevice = async (req, res) => {
       status,
       room,
       kind,
-      division,
       area,
       sto,
       totalPort || 0,
@@ -292,7 +273,6 @@ exports.updateDevice = async (req, res) => {
       status,
       room,
       kind,
-      division,
       area,
       sto,
       totalPort,
@@ -303,9 +283,9 @@ exports.updateDevice = async (req, res) => {
       UPDATE inventory_devices SET
         device_id = $1, ip = $2, name = $3, device_type = $4, 
         storage_location = $5, serial_number = $6, status = $7, room = $8, 
-        kind = $9, division = $10, area = $11, sto = $12, 
-        total_port = $13, idle_port = $14, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $15
+        kind = $9, area = $10, sto = $11, 
+        total_port = $12, idle_port = $13, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $14
       RETURNING *
     `;
 
@@ -319,7 +299,6 @@ exports.updateDevice = async (req, res) => {
       status,
       room,
       kind,
-      division,
       area,
       sto,
       totalPort,
@@ -362,7 +341,7 @@ exports.deleteDevice = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const { rows } = await db.query(
-      "SELECT id, username, name, email, nik, role, division, area, status FROM users ORDER BY created_at DESC",
+      "SELECT id, username, name, email, nik, role, area, status FROM users ORDER BY created_at DESC",
     );
     res.json({ success: true, data: rows });
   } catch (error) {
@@ -372,11 +351,11 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, email, nik, role, division, area } =
+    const { username, password, name, email, nik, role, area } =
       req.body;
     const query = `
-      INSERT INTO users (username, password, name, email, nik, role, division, area, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')
+      INSERT INTO users (username, password, name, email, nik, role, area, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
       RETURNING id
     `;
     await db.query(query, [
@@ -386,7 +365,6 @@ exports.createUser = async (req, res) => {
       email,
       nik,
       role,
-      division,
       area,
     ]);
     res.json({ success: true, message: "User berhasil dibuat" });
@@ -398,19 +376,18 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, role, division, area } = req.body;
+    const { name, email, nik, role, area } = req.body;
     const query = `
       UPDATE users SET 
-        name = $1, email = $2, nik = $3, role = $4, division = $5, area = $6,
+        name = $1, email = $2, nik = $3, role = $4, area = $5,
         updated_at = CURRENT_TIMESTAMP 
-      WHERE id = $7
+      WHERE id = $6
     `;
     const { rowCount } = await db.query(query, [
       name,
       email,
       nik,
       role,
-      division,
       area,
       id,
     ]);
@@ -475,7 +452,7 @@ exports.getProfile = async (req, res) => {
   try {
     const { id } = req.params;
     const { rows } = await db.query(
-      "SELECT id, username, name, email, nik, role, division, area, status FROM users WHERE id = $1",
+      "SELECT id, username, name, email, nik, role, area, status FROM users WHERE id = $1",
       [id],
     );
 
@@ -494,20 +471,19 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, division, area } = req.body;
+    const { name, email, nik, area } = req.body;
 
     const query = `
       UPDATE users SET 
-        name = $1, email = $2, nik = $3, division = $4, area = $5,
+        name = $1, email = $2, nik = $3, area = $4,
         updated_at = CURRENT_TIMESTAMP 
-      WHERE id = $6
-      RETURNING id, username, name, email, nik, role, division, area, status
+      WHERE id = $5
+      RETURNING id, username, name, email, nik, role, area, status
     `;
     const { rows } = await db.query(query, [
       name,
       email,
       nik,
-      division,
       area,
       id,
     ]);
@@ -530,20 +506,16 @@ exports.updateProfile = async (req, res) => {
 
 exports.getDashboard = async (req, res) => {
   try {
-    const { division, area } = req.query;
+    const { area } = req.query;
     let whereClause = "WHERE 1=1";
     const params = [];
 
-    if (division) {
-      params.push(division);
-      whereClause += ` AND division = $${params.length}`;
-    }
     if (area) {
       params.push(area);
       whereClause += ` AND area = $${params.length}`;
     }
 
-    const userCount = await db.query(`SELECT COUNT(*) FROM users ${division ? 'WHERE division = $1' : ''}`, division ? [division] : []);
+    const userCount = await db.query(`SELECT COUNT(*) FROM users`);
     
     // Fix: Ensure we don't have dangling WHERE/AND without conditions
     const deviceWhere = whereClause === "WHERE 1=1" ? "" : whereClause.replace("WHERE 1=1 AND ", "WHERE ");

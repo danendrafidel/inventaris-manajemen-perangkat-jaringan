@@ -137,7 +137,6 @@ export default function FormPMR() {
       const params = { search: searchTerm };
       // Restrict scope for non-admin users
       if (user.role !== 'admin') {
-        params.division = user.division;
         params.area = user.area;
       }
       const data = await fetchInventoryDevices(params);
@@ -254,7 +253,6 @@ export default function FormPMR() {
                             <p className="flex justify-between"><span>Status:</span> <span className="text-slate-900">{foundDevice.status}</span></p>
                             <p className="flex justify-between"><span>Ruangan:</span> <span className="text-slate-900">{foundDevice.room}</span></p>
                             <p className="flex justify-between"><span>Kategori:</span> <span className="text-slate-900">{foundDevice.kind}</span></p>
-                            <p className="flex justify-between"><span>Divisi:</span> <span className="text-slate-900">{foundDevice.division}</span></p>
                             <p className="flex justify-between"><span>Area:</span> <span className="text-slate-900">{foundDevice.area}</span></p>
                             <p className="flex justify-between"><span>STO:</span> <span className="text-slate-900">{foundDevice.sto}</span></p>
                             <p className="flex justify-between"><span>Total Port:</span> <span className="text-slate-900">{foundDevice.totalPort}</span></p>

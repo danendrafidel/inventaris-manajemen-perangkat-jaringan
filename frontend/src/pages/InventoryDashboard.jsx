@@ -58,13 +58,11 @@ export default function InventoryDashboard() {
   const [search, setSearch] = useState("");
   const [draftSearch, setDraftSearch] = useState("");
   const [filters, setFilters] = useState({
-    division: "",
     sto: "",
     area: "",
     status: "",
   });
   const [draftFilters, setDraftFilters] = useState({
-    division: "",
     sto: "",
     area: "",
     status: "",
@@ -83,7 +81,6 @@ export default function InventoryDashboard() {
     status: "",
     room: "",
     kind: "",
-    division: "",
     area: "",
     sto: "",
     totalPort: "",
@@ -113,14 +110,12 @@ export default function InventoryDashboard() {
     if (user) {
       // Define base filter params based on user role
       const roleParams = {};
-      if (role !== 'admin') {
-        roleParams.division = user.division;
+      if (role !== "admin") {
         roleParams.area = user.area;
       }
 
       loadData(roleParams);
-    }
-    else navigate("/", { replace: true });
+    } else navigate("/", { replace: true });
   }, [user, page, search, filters]);
 
   const loadData = async (roleParams = {}) => {
@@ -136,7 +131,7 @@ export default function InventoryDashboard() {
           page,
           limit,
           ...filters,
-          ...roleParams
+          ...roleParams,
         }),
       ]);
       setStats(s);
@@ -409,28 +404,6 @@ export default function InventoryDashboard() {
             {/* Bottom Row: Dropdowns & Action Buttons */}
             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-center gap-3 flex-1">
-                <select
-                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
-                  style={{
-                    backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 0.75rem center",
-                    backgroundSize: "0.85rem",
-                  }}
-                  value={draftFilters.division}
-                  onChange={(e) =>
-                    handleDraftFilterChange("division", e.target.value)
-                  }
-                >
-                  <option value="">Divisi</option>
-                  {options.divisions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-
                 <select
                   className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
                   style={{
@@ -881,7 +854,7 @@ export default function InventoryDashboard() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-1">
-                      NAMA PERANGKAT
+                      NAMA PERANGKAT / MODEL PERANGKAT
                     </label>
                     <input
                       required
@@ -1029,25 +1002,6 @@ export default function InventoryDashboard() {
                       }
                       placeholder="Masukkan jenis perangkat"
                     />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-1">
-                      DIVISI
-                    </label>
-                    <select
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all"
-                      value={formData.division}
-                      onChange={(e) =>
-                        setFormData({ ...formData, division: e.target.value })
-                      }
-                    >
-                      <option value="">Pilih Divisi</option>
-                      {options.divisions.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
                   </div>
                 </div>
 
@@ -1240,14 +1194,6 @@ export default function InventoryDashboard() {
                         </span>
                         <span className="text-xs md:text-sm font-black text-slate-900">
                           {selectedItem.room}
-                        </span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-slate-200 pb-2 gap-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">
-                          Divisi
-                        </span>
-                        <span className="text-xs md:text-sm font-black text-slate-900">
-                          {selectedItem.division}
                         </span>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:justify-between border-b border-slate-200 pb-2 gap-1">

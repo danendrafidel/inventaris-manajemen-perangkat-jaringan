@@ -2,13 +2,6 @@ const express = require('express');
 const router = express.Router();
 const areaController = require('../controllers/areaController');
 
-// DIVISION ROUTES (Sebelumnya Witel)
-router.get('/divisions', areaController.getAllDivisions);
-router.post('/divisions', areaController.createDivision);
-router.put('/divisions/:id', areaController.updateDivision);
-router.delete('/divisions/:id', areaController.deleteDivision);
-router.patch('/divisions/:id/status', areaController.toggleDivisionStatus);
-
 // AREA ROUTES (Sebelumnya Kota)
 router.get('/areas', areaController.getAllAreas);
 router.post('/areas', areaController.createArea);
