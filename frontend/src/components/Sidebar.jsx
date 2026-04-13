@@ -1,0 +1,229 @@
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { clearAuth, getStoredUser } from "../services/authService";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+
+export default function Sidebar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isAreaOpen, setIsAreaOpen] = useState(false);
+  const [isPmrOpen, setIsPmrOpen] = useState(false);
+  const location = useLocation();
+  const user = getStoredUser();
+  const role = user?.role;
+  const isAdminOrOfficer = role === "admin" || role === "officer";
+
+  const handleLogout = () => {
+    clearAuth();
+    window.location.href = "/";
+  };
+
+  const isActive = (path) => location.pathname === path;
+
+  const toggleSidebar = () => setIsOpen(!isOpen);
+  const toggleArea = () => setIsAreaOpen(!isAreaOpen);
+  const togglePmr = () => setIsPmrOpen(!isPmrOpen);
+
+  return (
+    <>
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={toggleSidebar}
+        className="md:hidden fixed top-4 left-4 z-50 h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-lg flex items-center justify-center text-slate-600"
+      >
+        {isOpen ? <CloseIcon /> : <MenuIcon />}
+      </button>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
+      <div
+        className={`
+        fixed left-0 top-0 bottom-0 border-r border-slate-200 bg-white z-40 transition-transform duration-300 w-64
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        md:translate-x-0
+      `}
+      >
+        <div className="px-5 py-6 flex flex-col h-full w-full overflow-y-auto">
+          <div className="flex items-center gap-3 px-2">
+            <div className="h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-200">
+              I
+            </div>
+            <div className="leading-tight">
+              <p className="text-sm font-bold text-slate-900 tracking-tight">
+                INVENTARIS
+              </p>
+              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                Sistem Manajemen
+              </p>
+            </div>
+          </div>
+
+          <nav className="mt-10 flex flex-col gap-1.5">
+            <Link
+              to="/dashboard"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                isActive("/dashboard")
+                  ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <span className="text-lg opacity-70">📊</span> Dashboard
+            </Link>
+
+            {isAdminOrOfficer && (
+              <>
+                <Link
+                  to="/users"
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                    isActive("/users")
+                      ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="text-lg">👥</span> Kelola Pengguna
+                </Link>
+
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={toggleArea}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                      location.pathname.startsWith("/mapping")
+                        ? "bg-slate-50 text-blue-700"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">🗺️</span> Mapping Area
+                    </div>
+                    {isAreaOpen ? (
+                      <KeyboardArrowUpIcon sx={{ fontSize: 18 }} />
+                    ) : (
+                      <KeyboardArrowDownIcon sx={{ fontSize: 18 }} />
+                    )}
+                  </button>
+
+                  {isAreaOpen && (
+                    <div className="ml-9 flex flex-col gap-1 border-l-2 border-slate-100 pl-2">
+                      <Link
+                        to="/mapping/division"
+                        onClick={() => setIsOpen(false)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                          isActive("/mapping/division")
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                        }`}
+                      >
+                        Witel/Divisi
+                      </Link>
+                      <Link
+                        to="/mapping/area"
+                        onClick={() => setIsOpen(false)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                          isActive("/mapping/area")
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                        }`}
+                      >
+                        Kota/Area
+                      </Link>
+                      <Link
+                        to="/mapping/sto"
+                        onClick={() => setIsOpen(false)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                          isActive("/mapping/sto")
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                        }`}
+                      >
+                        STO
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            <Link
+              to="/inventory"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                isActive("/inventory")
+                  ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <span className="text-lg">📦</span> Inventaris
+            </Link>
+
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={togglePmr}
+                className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  location.pathname.startsWith("/pmr")
+                    ? "bg-slate-50 text-blue-700"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">🛠️</span> PMR
+                </div>
+                {isPmrOpen ? (
+                  <KeyboardArrowUpIcon sx={{ fontSize: 18 }} />
+                ) : (
+                  <KeyboardArrowDownIcon sx={{ fontSize: 18 }} />
+                )}
+              </button>
+
+              {isPmrOpen && (
+                <div className="ml-9 flex flex-col gap-1 border-l-2 border-slate-100 pl-2">
+                  <Link
+                    to="/pmr"
+                    onClick={() => setIsOpen(false)}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      isActive("/pmr")
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                    }`}
+                  >
+                    Formulir PMR
+                  </Link>
+                  <Link
+                    to="/pmr/log"
+                    onClick={() => setIsOpen(false)}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                      isActive("/pmr/log")
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                    }`}
+                  >
+                    Log PMR
+                  </Link>
+                </div>
+              )}
+            </div>
+          </nav>
+
+          <div className="mt-auto pt-6 px-2">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm uppercase tracking-widest"
+            >
+              LOGOUT SYSTEM
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

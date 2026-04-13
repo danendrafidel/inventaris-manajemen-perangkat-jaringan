@@ -1,0 +1,322 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getStoredUser } from "../services/authService";
+import { fetchDashboardSummary } from "../services/dashboardService";
+import Sidebar from "../components/Sidebar";
+
+function StatCard({ title, value, suffix, icon, tone }) {
+  const toneClasses =
+    tone === "blue"
+      ? { iconBg: "bg-blue-500/10 text-blue-700", accent: "text-blue-700" }
+      : tone === "pink"
+        ? {
+            iconBg: "bg-fuchsia-500/10 text-fuchsia-700",
+            accent: "text-fuchsia-700",
+          }
+        : tone === "emerald"
+          ? {
+              iconBg: "bg-emerald-500/10 text-emerald-700",
+              accent: "text-emerald-700",
+            }
+          : {
+              iconBg: "bg-slate-500/10 text-slate-700",
+              accent: "text-slate-700",
+            };
+
+  return (
+    <div className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+            {title}
+          </p>
+          <p className="text-3xl font-black text-slate-900 tabular-nums">
+            {value}
+            <span
+              className={`ml-2 text-xs font-bold ${toneClasses.accent} opacity-70`}
+            >
+              {suffix}
+            </span>
+          </p>
+        </div>
+        <div
+          className={`h-12 w-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${toneClasses.iconBg}`}
+          aria-hidden="true"
+        >
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActivityItem({ icon, title, time, description }) {
+  return (
+    <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors group">
+      <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-lg shrink-0 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors border border-slate-200/50">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 mb-0.5">
+          <p className="text-sm font-bold text-slate-900 truncate">{title}</p>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter shrink-0">
+            {time}
+          </span>
+        </div>
+        <p className="text-xs text-slate-500 line-clamp-1">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const [user] = useState(() => getStoredUser());
+  const [loadError, setLoadError] = useState("");
+  const [dashboard, setDashboard] = useState(null);
+
+  const activities = [
+    {
+      id: 1,
+      icon: "🔑",
+      title: "Login Berhasil",
+      time: "Baru saja",
+      description: "Anda berhasil masuk ke sistem manajemen inventaris.",
+    },
+    {
+      id: 2,
+      icon: "📦",
+      title: "Membuka Inventaris",
+      time: "2 menit lalu",
+      description: "Melihat daftar perangkat.",
+    },
+    {
+      id: 3,
+      icon: "👤",
+      title: "Update Profil",
+      time: "1 jam lalu",
+      description: "Mengubah informasi NIK dan preferensi akun.",
+    },
+    {
+      id: 4,
+      icon: "⚙️",
+      title: "System Sync",
+      time: "3 jam lalu",
+      description: "Sinkronisasi otomatis database dengan server pusat.",
+    },
+  ];
+
+  const roleLabel = useMemo(() => {
+    const r = String(user?.role || "").toLowerCase();
+    if (r === "admin") return "Administrator";
+    if (r === "officer") return "Officer";
+    return "User";
+  }, [user?.role]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/", { replace: true });
+      return;
+    }
+    
+    // Apply role-based filtering for stats
+    const params = new URLSearchParams();
+    if (user.role !== 'admin') {
+        params.set('division', user.division);
+        params.set('area', user.area);
+    }
+    
+    fetchDashboardSummary(params.toString())
+      .then(setDashboard)
+      .catch((err) => setLoadError(err.message));
+  }, [user, navigate]);
+
+  if (!user) return null;
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      <Sidebar />
+
+      <div className="flex-1 flex flex-col md:ml-64">
+        {/* Topbar */}
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 md:hidden" />
+            <div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                <span>Dashboard</span>
+                <span>/</span>
+                <span className="text-blue-600">OVERVIEW</span>
+              </div>
+              <h1 className="text-lg md:text-xl font-extrabold text-slate-900 tracking-tight">
+                Dashboard Overview
+              </h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 md:gap-5">
+            <Link
+              to="/profile"
+              className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-linear-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 uppercase hover:scale-110 transition-transform text-sm md:text-base"
+              title="Lihat Profil"
+            >
+              {user.name?.charAt(0)}
+            </Link>
+          </div>
+        </header>
+
+        <main className="p-4 md:p-8">
+          {/* Welcome banner */}
+          <section className="relative overflow-hidden rounded-4xl md:rounded-[2.5rem] bg-linear-to-br from-indigo-600 to-blue-700 p-6 md:p-12 text-white shadow-xl shadow-blue-200 mb-8">
+            <div className="relative z-10">
+              <h2 className="text-2xl md:text-4xl font-black tracking-tight">
+                Selamat Datang, {user.name.split(" ")[0]}!{" "}
+                <span aria-hidden="true">👋</span>
+              </h2>
+              <p className="mt-2 md:mt-3 text-blue-100 font-medium max-w-2xl text-sm md:text-lg">
+                Akses{" "}
+                <span className="font-bold text-white uppercase tracking-wider bg-white/20 px-2 py-0.5 md:px-3 md:py-1 rounded-lg text-xs md:text-sm">
+                  {roleLabel}
+                </span>{" "}
+                Aktif. Pantau seluruh ekosistem perangkat jaringan secara
+                real-time.
+              </p>
+
+              <div className="mt-8 md:mt-10 flex flex-wrap items-center gap-4 md:gap-6">
+                <Link
+                  to="/inventory"
+                  className="inline-flex items-center gap-2 rounded-xl md:rounded-2xl bg-white px-6 py-3 md:px-8 md:py-4 text-xs md:text-sm font-black text-blue-700 shadow-xl hover:bg-blue-50 transition-all hover:scale-105 active:scale-95"
+                >
+                  BUKA INVENTARIS <span>→</span>
+                </Link>
+                <div className="flex items-center gap-4 md:gap-6 text-[10px] md:text-xs font-bold text-blue-100">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    SYSTEM ACTIVE
+                  </div>
+                  <div className="hidden xs:block h-4 w-px bg-white/20" />
+                  <div className="hidden xs:block">VERSION 1.0</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Decorative circles */}
+            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+          </section>
+
+          {loadError && (
+            <div className="mb-6 rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-4 text-sm font-bold text-rose-700 shadow-sm animate-pulse">
+              ⚠️ {loadError}
+            </div>
+          )}
+
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatCard
+              title="TOTAL USERS"
+              value={dashboard?.stats?.totalUsers ?? 0}
+              suffix={dashboard?.meta?.usersSuffix}
+              icon="👥"
+              tone="pink"
+            />
+            <StatCard
+              title="MANAGED DEVICES"
+              value={dashboard?.stats?.totalDevices ?? 0}
+              suffix={dashboard?.meta?.devicesSuffix}
+              icon="📡"
+              tone="blue"
+            />
+            <StatCard
+              title="ACTIVE LOANS"
+              value={dashboard?.stats?.activeLoans ?? 0}
+              suffix={dashboard?.meta?.loansSuffix}
+              icon="📋"
+              tone="emerald"
+            />
+            <StatCard
+              title="UNITS"
+              value={dashboard?.stats?.units ?? 0}
+              suffix={dashboard?.meta?.unitsSuffix}
+              icon="🏢"
+              tone="amber"
+            />
+          </div>
+
+          {/* System Summary Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                  System Summary
+                </h3>
+                <span className="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-200">
+                  Global Infrastructure Data
+                </span>
+              </div>
+              <p className="text-slate-600 leading-relaxed font-medium text-base mb-8">
+                Dashboard overview ini menyajikan ringkasan administratif
+                sistem. Untuk manajemen teknis, konfigurasi, dan pemantauan
+                spesifik per unit perangkat, silakan gunakan modul{" "}
+                <span className="font-bold text-blue-600">Inventaris</span>.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-2xl bg-slate-50 p-5 border border-slate-100 group hover:border-emerald-200 transition-colors">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                    Security Status
+                  </p>
+                  <p className="text-sm font-bold text-emerald-600">
+                    ENCRYPTED & SECURE
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-5 border border-slate-100 group hover:border-blue-200 transition-colors">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                    Database Sync
+                  </p>
+                  <p className="text-sm font-bold text-blue-600">
+                    REAL-TIME ACTIVE
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-4xl border border-slate-200 bg-slate-900 p-8 text-white shadow-xl shadow-slate-200 relative overflow-hidden group">
+              <div className="relative z-10 h-full flex flex-col">
+                <h3 className="text-xl font-black tracking-tight mb-3">
+                  Pusat Bantuan
+                </h3>
+                <p className="text-slate-400 text-sm font-medium mb-10 leading-relaxed">
+                  Butuh bantuan navigasi sistem atau pelaporan kendala teknis?
+                </p>
+
+                <button className="mt-auto w-full rounded-2xl bg-white/10 border border-white/20 py-4 text-xs font-black hover:bg-white/20 transition-all uppercase tracking-widest">
+                  Hubungi Admin
+                </button>
+              </div>
+              <div className="absolute -right-10 -bottom-10 text-[10rem] opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                ⚙️
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity Section */}
+          <div className="mt-8 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                Aktivitas Terkini
+              </h3>
+              <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                System Log Feed
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {activities.map((act) => (
+                <ActivityItem key={act.id} {...act} />
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
