@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import {
@@ -35,6 +35,8 @@ import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
 import ApartmentIcon from "@mui/icons-material/Apartment";
+import PublicIcon from "@mui/icons-material/Public";
+import MapIcon from "@mui/icons-material/Map";
 
 export default function MappingArea() {
   const user = getStoredUser();
@@ -53,6 +55,12 @@ export default function MappingArea() {
     severity: "success",
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const stats = useMemo(() => ({
+    total: areas.length,
+    active: areas.filter(a => a.status === 'active').length,
+    inactive: areas.filter(a => a.status !== 'active').length,
+  }), [areas]);
 
   const showNotify = (message, severity = "success") =>
     setNotification({ open: true, message, severity });
@@ -189,6 +197,22 @@ export default function MappingArea() {
         </header>
 
         <main className="p-4 md:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                {[
+                    { title: "TOTAL AREA", value: stats.total, icon: <PublicIcon />, color: "bg-slate-600" },
+                    { title: "AKTIF", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
+                    { title: "NONAKTIF", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
+                ].map((s, i) => (
+                    <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase">{s.title}</p>
+                            <p className="text-2xl font-black text-slate-900">{s.value}</p>
+                        </div>
+                        <div className={`h-10 w-10 rounded-xl ${s.color} text-white flex items-center justify-center shadow-lg`}>{s.icon}</div>
+                    </div>
+                ))}
+            </div>
+
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
@@ -367,7 +391,7 @@ export default function MappingArea() {
                     </p>
                     <p>
                       <span className="font-black text-slate-400 uppercase">
-                        Coord:
+                        <MapIcon sx={{ fontSize: 12 }} /> Coord:
                       </span>{" "}
                       {c.latitude ? `${c.latitude}, ${c.longitude}` : "-"}
                     </p>

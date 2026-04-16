@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import {
@@ -20,6 +20,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
+import GroupIcon from "@mui/icons-material/Group";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import BadgeIcon from "@mui/icons-material/Badge";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 
 export default function UserManagement() {
   const navigate = useNavigate();
@@ -54,6 +58,13 @@ export default function UserManagement() {
     message: "",
     severity: "success",
   });
+
+  const userStats = useMemo(() => ({
+    total: users.length,
+    admin: users.filter(u => u.role === 'admin').length,
+    officer: users.filter(u => u.role === 'officer').length,
+    user: users.filter(u => u.role === 'user').length,
+  }), [users]);
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
@@ -150,8 +161,7 @@ export default function UserManagement() {
         <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="w-10 md:hidden shrink-0" />{" "}
-              {/* Mobile Toggle Spacer */}
+              <div className="w-10 md:hidden shrink-0" />
               <div className="min-w-0">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">
                   Dashboard / <span className="text-blue-600">PENGGUNA</span>
@@ -195,6 +205,25 @@ export default function UserManagement() {
         </header>
 
         <main className="p-4 md:p-8 max-w-full overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[
+              { title: "TOTAL USER", value: userStats.total, icon: <GroupIcon />, color: "bg-slate-600" },
+              { title: "ADMIN", value: userStats.admin, icon: <AdminPanelSettingsIcon />, color: "bg-rose-500" },
+              { title: "OFFICER", value: userStats.officer, icon: <BadgeIcon />, color: "bg-blue-600" },
+              { title: "USER", value: userStats.user, icon: <PersonOutlineIcon />, color: "bg-emerald-500" },
+            ].map((stat, i) => (
+              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">{stat.title}</p>
+                  <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                </div>
+                <div className={`h-10 w-10 rounded-xl ${stat.color} text-white flex items-center justify-center shadow-lg`}>
+                  {stat.icon}
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">

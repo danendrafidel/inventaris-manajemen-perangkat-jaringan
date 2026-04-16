@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import {
@@ -31,6 +31,7 @@ import BusinessIcon from "@mui/icons-material/Business";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
+import MapIcon from "@mui/icons-material/Map";
 
 export default function MappingOffice() {
   const user = getStoredUser();
@@ -41,6 +42,12 @@ export default function MappingOffice() {
   const [formData, setFormData] = useState({ name: "", latitude: "", longitude: "" });
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
   const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const stats = useMemo(() => ({
+    total: offices.length,
+    active: offices.filter(o => o.status === 'active').length,
+    inactive: offices.filter(o => o.status !== 'active').length,
+  }), [offices]);
 
   const showNotify = (message, severity = "success") => setNotification({ open: true, message, severity });
 
@@ -144,6 +151,22 @@ export default function MappingOffice() {
         </header>
 
         <main className="p-4 md:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                {[
+                    { title: "TOTAL KANTOR", value: stats.total, icon: <BusinessIcon />, color: "bg-slate-600" },
+                    { title: "AKTIF", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
+                    { title: "NONAKTIF", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
+                ].map((s, i) => (
+                    <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase">{s.title}</p>
+                            <p className="text-2xl font-black text-slate-900">{s.value}</p>
+                        </div>
+                        <div className={`h-10 w-10 rounded-xl ${s.color} text-white flex items-center justify-center shadow-lg`}>{s.icon}</div>
+                    </div>
+                ))}
+            </div>
+
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
@@ -210,7 +233,7 @@ export default function MappingOffice() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
                     <p><span className="font-black text-slate-400 uppercase"><PersonIcon sx={{ fontSize: 12 }} /> Users:</span> {o.active_user_count}</p>
-                    <p><span className="font-black text-slate-400 uppercase">Coord:</span> {o.latitude ? `${o.latitude}, ${o.longitude}` : "-"}</p>
+                    <p><span className="font-black text-slate-400 uppercase"><MapIcon sx={{ fontSize: 12 }} /> Coord:</span> {o.latitude ? `${o.latitude}, ${o.longitude}` : "-"}</p>
                   </div>
                   <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
                     <button onClick={() => handleToggleStatus(o.id)} className={`h-8 w-8 rounded-lg border flex items-center justify-center ${o.status === 'active' ? 'text-rose-600 border-rose-200' : 'text-emerald-600 border-emerald-200'}`}>

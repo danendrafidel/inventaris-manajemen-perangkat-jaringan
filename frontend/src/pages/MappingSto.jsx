@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import {
@@ -35,6 +35,8 @@ import RouterIcon from "@mui/icons-material/Router";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SettingsInputComponentIcon from "@mui/icons-material/SettingsInputComponent";
+import MapIcon from "@mui/icons-material/Map";
+import ApartmentIcon from "@mui/icons-material/Apartment";
 
 export default function MappingSto() {
   const user = getStoredUser();
@@ -55,6 +57,12 @@ export default function MappingSto() {
     severity: "success",
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const stats = useMemo(() => ({
+    total: stos.length,
+    active: stos.filter(s => s.status === 'active').length,
+    inactive: stos.filter(s => s.status !== 'active').length,
+  }), [stos]);
 
   const showNotify = (message, severity = "success") =>
     setNotification({ open: true, message, severity });
@@ -197,6 +205,21 @@ export default function MappingSto() {
         </header>
 
         <main className="p-4 md:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                {[
+                    { title: "TOTAL STO", value: stats.total, icon: <RouterIcon />, color: "bg-slate-600" },
+                    { title: "AKTIF", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
+                    { title: "NONAKTIF", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
+                ].map((s, i) => (
+                    <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase">{s.title}</p>
+                            <p className="text-2xl font-black text-slate-900">{s.value}</p>
+                        </div>
+                        <div className={`h-10 w-10 rounded-xl ${s.color} text-white flex items-center justify-center shadow-lg`}>{s.icon}</div>
+                    </div>
+                ))}
+            </div>
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
@@ -352,13 +375,13 @@ export default function MappingSto() {
                   <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
                     <p>
                       <span className="font-black text-slate-400 uppercase">
-                        Area:
+                        <ApartmentIcon sx={{ fontSize: 12 }} /> Area:
                       </span>{" "}
                       {s.area_name}
                     </p>
                     <p>
                       <span className="font-black text-slate-400 uppercase">
-                        Coord:
+                        <MapIcon sx={{ fontSize: 12 }} /> Coord:
                       </span>{" "}
                       {s.latitude ? `${s.latitude}, ${s.longitude}` : "-"}
                     </p>
@@ -523,7 +546,7 @@ export default function MappingSto() {
               )}
               <button
                 type="submit"
-                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs"
+                className="w-full py-4 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all"
               >
                 Simpan
               </button>

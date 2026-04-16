@@ -20,6 +20,10 @@ import BusinessIcon from "@mui/icons-material/Business";
 import MapIcon from "@mui/icons-material/Map";
 import CloseIcon from "@mui/icons-material/Close";
 import SaveIcon from "@mui/icons-material/Save";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import ShieldIcon from "@mui/icons-material/Shield";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -29,6 +33,7 @@ export default function Profile() {
   const [loadError, setLoadError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
   const [options, setOptions] = useState({ areas: [], offices: [] });
 
   const [formData, setFormData] = useState({
@@ -38,7 +43,11 @@ export default function Profile() {
     area: "",
     office_id: "",
   });
-  const [newPassword, setNewPassword] = useState("");
+  const [passwords, setPasswords] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  });
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
 
   const showNotify = (message, severity = "success") => {
@@ -86,7 +95,6 @@ export default function Profile() {
     try {
       const updated = await updateProfile(storedUser.id, formData);
       setProfile(updated);
-      // Update local storage to keep session in sync
       const current = getStoredUser();
       persistUser(
         { ...current, ...updated },
@@ -101,10 +109,14 @@ export default function Profile() {
 
   const handleChangePass = async (e) => {
     e.preventDefault();
+    if (passwords.new !== passwords.confirm) {
+      showNotify("Konfirmasi password baru tidak cocok", "error");
+      return;
+    }
     try {
-      await changeUserPassword(storedUser.id, newPassword);
+      await changeUserPassword(storedUser.id, passwords.current, passwords.new);
       setShowPassModal(false);
-      setNewPassword("");
+      setPasswords({ current: "", new: "", confirm: "" });
       showNotify("Password berhasil diubah");
     } catch (err) {
       showNotify(err.message, "error");
@@ -125,7 +137,7 @@ export default function Profile() {
         <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-10 md:hidden" /> {/* Mobile Toggle Spacer */}
+              <div className="w-10 md:hidden" />
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                   SISTEM / <span className="text-blue-600">PROFIL</span>
@@ -138,7 +150,7 @@ export default function Profile() {
           </div>
         </header>
 
-        <main className="p-4 md:p-8 max-w-4xl">
+        <main className="p-4 md:p-8 w-full">
           {loading && (
             <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 text-sm font-bold text-slate-600">
               Memuat profil...
@@ -167,8 +179,7 @@ export default function Profile() {
           ) : null}
 
           {profile && (
-          <div className="bg-white rounded-4xl md:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-            {/* Cover / Header */}
+          <div className="bg-white rounded-4xl md:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden w-full">
             <div className="h-24 md:h-32 bg-linear-to-r from-blue-600 to-indigo-700 relative">
               <div className="absolute -bottom-10 md:-bottom-12 left-6 md:left-10">
                 <div className="h-20 w-20 md:h-24 md:w-24 rounded-2xl md:rounded-3xl bg-white p-1.5 shadow-xl">
@@ -219,7 +230,7 @@ export default function Profile() {
 
               <form
                 onSubmit={handleUpdate}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12"
               >
                 <div className="space-y-5 md:space-y-6">
                   <div className="space-y-1.5">
@@ -336,8 +347,7 @@ export default function Profile() {
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={() => setShowPassModal(false)}
           />
-          <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95">
-            <div className="p-10">
+          <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 p-10">
               <div className="flex items-center gap-4 mb-8">
                 <div className="h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-lg shadow-indigo-200">
                   <LockIcon />
@@ -351,37 +361,27 @@ export default function Profile() {
                   </p>
                 </div>
               </div>
-              <form onSubmit={handleChangePass}>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    PASSWORD BARU
-                  </label>
-                  <input
-                    required
-                    type="password"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-100 transition-all"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Minimum 8 karakter"
-                  />
+              <form onSubmit={handleChangePass} className="space-y-4">
+                <div className="space-y-1.5 relative">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PASSWORD SAAT INI</label>
+                  <input required type={showPasswords.current ? "text" : "password"} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none" value={passwords.current} onChange={e => setPasswords({...passwords, current: e.target.value})} />
+                  <button type="button" onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})} className="absolute right-4 top-9 text-slate-400 hover:text-slate-600">{showPasswords.current ? <VisibilityOffIcon sx={{ fontSize: 18 }}/> : <VisibilityIcon sx={{ fontSize: 18 }}/>}</button>
+                </div>
+                <div className="space-y-1.5 relative">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PASSWORD BARU</label>
+                  <input required type={showPasswords.new ? "text" : "password"} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none" value={passwords.new} onChange={e => setPasswords({...passwords, new: e.target.value})} />
+                  <button type="button" onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})} className="absolute right-4 top-9 text-slate-400 hover:text-slate-600">{showPasswords.new ? <VisibilityOffIcon sx={{ fontSize: 18 }}/> : <VisibilityIcon sx={{ fontSize: 18 }}/>}</button>
+                </div>
+                <div className="space-y-1.5 relative">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">KONFIRMASI PASSWORD BARU</label>
+                  <input required type={showPasswords.confirm ? "text" : "password"} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none" value={passwords.confirm} onChange={e => setPasswords({...passwords, confirm: e.target.value})} />
+                  <button type="button" onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})} className="absolute right-4 top-9 text-slate-400 hover:text-slate-600">{showPasswords.confirm ? <VisibilityOffIcon sx={{ fontSize: 18 }}/> : <VisibilityIcon sx={{ fontSize: 18 }}/>}</button>
                 </div>
                 <div className="flex items-center justify-end gap-3 mt-8">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassModal(false)}
-                    className="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-8 py-3 rounded-2xl bg-indigo-600 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all"
-                  >
-                    Update Password
-                  </button>
+                  <button type="button" onClick={() => setShowPassModal(false)} className="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest">Batal</button>
+                  <button type="submit" className="px-8 py-3 rounded-2xl bg-indigo-600 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all">Update Password</button>
                 </div>
               </form>
-            </div>
           </div>
         </div>
       )}

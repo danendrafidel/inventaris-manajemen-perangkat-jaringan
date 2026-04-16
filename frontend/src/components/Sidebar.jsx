@@ -11,6 +11,7 @@ import MapIcon from "@mui/icons-material/Map";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import BuildIcon from "@mui/icons-material/Build";
 import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -217,6 +218,18 @@ export default function Sidebar() {
                 </div>
               )}
             </div>
+
+            <Link
+              to="/profile"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                isActive("/profile")
+                  ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <AccountCircleIcon fontSize="small" /> Profil Saya
+            </Link>
           </nav>
 
           <div className="mt-auto pt-6 px-2">

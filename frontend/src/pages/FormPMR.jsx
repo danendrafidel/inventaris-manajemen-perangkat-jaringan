@@ -210,7 +210,13 @@ export default function FormPMR() {
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Petugas Lapangan
+                  {user?.role === "admin"
+                    ? "Admin"
+                    : user?.role === "officer"
+                      ? "Officer"
+                      : user?.role === "petugas"
+                        ? "Petugas"
+                        : "Petugas Lapangan"}
                 </p>
                 <h2 className="text-lg font-black text-slate-900">
                   {user?.name}

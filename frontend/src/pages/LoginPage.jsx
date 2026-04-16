@@ -7,11 +7,14 @@ import StorageIcon from "@mui/icons-material/Storage";
 import BuildIcon from "@mui/icons-material/Build";
 import PersonIcon from "@mui/icons-material/Person";
 import LockIcon from "@mui/icons-material/Lock";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [identity, setIdentity] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -156,13 +159,20 @@ export default function LoginPage() {
                 </span>
                 <input
                   id="password"
-                  type="password"
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 pl-12 pr-4 py-4 text-sm font-bold outline-none ring-0 transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100/50"
+                  type={showPassword ? "text" : "password"}
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 pl-12 pr-12 py-4 text-sm font-bold outline-none ring-0 transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100/50"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                </button>
               </div>
             </div>
 
