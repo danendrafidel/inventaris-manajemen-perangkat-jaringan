@@ -1,5 +1,4 @@
 const db = require('../config/db');
-const { logActivity } = require('./activityController');
 
 function mapDeviceFromDB(row) {
   return {
@@ -40,7 +39,6 @@ exports.login = async (req, res) => {
     }
 
     const user = rows[0];
-    await logActivity(user.id, 'LOGIN', `User ${user.username} berhasil login`);
     
     res.json({
       success: true,
@@ -169,7 +167,7 @@ exports.fetchInventoryDevices = async (req, res) => {
 exports.createDevice = async (req, res) => {
   try {
     const {
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort, userId
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort
     } = req.body;
 
     const query = `
@@ -185,7 +183,6 @@ exports.createDevice = async (req, res) => {
       deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort || 0, idlePort || 0,
     ]);
 
-    await logActivity(userId || 1, 'CREATE_DEVICE', `User menambah perangkat: ${name}`);
     res.json({
       success: true,
       data: mapDeviceFromDB(rows[0]),
@@ -200,7 +197,7 @@ exports.updateDevice = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort, userId
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort
     } = req.body;
 
     const query = `
@@ -223,7 +220,6 @@ exports.updateDevice = async (req, res) => {
         .json({ success: false, message: "Perangkat tidak ditemukan" });
     }
 
-    await logActivity(userId || 1, 'UPDATE_DEVICE', `User memperbarui perangkat: ${name}`);
     res.json({ success: true, message: "Perangkat berhasil diperbarui" });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui perangkat");
@@ -233,12 +229,7 @@ exports.updateDevice = async (req, res) => {
 exports.deleteDevice = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
     
-    // Get info first for logging
-    const device = await db.query('SELECT name FROM inventory_devices WHERE id = $1', [id]);
-    const name = device.rows[0]?.name;
-
     const { rowCount } = await db.query(
       "DELETE FROM inventory_devices WHERE id = $1",
       [id],
@@ -250,7 +241,6 @@ exports.deleteDevice = async (req, res) => {
         .json({ success: false, message: "Perangkat tidak ditemukan" });
     }
     
-    await logActivity(userId || 1, 'DELETE_DEVICE', `User menghapus perangkat: ${name}`);
     res.json({ success: true, message: "Perangkat berhasil dihapus" });
   } catch (error) {
     handleError(res, error, "Gagal menghapus perangkat");
@@ -276,7 +266,7 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, email, nik, role, area, office_id, createdBy } =
+    const { username, password, name, email, nik, role, area, office_id } =
       req.body;
     const query = `
       INSERT INTO users (username, password, name, email, nik, role, area, office_id, status)
@@ -294,7 +284,6 @@ exports.createUser = async (req, res) => {
       office_id || null,
     ]);
     
-    await logActivity(createdBy || 1, 'CREATE_USER', `User ${username} dibuat`);
     res.json({ success: true, message: "User berhasil dibuat" });
   } catch (error) {
     handleError(res, error, "Gagal membuat user");
@@ -304,7 +293,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, role, area, office_id, updatedBy } = req.body;
+    const { name, email, nik, role, area, office_id } = req.body;
     const query = `
       UPDATE users SET 
         name = $1, email = $2, nik = $3, role = $4, area = $5, office_id = $6,
@@ -326,7 +315,6 @@ exports.updateUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan" });
     }
-    await logActivity(updatedBy || 1, 'UPDATE_USER', `Profil user ${name} diperbarui`);
     res.json({ success: true, message: "User berhasil diperbarui" });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui user");
@@ -336,7 +324,7 @@ exports.updateUser = async (req, res) => {
 exports.changePassword = async (req, res) => {
   try {
     const { id } = req.params;
-    const { password, updatedBy } = req.body;
+    const { password } = req.body;
     const { rowCount } = await db.query(
       "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
       [password, id],
@@ -347,7 +335,6 @@ exports.changePassword = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan" });
     }
-    await logActivity(updatedBy || 1, 'CHANGE_PASSWORD', `Password user ${id} diubah`);
     res.json({ success: true, message: "Password berhasil diganti" });
   } catch (error) {
     handleError(res, error, "Gagal mengganti password");
@@ -356,7 +343,7 @@ exports.changePassword = async (req, res) => {
 
 exports.toggleUserStatus = async (req, res) => {
   try {
-    const { id, updatedBy } = req.body;
+    const { id } = req.body;
     const { rows } = await db.query("SELECT status, username FROM users WHERE id = $1", [
       id,
     ]);
@@ -373,7 +360,6 @@ exports.toggleUserStatus = async (req, res) => {
       [newStatus, id],
     );
 
-    await logActivity(updatedBy || 1, 'TOGGLE_STATUS', `Status user ${rows[0].username} menjadi ${newStatus}`);
     res.json({ success: true, message: `User berhasil ${newStatus}` });
   } catch (error) {
     handleError(res, error, "Gagal mengubah status user");
@@ -440,7 +426,6 @@ exports.updateProfile = async (req, res) => {
       WHERE u.id = $1
     `, [id]);
 
-    await logActivity(id, 'UPDATE_PROFILE', `User ${fullProfile[0].username} memperbarui profil`);
     res.json({
       success: true,
       data: fullProfile[0],

@@ -3,9 +3,9 @@ const router = express.Router();
 const inventoryController = require('../controllers/inventoryController');
 
 router.post('/login', inventoryController.login);
-router.get('/inventory/stats', inventoryController.getStats);
-router.get('/inventory/options', inventoryController.getOptions);
-router.get('/inventory/devices', inventoryController.getDevices);
+router.get('/inventory/stats', inventoryController.getInventoryStats);
+router.get('/inventory/options', inventoryController.getInventoryOptions);
+router.get('/inventory/devices', inventoryController.fetchInventoryDevices);
 router.post('/inventory/devices', inventoryController.createDevice);
 router.put('/inventory/devices/:id', inventoryController.updateDevice);
 router.delete('/inventory/devices/:id', inventoryController.deleteDevice);
