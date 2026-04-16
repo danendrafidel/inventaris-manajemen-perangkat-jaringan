@@ -4,15 +4,15 @@ import { getStoredUser } from "../services/authService";
 import { fetchDashboardSummary } from "../services/dashboardService";
 import Sidebar from "../components/Sidebar";
 
-import LoginIcon from "@mui/icons-material/Login";
-import InventoryIcon from "@mui/icons-material/Inventory";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import SettingsIcon from "@mui/icons-material/Settings";
 import PeopleIcon from "@mui/icons-material/People";
 import RouterIcon from "@mui/icons-material/Router";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import CloseIcon from "@mui/icons-material/Close";
+import EmailIcon from "@mui/icons-material/Email";
+import PhoneIcon from "@mui/icons-material/Phone";
+import BusinessIcon from "@mui/icons-material/Business";
 
 function StatCard({ title, value, suffix, icon, tone }) {
   const toneClasses =
@@ -60,61 +60,12 @@ function StatCard({ title, value, suffix, icon, tone }) {
   );
 }
 
-function ActivityItem({ icon, title, time, description }) {
-  return (
-    <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors group">
-      <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-lg shrink-0 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors border border-slate-200/50">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-0.5">
-          <p className="text-sm font-bold text-slate-900 truncate">{title}</p>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter shrink-0">
-            {time}
-          </span>
-        </div>
-        <p className="text-xs text-slate-500 line-clamp-1">{description}</p>
-      </div>
-    </div>
-  );
-}
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user] = useState(() => getStoredUser());
   const [loadError, setLoadError] = useState("");
   const [dashboard, setDashboard] = useState(null);
-
-  const activities = [
-    {
-      id: 1,
-      icon: <LoginIcon />,
-      title: "Login Berhasil",
-      time: "Baru saja",
-      description: "Anda berhasil masuk ke sistem manajemen inventaris.",
-    },
-    {
-      id: 2,
-      icon: <InventoryIcon />,
-      title: "Membuka Inventaris",
-      time: "2 menit lalu",
-      description: "Melihat daftar perangkat.",
-    },
-    {
-      id: 3,
-      icon: <AccountCircleIcon />,
-      title: "Update Profil",
-      time: "1 jam lalu",
-      description: "Mengubah informasi NIK dan preferensi akun.",
-    },
-    {
-      id: 4,
-      icon: <SettingsIcon />,
-      title: "System Sync",
-      time: "3 jam lalu",
-      description: "Sinkronisasi otomatis database dengan server pusat.",
-    },
-  ];
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   const roleLabel = useMemo(() => {
     const r = String(user?.role || "").toLowerCase();
@@ -128,13 +79,13 @@ export default function Dashboard() {
       navigate("/", { replace: true });
       return;
     }
-    
+
     // Apply role-based filtering for stats
     const params = new URLSearchParams();
-    if (user.role !== 'admin') {
-        params.set('area', user.area);
+    if (user.role !== "admin") {
+      params.set("area", user.area);
     }
-    
+
     fetchDashboardSummary(params.toString())
       .then(setDashboard)
       .catch((err) => setLoadError(err.message));
@@ -145,6 +96,72 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
+
+      {/* Admin Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setShowAdminModal(false)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black text-slate-900">
+                Hubungi Admin
+              </h3>
+              <button
+                onClick={() => setShowAdminModal(false)}
+                className="text-slate-400 hover:text-slate-900"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <a
+                href="mailto:admin@telkom.co.id"
+                className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors"
+              >
+                <EmailIcon className="text-blue-600" />
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">
+                    Email
+                  </p>
+                  <p className="text-sm font-bold text-slate-900">
+                    admin@telkom.co.id
+                  </p>
+                </div>
+              </a>
+              <a
+                href="https://wa.me/6282133765908"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50 transition-colors"
+              >
+                <PhoneIcon className="text-emerald-600" />
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">
+                    Kontak (WhatsApp)
+                  </p>
+                  <p className="text-sm font-bold text-slate-900">
+                    0821-3376-5908
+                  </p>
+                </div>
+              </a>
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50">
+                <BusinessIcon className="text-indigo-600" />
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">
+                    Kantor
+                  </p>
+                  <p className="text-sm font-bold text-slate-900">
+                    Telkom Landmark Tower Surabaya, Indonesia
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col md:ml-64">
         {/* Topbar */}
@@ -258,7 +275,7 @@ export default function Dashboard() {
                   System Summary
                 </h3>
                 <span className="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-200">
-                  Global Infrastructure Data
+                  Information System
                 </span>
               </div>
               <p className="text-slate-600 leading-relaxed font-medium text-base mb-8">
@@ -297,30 +314,16 @@ export default function Dashboard() {
                   Butuh bantuan navigasi sistem atau pelaporan kendala teknis?
                 </p>
 
-                <button className="mt-auto w-full rounded-2xl bg-white/10 border border-white/20 py-4 text-xs font-black hover:bg-white/20 transition-all uppercase tracking-widest">
+                <button
+                  onClick={() => setShowAdminModal(true)}
+                  className="mt-auto w-full rounded-2xl bg-white/10 border border-white/20 py-4 text-xs font-black hover:bg-white/20 transition-all uppercase tracking-widest"
+                >
                   Hubungi Admin
                 </button>
               </div>
               <div className="absolute -right-10 -bottom-10 text-[10rem] opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700">
                 <SupportAgentIcon fontSize="inherit" />
               </div>
-            </div>
-          </div>
-
-          {/* Recent Activity Section */}
-          <div className="mt-8 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                Aktivitas Terkini
-              </h3>
-              <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                System Log Feed
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {activities.map((act) => (
-                <ActivityItem key={act.id} {...act} />
-              ))}
             </div>
           </div>
         </main>

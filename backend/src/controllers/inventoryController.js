@@ -1,228 +1,175 @@
-const db = require("../config/db");
+const db = require('../config/db');
+const { logActivity } = require('./activityController');
 
-// Helper to handle errors
-const handleError = (res, error, message = "Internal Server Error") => {
+function mapDeviceFromDB(row) {
+  return {
+    id: row.id,
+    deviceId: row.device_id,
+    ip: row.ip,
+    name: row.name,
+    deviceType: row.device_type,
+    storageLocation: row.storage_location,
+    serialNumber: row.serial_number,
+    status: row.status,
+    room: row.room,
+    area: row.area,
+    sto: row.sto,
+    totalPort: row.total_port,
+    idlePort: row.idle_port,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function handleError(res, error, defaultMessage) {
   console.error(error);
-  res.status(500).json({ success: false, message });
-};
-// Helper to map DB row to Frontend object
-const mapDeviceFromDB = (row) => ({
-  id: row.id,
-  deviceId: row.device_id,
-  ip: row.ip,
-  name: row.name,
-  deviceType: row.device_type,
-  storage_location: row.storage_location,
-  serialNumber: row.serial_number,
-  status: row.status,
-  room: row.room,
-  area: row.area,
-  sto: row.sto,
-  totalPort: row.total_port,
-  idlePort: row.idle_port,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+  res.status(500).json({ success: false, message: defaultMessage });
+}
 
-const hasColumn = async (tableName, columnName) => {
-  const { rows } = await db.query(
-    `SELECT 1
-     FROM information_schema.columns
-     WHERE table_schema = 'public'
-       AND table_name = $1
-       AND column_name = $2
-     LIMIT 1`,
-    [tableName, columnName],
-  );
-  return rows.length > 0;
-};
-
-// Auth & Session
 exports.login = async (req, res) => {
   try {
-    const { identity, password } = req.body || {};
-    const query = `
-      SELECT u.*, o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
-      FROM users u
-      LEFT JOIN offices o ON u.office_id = o.id
-      WHERE (LOWER(u.email) = LOWER($1) OR u.username = $1) 
-      AND u.password = $2
-    `;
+    const { identity, password } = req.body;
+    const query =
+      "SELECT * FROM users WHERE (username = $1 OR email = $1) AND password = $2 AND status = 'active'";
     const { rows } = await db.query(query, [identity, password]);
 
     if (rows.length === 0) {
       return res
         .status(401)
-        .json({ success: false, message: "Kredensial salah" });
+        .json({ success: false, message: "Username/Email atau password salah" });
     }
 
     const user = rows[0];
-    if (user.status === "inactive") {
-      return res
-        .status(403)
-        .json({ success: false, message: "Akun Anda dinonaktifkan" });
-    }
-
-    const { password: _, ...safeUser } = user;
-    res.json({ success: true, user: safeUser });
+    await logActivity(user.id, 'LOGIN', `User ${user.username} berhasil login`);
+    
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        area: user.area,
+        kantor: user.kantor,
+        office_id: user.office_id,
+      },
+    });
   } catch (error) {
     handleError(res, error, "Gagal melakukan login");
   }
 };
 
-// Inventory Device Logic
-exports.getStats = async (req, res) => {
+exports.getInventoryOptions = async (req, res) => {
   try {
-    const { area } = req.query;
-    let whereClause = "WHERE 1=1";
-    const params = [];
-
-    if (area) {
-      params.push(area);
-      whereClause += ` AND area = $${params.length}`;
-    }
-
-    const totalQuery = `SELECT COUNT(*) FROM inventory_devices ${whereClause}`;
-    const baikQuery = `SELECT COUNT(*) FROM inventory_devices ${whereClause} AND status = 'OPERATED'`;
-    const areaQuery = `SELECT COUNT(DISTINCT area) FROM inventory_devices ${whereClause}`;
-    const portQuery = `SELECT SUM(total_port) as total, SUM(idle_port) as idle FROM inventory_devices ${whereClause}`;
-
-    const [total, baik, areas, ports] = await Promise.all([
-      db.query(totalQuery, params),
-      db.query(baikQuery, params),
-      db.query(areaQuery, params),
-      db.query(portQuery, params),
+    const { role, email } = req.query;
+    const [areas, stos, statuses, deviceTypes, roles] = await Promise.all([
+      db.query("SELECT DISTINCT name FROM areas"),
+      db.query("SELECT DISTINCT name FROM stos"),
+      db.query("SELECT DISTINCT status FROM inventory_devices"),
+      db.query("SELECT DISTINCT device_type FROM inventory_devices"),
+      db.query("SELECT DISTINCT role FROM users"),
     ]);
-
-    const totalCount = parseInt(total.rows[0].count) || 0;
-    const baikCount = parseInt(baik.rows[0].count) || 0;
 
     res.json({
       success: true,
       data: {
-        stats: {
-          totalDevices: totalCount,
-          statusBaik: baikCount,
-          perluPerhatian: totalCount - baikCount,
-          areaTercoverCount: parseInt(areas.rows[0].count) || 0,
-          totalPorts: parseInt(ports.rows[0].total) || 0,
-          idlePorts: parseInt(ports.rows[0].idle) || 0,
-        },
+        areas: areas.rows.map((r) => r.name),
+        stos: stos.rows.map((r) => r.name),
+        statuses: statuses.rows.map((r) => r.status),
+        deviceTypes: deviceTypes.rows.map((r) => r.device_type),
+        roles: roles.rows.map((r) => r.role),
+        offices: [
+            { val: 1, label: "Kantor Pusat" },
+            { val: 2, label: "Kantor Witel" },
+            { val: 3, label: "Kantor Regional" }
+        ]
       },
     });
   } catch (error) {
-    handleError(res, error, "Gagal mengambil statistik");
+    handleError(res, error, "Gagal memuat opsi filter");
   }
 };
 
-exports.getOptions = async (req, res) => {
+exports.getInventoryStats = async (req, res) => {
   try {
-    // Queries to aggregate master data + existing usage data
-    const queries = {
-      areas: `
-        SELECT name as val FROM areas 
-        UNION 
-        SELECT DISTINCT area FROM inventory_devices WHERE area IS NOT NULL AND area != '' 
-        UNION 
-        SELECT DISTINCT area FROM users WHERE area IS NOT NULL AND area != ''
-      `,
-      stos: `
-        SELECT name as val FROM stos 
-        UNION 
-        SELECT DISTINCT sto FROM inventory_devices WHERE sto IS NOT NULL AND sto != ''
-      `,
-      statuses:
-        "SELECT DISTINCT status FROM inventory_devices WHERE status IS NOT NULL AND status != ''",
-      deviceTypes:
-        "SELECT DISTINCT device_type FROM inventory_devices WHERE device_type IS NOT NULL AND device_type != ''",
-      roles:
-        "SELECT DISTINCT role FROM users WHERE role IS NOT NULL AND role != ''",
-      offices: "SELECT id as val, name as label FROM offices WHERE status = 'active' ORDER BY name ASC",
-    };
+    const { area } = req.query;
+    let params = [];
+    let whereClause = "";
+    if (area) {
+        params.push(area);
+        whereClause = "WHERE area = $1";
+    }
 
-    const results = await Promise.all(
-      Object.entries(queries).map(async ([key, sql]) => {
-        const { rows } = await db.query(sql);
-        if (key === 'offices') return [key, rows];
-        return [
-          key,
-          rows
-            .map((r) => r.val)
-            .filter((val) => val)
-            .sort(),
-        ];
-      }),
-    );
-
-    const options = Object.fromEntries(results);
-
-    // Fallback default
-    if (options.statuses.length === 0)
-      options.statuses = ["OPERATED", "IDLE", "MAINTENANCE", "PROBLEM"];
-    if (options.roles.length === 0)
-      options.roles = ["admin", "officer", "user"];
-    if (options.deviceTypes.length === 0)
-      options.deviceTypes = ["Router", "OLT", "Switch"];
+    const [totalDevices, statusBaik, perluPerhatian, areaTercover] = await Promise.all([
+      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause}`, params),
+      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area ? 'AND' : 'WHERE'} status = 'OPERATED'`, params),
+      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area ? 'AND' : 'WHERE'} status IN ('MAINTENANCE', 'PROBLEM')`, params),
+      db.query(`SELECT COUNT(DISTINCT area) FROM inventory_devices ${whereClause}`, params),
+    ]);
 
     res.json({
-      success: true,
-      data: options,
+        success: true,
+        data: {
+            stats: {
+                totalDevices: parseInt(totalDevices.rows[0].count),
+                statusBaik: parseInt(statusBaik.rows[0].count),
+                perluPerhatian: parseInt(perluPerhatian.rows[0].count),
+                areaTercoverCount: parseInt(areaTercover.rows[0].count),
+            }
+        }
     });
   } catch (error) {
-    handleError(res, error, "Gagal mengambil opsi data");
+    handleError(res, error, "Gagal memuat statistik inventaris");
   }
 };
 
-exports.getDevices = async (req, res) => {
+exports.fetchInventoryDevices = async (req, res) => {
   try {
-    const { search, sto, area, status } = req.query || {};
-    let query = "SELECT * FROM inventory_devices WHERE 1=1";
-    const params = [];
-
+    const { search, sto, area, status, page, limit } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    let where = [];
+    let params = [];
+    
     if (search) {
-      params.push(`%${search.toLowerCase()}%`);
-      query += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(device_id) LIKE $${params.length} OR LOWER(serial_number) LIKE $${params.length})`;
+      params.push(`%${search}%`);
+      where.push(`(device_id ILIKE $${params.length} OR name ILIKE $${params.length} OR serial_number ILIKE $${params.length})`);
     }
     if (sto) {
       params.push(sto);
-      query += ` AND sto = $${params.length}`;
+      where.push(`sto = $${params.length}`);
     }
     if (area) {
       params.push(area);
-      query += ` AND area = $${params.length}`;
+      where.push(`area = $${params.length}`);
     }
     if (status) {
       params.push(status);
-      query += ` AND status = $${params.length}`;
+      where.push(`status = $${params.length}`);
     }
-
-    query += " ORDER BY created_at DESC";
-    const { rows } = await db.query(query, params);
-
+    
+    const whereClause = where.length > 0 ? "WHERE " + where.join(" AND ") : "";
+    
+    const [total, items] = await Promise.all([
+      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause}`, params),
+      db.query(`SELECT * FROM inventory_devices ${whereClause} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`, [...params, parseInt(limit), offset])
+    ]);
+    
     res.json({
-      success: true,
-      data: { items: rows.map(mapDeviceFromDB), total: rows.length },
+        success: true,
+        data: {
+            items: items.rows.map(mapDeviceFromDB),
+            total: parseInt(total.rows[0].count)
+        }
     });
   } catch (error) {
-    handleError(res, error, "Gagal mengambil data perangkat");
+    handleError(res, error, "Gagal memuat daftar perangkat");
   }
 };
 
 exports.createDevice = async (req, res) => {
   try {
     const {
-      deviceId,
-      ip,
-      name,
-      deviceType,
-      storageLocation,
-      serialNumber,
-      status,
-      room,
-      area,
-      sto,
-      totalPort,
-      idlePort,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort, userId
     } = req.body;
 
     const query = `
@@ -235,20 +182,10 @@ exports.createDevice = async (req, res) => {
     `;
 
     const { rows } = await db.query(query, [
-      deviceId,
-      ip,
-      name,
-      deviceType,
-      storageLocation,
-      serialNumber,
-      status,
-      room,
-      area,
-      sto,
-      totalPort || 0,
-      idlePort || 0,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort || 0, idlePort || 0,
     ]);
 
+    await logActivity(userId || 1, 'CREATE_DEVICE', `User menambah perangkat: ${name}`);
     res.json({
       success: true,
       data: mapDeviceFromDB(rows[0]),
@@ -263,18 +200,7 @@ exports.updateDevice = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      deviceId,
-      ip,
-      name,
-      deviceType,
-      storageLocation,
-      serialNumber,
-      status,
-      room,
-      area,
-      sto,
-      totalPort,
-      idlePort,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort, userId
     } = req.body;
 
     const query = `
@@ -288,19 +214,7 @@ exports.updateDevice = async (req, res) => {
     `;
 
     const { rows } = await db.query(query, [
-      deviceId,
-      ip,
-      name,
-      deviceType,
-      storageLocation,
-      serialNumber,
-      status,
-      room,
-      area,
-      sto,
-      totalPort,
-      idlePort,
-      id,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort, id,
     ]);
 
     if (rows.length === 0) {
@@ -309,6 +223,7 @@ exports.updateDevice = async (req, res) => {
         .json({ success: false, message: "Perangkat tidak ditemukan" });
     }
 
+    await logActivity(userId || 1, 'UPDATE_DEVICE', `User memperbarui perangkat: ${name}`);
     res.json({ success: true, message: "Perangkat berhasil diperbarui" });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui perangkat");
@@ -318,6 +233,12 @@ exports.updateDevice = async (req, res) => {
 exports.deleteDevice = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.body;
+    
+    // Get info first for logging
+    const device = await db.query('SELECT name FROM inventory_devices WHERE id = $1', [id]);
+    const name = device.rows[0]?.name;
+
     const { rowCount } = await db.query(
       "DELETE FROM inventory_devices WHERE id = $1",
       [id],
@@ -328,6 +249,8 @@ exports.deleteDevice = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Perangkat tidak ditemukan" });
     }
+    
+    await logActivity(userId || 1, 'DELETE_DEVICE', `User menghapus perangkat: ${name}`);
     res.json({ success: true, message: "Perangkat berhasil dihapus" });
   } catch (error) {
     handleError(res, error, "Gagal menghapus perangkat");
@@ -353,7 +276,7 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, email, nik, role, area, office_id } =
+    const { username, password, name, email, nik, role, area, office_id, createdBy } =
       req.body;
     const query = `
       INSERT INTO users (username, password, name, email, nik, role, area, office_id, status)
@@ -370,6 +293,8 @@ exports.createUser = async (req, res) => {
       area,
       office_id || null,
     ]);
+    
+    await logActivity(createdBy || 1, 'CREATE_USER', `User ${username} dibuat`);
     res.json({ success: true, message: "User berhasil dibuat" });
   } catch (error) {
     handleError(res, error, "Gagal membuat user");
@@ -379,7 +304,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, role, area, office_id } = req.body;
+    const { name, email, nik, role, area, office_id, updatedBy } = req.body;
     const query = `
       UPDATE users SET 
         name = $1, email = $2, nik = $3, role = $4, area = $5, office_id = $6,
@@ -401,6 +326,7 @@ exports.updateUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan" });
     }
+    await logActivity(updatedBy || 1, 'UPDATE_USER', `Profil user ${name} diperbarui`);
     res.json({ success: true, message: "User berhasil diperbarui" });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui user");
@@ -410,7 +336,7 @@ exports.updateUser = async (req, res) => {
 exports.changePassword = async (req, res) => {
   try {
     const { id } = req.params;
-    const { password } = req.body;
+    const { password, updatedBy } = req.body;
     const { rowCount } = await db.query(
       "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
       [password, id],
@@ -421,6 +347,7 @@ exports.changePassword = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan" });
     }
+    await logActivity(updatedBy || 1, 'CHANGE_PASSWORD', `Password user ${id} diubah`);
     res.json({ success: true, message: "Password berhasil diganti" });
   } catch (error) {
     handleError(res, error, "Gagal mengganti password");
@@ -429,8 +356,8 @@ exports.changePassword = async (req, res) => {
 
 exports.toggleUserStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { rows } = await db.query("SELECT status FROM users WHERE id = $1", [
+    const { id, updatedBy } = req.body;
+    const { rows } = await db.query("SELECT status, username FROM users WHERE id = $1", [
       id,
     ]);
 
@@ -446,6 +373,7 @@ exports.toggleUserStatus = async (req, res) => {
       [newStatus, id],
     );
 
+    await logActivity(updatedBy || 1, 'TOGGLE_STATUS', `Status user ${rows[0].username} menjadi ${newStatus}`);
     res.json({ success: true, message: `User berhasil ${newStatus}` });
   } catch (error) {
     handleError(res, error, "Gagal mengubah status user");
@@ -512,6 +440,7 @@ exports.updateProfile = async (req, res) => {
       WHERE u.id = $1
     `, [id]);
 
+    await logActivity(id, 'UPDATE_PROFILE', `User ${fullProfile[0].username} memperbarui profil`);
     res.json({
       success: true,
       data: fullProfile[0],
@@ -533,7 +462,6 @@ exports.getDashboard = async (req, res) => {
       whereClause += ` AND area = $${params.length}`;
     }
 
-    // Filter user count by area if provided
     let userQuery = "SELECT COUNT(*) FROM users";
     let userParams = [];
     if (area) {
@@ -542,11 +470,9 @@ exports.getDashboard = async (req, res) => {
     }
     const userCount = await db.query(userQuery, userParams);
     
-    // Fix: Ensure we don't have dangling WHERE/AND without conditions
     const deviceWhere = whereClause === "WHERE 1=1" ? "" : whereClause.replace("WHERE 1=1 AND ", "WHERE ");
     const deviceCount = await db.query(`SELECT COUNT(*) FROM inventory_devices ${deviceWhere}`, params);
     
-    // For units (STO), scope it by area if provided
     let stoQuery = "SELECT COUNT(*) FROM stos";
     let stoParams = [];
     if (area) {

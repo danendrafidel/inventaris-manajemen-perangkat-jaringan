@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const inventoryRoutes = require('./routes/inventoryRoutes')
 const areaRoutes = require('./routes/areaRoutes')
+const activityRoutes = require('./routes/activityRoutes')
 
 const app = express()
 
@@ -24,6 +25,7 @@ app.use((req, res, next) => {
 // Routes API
 app.use('/api', inventoryRoutes)
 app.use('/api/area', areaRoutes)
+app.use('/api/activities', activityRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -36,4 +38,3 @@ app.use('/api', (req, res) => {
 });
 
 module.exports = app
-
