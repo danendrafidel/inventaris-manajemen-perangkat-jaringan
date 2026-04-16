@@ -46,12 +46,10 @@ export default function InventoryDashboard() {
   const [stats, setStats] = useState(null);
   const [items, setItems] = useState([]);
   const [options, setOptions] = useState({
-    divisions: [],
     regions: [],
     stos: [],
     areas: [],
     statuses: [],
-    kinds: [],
     deviceTypes: [],
   });
 
@@ -80,7 +78,6 @@ export default function InventoryDashboard() {
     serialNumber: "",
     status: "",
     room: "",
-    kind: "",
     area: "",
     sto: "",
     totalPort: "",
@@ -155,8 +152,6 @@ export default function InventoryDashboard() {
       serialNumber: "",
       status: "OPERATED",
       room: "",
-      kind: "",
-      division: "",
       area: "",
       sto: "",
       totalPort: "",
@@ -287,7 +282,7 @@ export default function InventoryDashboard() {
   };
 
   const handleResetFilters = () => {
-    const initial = { division: "", sto: "", area: "", status: "" };
+    const initial = { sto: "", area: "", status: "" };
     setDraftFilters(initial);
     setFilters(initial);
     setSearch("");
@@ -309,7 +304,7 @@ export default function InventoryDashboard() {
 
       <div className="flex-1 md:ml-64">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-10 md:hidden shrink-0" />{" "}
             {/* Spacer for mobile toggle */}
@@ -784,7 +779,7 @@ export default function InventoryDashboard() {
 
       {/* Form Modal (Add / Edit) */}
       {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
             onClick={() =>
@@ -990,19 +985,6 @@ export default function InventoryDashboard() {
                       }
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-1">
-                      JENIS
-                    </label>
-                    <input
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
-                      value={formData.kind}
-                      onChange={(e) =>
-                        setFormData({ ...formData, kind: e.target.value })
-                      }
-                      placeholder="Masukkan jenis perangkat"
-                    />
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 bg-slate-900 p-4 md:p-6 rounded-2xl md:rounded-3xl text-white shadow-xl">
@@ -1069,7 +1051,7 @@ export default function InventoryDashboard() {
 
       {/* Complete Detail Modal */}
       {showDetailModal && selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-2 md:p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300"
             onClick={() => setShowDetailModal(false)}
@@ -1136,14 +1118,6 @@ export default function InventoryDashboard() {
                         </span>
                         <span className="text-xs md:text-sm font-black text-slate-900">
                           {selectedItem.serialNumber}
-                        </span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-slate-200 pb-2 gap-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">
-                          Jenis
-                        </span>
-                        <span className="text-xs md:text-sm font-black text-slate-900">
-                          {selectedItem.kind}
                         </span>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:justify-between border-b border-slate-200 pb-2 gap-1">
@@ -1244,7 +1218,7 @@ export default function InventoryDashboard() {
       )}
       {/* Barcode Preview Modal */}
       {showBarcodeModal && selectedItem && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2010] flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300"
             onClick={() => setShowBarcodeModal(false)}

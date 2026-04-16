@@ -160,7 +160,7 @@ export default function MappingSto() {
       />
 
       <div className="flex-1 md:ml-64">
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
+        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
@@ -254,9 +254,6 @@ export default function MappingSto() {
                           <p className="text-xs font-bold text-slate-700">
                             {s.area_name}
                           </p>
-                          <p className="text-[10px] text-slate-400 uppercase">
-                            {s.division_name}
-                          </p>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span title="Devices">📡 {s.device_count}</span>
@@ -336,7 +333,12 @@ export default function MappingSto() {
                         📡
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">{s.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900">{s.name}</p>
+                          <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                            ID: {s.generated_id || s.id}
+                          </span>
+                        </div>
                         <p className="text-[10px] text-slate-400 font-bold uppercase">
                           {s.status}
                         </p>
@@ -403,7 +405,7 @@ export default function MappingSto() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setShowModal(false)}

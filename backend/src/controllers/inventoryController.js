@@ -16,7 +16,6 @@ const mapDeviceFromDB = (row) => ({
   serialNumber: row.serial_number,
   status: row.status,
   room: row.room,
-  kind: row.kind,
   area: row.area,
   sto: row.sto,
   totalPort: row.total_port,
@@ -43,9 +42,11 @@ exports.login = async (req, res) => {
   try {
     const { identity, password } = req.body || {};
     const query = `
-      SELECT * FROM users 
-      WHERE (LOWER(email) = LOWER($1) OR username = $1) 
-      AND password = $2
+      SELECT u.*, o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
+      FROM users u
+      LEFT JOIN offices o ON u.office_id = o.id
+      WHERE (LOWER(u.email) = LOWER($1) OR u.username = $1) 
+      AND u.password = $2
     `;
     const { rows } = await db.query(query, [identity, password]);
 
@@ -132,17 +133,17 @@ exports.getOptions = async (req, res) => {
       `,
       statuses:
         "SELECT DISTINCT status FROM inventory_devices WHERE status IS NOT NULL AND status != ''",
-      kinds:
-        "SELECT DISTINCT kind FROM inventory_devices WHERE kind IS NOT NULL AND kind != ''",
       deviceTypes:
         "SELECT DISTINCT device_type FROM inventory_devices WHERE device_type IS NOT NULL AND device_type != ''",
       roles:
         "SELECT DISTINCT role FROM users WHERE role IS NOT NULL AND role != ''",
+      offices: "SELECT id as val, name as label FROM offices WHERE status = 'active' ORDER BY name ASC",
     };
 
     const results = await Promise.all(
       Object.entries(queries).map(async ([key, sql]) => {
         const { rows } = await db.query(sql);
+        if (key === 'offices') return [key, rows];
         return [
           key,
           rows
@@ -218,7 +219,6 @@ exports.createDevice = async (req, res) => {
       serialNumber,
       status,
       room,
-      kind,
       area,
       sto,
       totalPort,
@@ -228,9 +228,9 @@ exports.createDevice = async (req, res) => {
     const query = `
       INSERT INTO inventory_devices (
         device_id, ip, name, device_type, storage_location, 
-        serial_number, status, room, kind, area, sto, 
+        serial_number, status, room, area, sto, 
         total_port, idle_port
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
 
@@ -243,7 +243,6 @@ exports.createDevice = async (req, res) => {
       serialNumber,
       status,
       room,
-      kind,
       area,
       sto,
       totalPort || 0,
@@ -272,7 +271,6 @@ exports.updateDevice = async (req, res) => {
       serialNumber,
       status,
       room,
-      kind,
       area,
       sto,
       totalPort,
@@ -283,9 +281,9 @@ exports.updateDevice = async (req, res) => {
       UPDATE inventory_devices SET
         device_id = $1, ip = $2, name = $3, device_type = $4, 
         storage_location = $5, serial_number = $6, status = $7, room = $8, 
-        kind = $9, area = $10, sto = $11, 
-        total_port = $12, idle_port = $13, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $14
+        area = $9, sto = $10, 
+        total_port = $11, idle_port = $12, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $13
       RETURNING *
     `;
 
@@ -298,7 +296,6 @@ exports.updateDevice = async (req, res) => {
       serialNumber,
       status,
       room,
-      kind,
       area,
       sto,
       totalPort,
@@ -340,9 +337,14 @@ exports.deleteDevice = async (req, res) => {
 // USER MANAGEMENT CONTROLLERS
 exports.getAllUsers = async (req, res) => {
   try {
-    const { rows } = await db.query(
-      "SELECT id, username, name, email, nik, role, area, status FROM users ORDER BY created_at DESC",
-    );
+    const query = `
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+             o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
+      FROM users u
+      LEFT JOIN offices o ON u.office_id = o.id
+      ORDER BY u.created_at DESC
+    `;
+    const { rows } = await db.query(query);
     res.json({ success: true, data: rows });
   } catch (error) {
     handleError(res, error, "Gagal mengambil data user");
@@ -351,11 +353,11 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, email, nik, role, area } =
+    const { username, password, name, email, nik, role, area, office_id } =
       req.body;
     const query = `
-      INSERT INTO users (username, password, name, email, nik, role, area, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
+      INSERT INTO users (username, password, name, email, nik, role, area, office_id, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')
       RETURNING id
     `;
     await db.query(query, [
@@ -366,6 +368,7 @@ exports.createUser = async (req, res) => {
       nik,
       role,
       area,
+      office_id || null,
     ]);
     res.json({ success: true, message: "User berhasil dibuat" });
   } catch (error) {
@@ -376,12 +379,12 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, role, area } = req.body;
+    const { name, email, nik, role, area, office_id } = req.body;
     const query = `
       UPDATE users SET 
-        name = $1, email = $2, nik = $3, role = $4, area = $5,
+        name = $1, email = $2, nik = $3, role = $4, area = $5, office_id = $6,
         updated_at = CURRENT_TIMESTAMP 
-      WHERE id = $6
+      WHERE id = $7
     `;
     const { rowCount } = await db.query(query, [
       name,
@@ -389,6 +392,7 @@ exports.updateUser = async (req, res) => {
       nik,
       role,
       area,
+      office_id || null,
       id,
     ]);
 
@@ -451,10 +455,14 @@ exports.toggleUserStatus = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { rows } = await db.query(
-      "SELECT id, username, name, email, nik, role, area, status FROM users WHERE id = $1",
-      [id],
-    );
+    const query = `
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+             o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
+      FROM users u
+      LEFT JOIN offices o ON u.office_id = o.id
+      WHERE u.id = $1
+    `;
+    const { rows } = await db.query(query, [id]);
 
     if (rows.length === 0) {
       return res
@@ -471,20 +479,21 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, area } = req.body;
+    const { name, email, nik, area, office_id } = req.body;
 
     const query = `
       UPDATE users SET 
-        name = $1, email = $2, nik = $3, area = $4,
+        name = $1, email = $2, nik = $3, area = $4, office_id = $5,
         updated_at = CURRENT_TIMESTAMP 
-      WHERE id = $5
-      RETURNING id, username, name, email, nik, role, area, status
+      WHERE id = $6
+      RETURNING id, username, name, email, nik, role, area, office_id, status
     `;
     const { rows } = await db.query(query, [
       name,
       email,
       nik,
       area,
+      office_id || null,
       id,
     ]);
 
@@ -494,9 +503,18 @@ exports.updateProfile = async (req, res) => {
         .json({ success: false, message: "User tidak ditemukan" });
     }
 
+    // Fetch the full profile after update to include joined data
+    const { rows: fullProfile } = await db.query(`
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+             o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
+      FROM users u
+      LEFT JOIN offices o ON u.office_id = o.id
+      WHERE u.id = $1
+    `, [id]);
+
     res.json({
       success: true,
-      data: rows[0],
+      data: fullProfile[0],
       message: "Profil berhasil diperbarui",
     });
   } catch (error) {
@@ -515,7 +533,14 @@ exports.getDashboard = async (req, res) => {
       whereClause += ` AND area = $${params.length}`;
     }
 
-    const userCount = await db.query(`SELECT COUNT(*) FROM users`);
+    // Filter user count by area if provided
+    let userQuery = "SELECT COUNT(*) FROM users";
+    let userParams = [];
+    if (area) {
+      userQuery += " WHERE area = $1";
+      userParams.push(area);
+    }
+    const userCount = await db.query(userQuery, userParams);
     
     // Fix: Ensure we don't have dangling WHERE/AND without conditions
     const deviceWhere = whereClause === "WHERE 1=1" ? "" : whereClause.replace("WHERE 1=1 AND ", "WHERE ");

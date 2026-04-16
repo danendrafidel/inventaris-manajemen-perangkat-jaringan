@@ -6,6 +6,7 @@ import UserManagement from './pages/UserManagement'
 import Profile from "./pages/Profile";
 import MappingArea from "./pages/MappingArea";
 import MappingSto from "./pages/MappingSto";
+import MappingOffice from "./pages/MappingOffice";
 import FormPMR from './pages/FormPMR'
 import LogPMR from './pages/LogPMR'
 import { getStoredUser } from './services/authService'
@@ -79,6 +80,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin', 'officer']}>
               <MappingSto />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mapping/office"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'officer']}>
+              <MappingOffice />
             </ProtectedRoute>
           }
         />

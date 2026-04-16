@@ -27,8 +27,8 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState({
     roles: [],
-    divisions: [],
     areas: [],
+    offices: [],
   });
 
   // Modal States
@@ -45,6 +45,7 @@ export default function UserManagement() {
     nik: "",
     role: "",
     area: "",
+    office_id: null,
   });
   const [newPassword, setNewPassword] = useState("");
   const [notification, setNotification] = useState({
@@ -76,7 +77,11 @@ export default function UserManagement() {
         fetchInventoryOptions({ role: currentUser.role }),
       ]);
       setUsers(u);
-      setOptions(o);
+      setOptions({
+        roles: Array.isArray(o?.roles) ? o.roles : [],
+        areas: Array.isArray(o?.areas) ? o.areas : [],
+        offices: Array.isArray(o?.offices) ? o.offices : [],
+      });
     } catch (err) {
       showNotify(err.message, "error");
     } finally {
@@ -141,7 +146,7 @@ export default function UserManagement() {
       />
 
       <div className="flex-1 md:ml-64">
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
+        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
               <div className="w-10 md:hidden shrink-0" />{" "}
@@ -157,7 +162,9 @@ export default function UserManagement() {
             </div>
             <div className="flex items-center gap-3 md:gap-4 shrink-0">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setFormData({
                     username: "",
                     password: "",
@@ -165,8 +172,8 @@ export default function UserManagement() {
                     email: "",
                     nik: "",
                     role: "",
-                    division: "",
                     area: "",
+                    office_id: "",
                   });
                   setShowAddModal(true);
                 }}
@@ -200,7 +207,10 @@ export default function UserManagement() {
                       KONTAK & NIK
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      ROLE & UNIT
+                      ROLE & AREA
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      KANTOR
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       STATUS
@@ -244,7 +254,12 @@ export default function UserManagement() {
                           {u.role}
                         </span>
                         <p className="text-[10px] font-bold text-slate-500 mt-1">
-                          {u.division} · {u.area}
+                          {u.area}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-xs font-bold text-slate-700">
+                          {u.kantor || "-"}
                         </p>
                       </td>
                       <td className="px-6 py-4">
@@ -337,14 +352,17 @@ export default function UserManagement() {
                   <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 space-y-2">
                     <div className="flex justify-between items-center">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        Role & Unit
+                        Role & Area
                       </p>
                       <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[8px] font-black uppercase tracking-widest border border-blue-100">
                         {u.role}
                       </span>
                     </div>
                     <p className="text-[10px] font-bold text-slate-700">
-                      {u.division} · {u.area}
+                      {u.area}
+                    </p>
+                    <p className="text-[10px] font-bold text-blue-600">
+                      Kantor: {u.kantor || "-"}
                     </p>
                     <div className="pt-1 border-t border-slate-200">
                       <p className="text-[10px] font-bold text-slate-600 truncate">
@@ -399,10 +417,14 @@ export default function UserManagement() {
 
       {/* Add / Edit User Modal */}
       {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
-            onClick={() => setShowAddModal(false) || setShowEditModal(false)}
+            onClick={(e) => {
+              if (e.target !== e.currentTarget) return;
+              setShowAddModal(false);
+              setShowEditModal(false);
+            }}
           />
           <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="p-10">
@@ -421,9 +443,11 @@ export default function UserManagement() {
                   </div>
                 </div>
                 <button
-                  onClick={() =>
-                    setShowAddModal(false) || setShowEditModal(false)
-                  }
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setShowEditModal(false);
+                  }}
                   className="h-10 w-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400"
                 >
                   <CloseIcon />
@@ -546,13 +570,40 @@ export default function UserManagement() {
                     ))}
                   </select>
                 </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-1">
+                    KANTOR
+                  </label>
+                  <select
+                    required
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
+                    value={formData.office_id}
+                    onChange={(e) =>
+                      setFormData({ ...formData, office_id: e.target.value })
+                    }
+                  >
+                    <option value="">Pilih Kantor</option>
+                    {options.offices.map((off) =>
+                      typeof off === "string" ? (
+                        <option key={off} value={off}>
+                          {off}
+                        </option>
+                      ) : (
+                        <option key={off.val} value={off.val}>
+                          {off.label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
 
                 <div className="sm:col-span-2 flex items-center justify-end gap-3 mt-4 pt-6 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowAddModal(false) || setShowEditModal(false)
-                    }
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setShowEditModal(false);
+                    }}
                     className="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest"
                   >
                     Cancel
@@ -572,7 +623,7 @@ export default function UserManagement() {
 
       {/* Change Password Modal */}
       {showPassModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={() => setShowPassModal(false)}

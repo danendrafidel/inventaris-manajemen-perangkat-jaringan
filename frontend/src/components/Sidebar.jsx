@@ -31,7 +31,7 @@ export default function Sidebar() {
       {/* Mobile Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className="md:hidden fixed top-4 left-4 z-50 h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-lg flex items-center justify-center text-slate-600"
+        className="md:hidden fixed top-4 left-4 z-1101 h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-lg flex items-center justify-center text-slate-600"
       >
         {isOpen ? <CloseIcon /> : <MenuIcon />}
       </button>
@@ -39,14 +39,14 @@ export default function Sidebar() {
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-1100 md:hidden"
           onClick={toggleSidebar}
         />
       )}
 
       <div
         className={`
-        fixed left-0 top-0 bottom-0 border-r border-slate-200 bg-white z-40 transition-transform duration-300 w-64
+        fixed left-0 top-0 bottom-0 border-r border-slate-200 bg-white z-1100 transition-transform duration-300 w-64
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
         md:translate-x-0
       `}
@@ -123,7 +123,7 @@ export default function Sidebar() {
                             : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                         }`}
                       >
-                        Kota/Area
+                        Area
                       </Link>
                       <Link
                         to="/mapping/sto"
@@ -135,6 +135,17 @@ export default function Sidebar() {
                         }`}
                       >
                         STO
+                      </Link>
+                      <Link
+                        to="/mapping/office"
+                        onClick={() => setIsOpen(false)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                          isActive("/mapping/office")
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                        }`}
+                      >
+                        Kantor
                       </Link>
                     </div>
                   )}

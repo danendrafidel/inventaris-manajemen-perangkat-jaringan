@@ -16,4 +16,11 @@ router.put('/stos/:id', areaController.updateSto);
 router.delete('/stos/:id', areaController.deleteSto);
 router.patch('/stos/:id/status', areaController.toggleStoStatus);
 
+// OFFICE ROUTES (Kantor)
+router.get('/offices', areaController.getAllOffices);
+router.post('/offices', areaController.createOffice);
+router.put('/offices/:id', areaController.updateOffice);
+router.delete('/offices/:id', areaController.deleteOffice);
+router.patch('/offices/:id/status', areaController.toggleOfficeStatus);
+
 module.exports = router;

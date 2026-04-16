@@ -1,8 +1,12 @@
 const db = require('../config/db');
 
 const handleError = (res, error, message = 'Internal Server Error') => {
-  console.error(error);
-  res.status(500).json({ success: false, message });
+  console.error("--- API ERROR ---");
+  console.error("Message:", message);
+  console.error("Error Detail:", error);
+  if (error.stack) console.error("Stack:", error.stack);
+  console.error("-----------------");
+  res.status(500).json({ success: false, message, detail: error.message });
 };
 
 // AREA CONTROLLERS (Sebelumnya Kota)
@@ -85,7 +89,8 @@ exports.getAllStos = async (req, res) => {
     const query = `
       SELECT s.*, c.name as area_name,
              (SELECT COUNT(*) FROM inventory_devices inv WHERE inv.sto = s.name) as device_count,
-             COALESCE(s.status, 'active') as status, s.id as generated_id
+             COALESCE(s.status, 'active') as status, 
+             CONCAT(c.id, '-', s.id) as generated_id
       FROM stos s 
       JOIN areas c ON s.area_id = c.id 
       ORDER BY s.name ASC
@@ -116,10 +121,10 @@ exports.createSto = async (req, res) => {
   try {
     const { name, area_id, latitude, longitude } = req.body;
     const { rows } = await db.query(
-      'INSERT INTO stos (name, area_id, latitude, longitude, status) VALUES ($1, $2, $3, $4, \'active\') RETURNING id, name',
+      'INSERT INTO stos (name, area_id, latitude, longitude, status) VALUES ($1, $2, $3, $4, \'active\') RETURNING id, name, area_id',
       [name, area_id, latitude, longitude]
     );
-    res.json({ success: true, data: { ...rows[0], generated_id: rows[0].id.toString() }, message: 'STO berhasil ditambahkan' });
+    res.json({ success: true, data: { ...rows[0], generated_id: `${rows[0].area_id}-${rows[0].id}` }, message: 'STO berhasil ditambahkan' });
   } catch (error) {
     handleError(res, error, 'Gagal menambahkan STO');
   }
@@ -148,5 +153,77 @@ exports.deleteSto = async (req, res) => {
     res.json({ success: true, message: 'STO berhasil dihapus' });
   } catch (error) {
     handleError(res, error, 'Gagal menghapus STO');
+  }
+};
+
+// OFFICE CONTROLLERS (Kantor)
+exports.getAllOffices = async (req, res) => {
+  try {
+    const query = `
+      SELECT o.*,
+             (SELECT COUNT(*) FROM users u WHERE u.office_id = o.id AND u.status = 'active') as active_user_count,
+             COALESCE(o.status, 'active') as status, 
+             o.id as generated_id
+      FROM offices o 
+      ORDER BY o.name ASC
+    `;
+    const { rows } = await db.query(query);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    handleError(res, error, 'Gagal mengambil data Kantor');
+  }
+};
+
+exports.toggleOfficeStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rows: current } = await db.query('SELECT status FROM offices WHERE id = $1', [id]);
+    if (current.length === 0) return res.status(404).json({ success: false, message: 'Kantor tidak ditemukan' });
+    
+    const newStatus = (current[0].status === 'inactive') ? 'active' : 'inactive';
+    await db.query('UPDATE offices SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [newStatus, id]);
+    
+    res.json({ success: true, message: `Status kantor berhasil diubah ke ${newStatus}` });
+  } catch (error) {
+    handleError(res, error, 'Gagal mengubah status kantor');
+  }
+};
+
+exports.createOffice = async (req, res) => {
+  try {
+    const { name, latitude, longitude } = req.body;
+    const { rows } = await db.query(
+      'INSERT INTO offices (name, latitude, longitude, status) VALUES ($1, $2, $3, \'active\') RETURNING id, name',
+      [name, latitude, longitude]
+    );
+    res.json({ success: true, data: { ...rows[0], generated_id: rows[0].id.toString() }, message: 'Kantor berhasil ditambahkan' });
+  } catch (error) {
+    handleError(res, error, 'Gagal menambahkan Kantor');
+  }
+};
+
+exports.updateOffice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, latitude, longitude } = req.body;
+    const { rows } = await db.query(
+      'UPDATE offices SET name = $1, latitude = $2, longitude = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
+      [name, latitude, longitude, id]
+    );
+    if (rows.length === 0) return res.status(404).json({ success: false, message: 'Kantor tidak ditemukan' });
+    res.json({ success: true, data: rows[0], message: 'Kantor berhasil diperbarui' });
+  } catch (error) {
+    handleError(res, error, 'Gagal memperbarui Kantor');
+  }
+};
+
+exports.deleteOffice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rowCount } = await db.query('DELETE FROM offices WHERE id = $1', [id]);
+    if (rowCount === 0) return res.status(404).json({ success: false, message: 'Kantor tidak ditemukan' });
+    res.json({ success: true, message: 'Kantor berhasil dihapus' });
+  } catch (error) {
+    handleError(res, error, 'Gagal menghapus Kantor');
   }
 };

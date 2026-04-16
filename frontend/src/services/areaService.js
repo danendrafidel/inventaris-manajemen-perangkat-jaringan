@@ -1,5 +1,16 @@
 import { API_BASE } from "../constants";
 
+async function readJsonSafe(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(
+      `Response bukan JSON (mungkin endpoint tidak aktif). Cuplikan: ${text.slice(0, 60)}`
+    );
+  }
+  return await response.json();
+}
+
 // AREA (Sebelumnya Kota)
 export async function fetchAllAreas() {
   const response = await fetch(`${API_BASE}/api/area/areas`);
@@ -93,5 +104,53 @@ export async function deleteSto(id) {
   });
   const data = await response.json();
   if (!response.ok || !data.success) throw new Error(data.message || 'Gagal menghapus STO');
+  return data.data;
+}
+
+// OFFICE (Kantor)
+export async function fetchAllOffices() {
+  const response = await fetch(`${API_BASE}/api/area/offices`);
+  const data = await readJsonSafe(response);
+  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal mengambil data Kantor');
+  return data.data;
+}
+
+export async function createOffice(payload) {
+  const response = await fetch(`${API_BASE}/api/area/offices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await readJsonSafe(response);
+  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal menambah Kantor');
+  return data.data;
+}
+
+export async function updateOffice(id, payload) {
+  const response = await fetch(`${API_BASE}/api/area/offices/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await readJsonSafe(response);
+  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal memperbarui Kantor');
+  return data.data;
+}
+
+export async function deleteOffice(id) {
+  const response = await fetch(`${API_BASE}/api/area/offices/${id}`, {
+    method: 'DELETE',
+  });
+  const data = await readJsonSafe(response);
+  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal menghapus Kantor');
+  return data.data;
+}
+
+export async function toggleOfficeStatus(id) {
+  const response = await fetch(`${API_BASE}/api/area/offices/${id}/status`, {
+    method: 'PATCH',
+  });
+  const data = await readJsonSafe(response);
+  if (!response.ok || !data.success) throw new Error(data.message || 'Gagal mengubah status Kantor');
   return data.data;
 }

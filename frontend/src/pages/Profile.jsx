@@ -26,16 +26,17 @@ export default function Profile() {
   const storedUser = getStoredUser();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
-  const [options, setOptions] = useState({ divisions: [], areas: [] });
+  const [options, setOptions] = useState({ areas: [], offices: [] });
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     nik: "",
-    division: "",
     area: "",
+    office_id: "",
   });
   const [newPassword, setNewPassword] = useState("");
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
@@ -54,6 +55,7 @@ export default function Profile() {
 
   const loadData = async () => {
     setLoading(true);
+    setLoadError("");
     try {
       const [p, o] = await Promise.all([
         fetchProfile(storedUser.id),
@@ -64,11 +66,16 @@ export default function Profile() {
         name: p.name,
         email: p.email,
         nik: p.nik || "",
-        area: p.area,
+        area: p.area || "",
+        office_id: p.office_id || "",
       });
-      setOptions(o);
+      setOptions({
+        areas: Array.isArray(o?.areas) ? o.areas : [],
+        offices: Array.isArray(o?.offices) ? o.offices : [],
+      });
     } catch (err) {
       showNotify(err.message, "error");
+      setLoadError(err.message || "Gagal memuat profil");
     } finally {
       setLoading(false);
     }
@@ -104,8 +111,6 @@ export default function Profile() {
     }
   };
 
-  if (!profile) return null;
-
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
@@ -117,7 +122,7 @@ export default function Profile() {
       />
 
       <div className="flex-1 md:ml-64">
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
+        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 md:hidden" /> {/* Mobile Toggle Spacer */}
@@ -134,6 +139,34 @@ export default function Profile() {
         </header>
 
         <main className="p-4 md:p-8 max-w-4xl">
+          {loading && (
+            <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 text-sm font-bold text-slate-600">
+              Memuat profil...
+            </div>
+          )}
+
+          {loadError && (
+            <div className="mb-6 rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
+              ⚠️ {loadError}
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={loadData}
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white hover:bg-rose-700"
+                >
+                  Coba Lagi
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!profile && !loading && !loadError ? (
+            <div className="rounded-4xl md:rounded-[2.5rem] border border-slate-200 bg-white p-8 text-center text-slate-500">
+              Profil belum tersedia.
+            </div>
+          ) : null}
+
+          {profile && (
           <div className="bg-white rounded-4xl md:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
             {/* Cover / Header */}
             <div className="h-24 md:h-32 bg-linear-to-r from-blue-600 to-indigo-700 relative">
@@ -249,9 +282,31 @@ export default function Profile() {
                       setFormData({ ...formData, area: e.target.value })
                     }
                   >
+                    <option value="">Pilih Area</option>
                     {options.areas.map((a) => (
                       <option key={a} value={a}>
                         {a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                    <BusinessIcon sx={{ fontSize: 14 }} /> Kantor
+                  </label>
+                  <select
+                    disabled={!isEditing}
+                    className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
+                    value={formData.office_id}
+                    onChange={(e) =>
+                      setFormData({ ...formData, office_id: e.target.value })
+                    }
+                  >
+                    <option value="">Pilih Kantor</option>
+                    {options.offices.map((off) => (
+                      <option key={off.val} value={off.val}>
+                        {off.label}
                       </option>
                     ))}
                   </select>
@@ -270,12 +325,13 @@ export default function Profile() {
               </form>
             </div>
           </div>
+          )}
         </main>
       </div>
 
       {/* Change Password Modal */}
       {showPassModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={() => setShowPassModal(false)}
