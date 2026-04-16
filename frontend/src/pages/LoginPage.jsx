@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, persistUser } from "../services/authService";
 import telkomLogo from "../assets/Logo Telkom.png";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
+import StorageIcon from "@mui/icons-material/Storage";
+import BuildIcon from "@mui/icons-material/Build";
+import PersonIcon from "@mui/icons-material/Person";
+import LockIcon from "@mui/icons-material/Lock";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -62,21 +67,21 @@ export default function LoginPage() {
 
             <div className="mt-12 flex items-center justify-center gap-6">
               <div className="flex flex-col items-center">
-                <span className="text-2xl mb-1">📊</span>
+                <AnalyticsIcon fontSize="large" className="mb-1" />
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
                   Analytics
                 </span>
               </div>
               <div className="h-8 w-px bg-white/20" />
               <div className="flex flex-col items-center">
-                <span className="text-2xl mb-1">📡</span>
+                <StorageIcon fontSize="large" className="mb-1" />
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
                   Inventory
                 </span>
               </div>
               <div className="h-8 w-px bg-white/20" />
               <div className="flex flex-col items-center">
-                <span className="text-2xl mb-1">🛠️</span>
+                <BuildIcon fontSize="large" className="mb-1" />
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
                   Monitoring
                 </span>
@@ -123,7 +128,7 @@ export default function LoginPage() {
               </label>
               <div className="group relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg group-focus-within:scale-110 transition-transform">
-                  👤
+                  <PersonIcon fontSize="small" />
                 </span>
                 <input
                   id="identity"
@@ -147,7 +152,7 @@ export default function LoginPage() {
               </label>
               <div className="group relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg group-focus-within:scale-110 transition-transform">
-                  🔑
+                  <LockIcon fontSize="small" />
                 </span>
                 <input
                   id="password"

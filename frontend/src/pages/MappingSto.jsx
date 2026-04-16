@@ -34,7 +34,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import RouterIcon from "@mui/icons-material/Router";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import MapIcon from "@mui/icons-material/Map";
 import SettingsInputComponentIcon from "@mui/icons-material/SettingsInputComponent";
 
 export default function MappingSto() {
@@ -256,7 +255,7 @@ export default function MappingSto() {
                           </p>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span title="Devices">📡 {s.device_count}</span>
+                          <span title="Devices"><RouterIcon sx={{ fontSize: 14 }} /> {s.device_count}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           {s.latitude && s.longitude ? (
@@ -330,7 +329,7 @@ export default function MappingSto() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-black text-sm">
-                        📡
+                        <RouterIcon />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">

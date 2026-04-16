@@ -4,6 +4,16 @@ import { getStoredUser } from "../services/authService";
 import { fetchDashboardSummary } from "../services/dashboardService";
 import Sidebar from "../components/Sidebar";
 
+import LoginIcon from "@mui/icons-material/Login";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import SettingsIcon from "@mui/icons-material/Settings";
+import PeopleIcon from "@mui/icons-material/People";
+import RouterIcon from "@mui/icons-material/Router";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import ApartmentIcon from "@mui/icons-material/Apartment";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+
 function StatCard({ title, value, suffix, icon, tone }) {
   const toneClasses =
     tone === "blue"
@@ -78,28 +88,28 @@ export default function Dashboard() {
   const activities = [
     {
       id: 1,
-      icon: "🔑",
+      icon: <LoginIcon />,
       title: "Login Berhasil",
       time: "Baru saja",
       description: "Anda berhasil masuk ke sistem manajemen inventaris.",
     },
     {
       id: 2,
-      icon: "📦",
+      icon: <InventoryIcon />,
       title: "Membuka Inventaris",
       time: "2 menit lalu",
       description: "Melihat daftar perangkat.",
     },
     {
       id: 3,
-      icon: "👤",
+      icon: <AccountCircleIcon />,
       title: "Update Profil",
       time: "1 jam lalu",
       description: "Mengubah informasi NIK dan preferensi akun.",
     },
     {
       id: 4,
-      icon: "⚙️",
+      icon: <SettingsIcon />,
       title: "System Sync",
       time: "3 jam lalu",
       description: "Sinkronisasi otomatis database dengan server pusat.",
@@ -168,8 +178,7 @@ export default function Dashboard() {
           <section className="relative overflow-hidden rounded-4xl md:rounded-[2.5rem] bg-linear-to-br from-indigo-600 to-blue-700 p-6 md:p-12 text-white shadow-xl shadow-blue-200 mb-8">
             <div className="relative z-10">
               <h2 className="text-2xl md:text-4xl font-black tracking-tight">
-                Selamat Datang, {user.name.split(" ")[0]}!{" "}
-                <span aria-hidden="true">👋</span>
+                Selamat Datang, {user.name.split(" ")[0]}!
               </h2>
               <p className="mt-2 md:mt-3 text-blue-100 font-medium max-w-2xl text-sm md:text-lg">
                 Akses{" "}
@@ -215,28 +224,28 @@ export default function Dashboard() {
               title="TOTAL USERS"
               value={dashboard?.stats?.totalUsers ?? 0}
               suffix={dashboard?.meta?.usersSuffix}
-              icon="👥"
+              icon={<PeopleIcon />}
               tone="pink"
             />
             <StatCard
               title="MANAGED DEVICES"
               value={dashboard?.stats?.totalDevices ?? 0}
               suffix={dashboard?.meta?.devicesSuffix}
-              icon="📡"
+              icon={<RouterIcon />}
               tone="blue"
             />
             <StatCard
               title="ACTIVE LOANS"
               value={dashboard?.stats?.activeLoans ?? 0}
               suffix={dashboard?.meta?.loansSuffix}
-              icon="📋"
+              icon={<AssignmentIcon />}
               tone="emerald"
             />
             <StatCard
               title="UNITS"
               value={dashboard?.stats?.units ?? 0}
               suffix={dashboard?.meta?.unitsSuffix}
-              icon="🏢"
+              icon={<ApartmentIcon />}
               tone="amber"
             />
           </div>
@@ -293,7 +302,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="absolute -right-10 -bottom-10 text-[10rem] opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                ⚙️
+                <SupportAgentIcon fontSize="inherit" />
               </div>
             </div>
           </div>

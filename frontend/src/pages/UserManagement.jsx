@@ -19,6 +19,7 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CloseIcon from "@mui/icons-material/Close";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PersonIcon from "@mui/icons-material/Person";
 
 export default function UserManagement() {
   const navigate = useNavigate();

@@ -30,6 +30,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import BusinessIcon from "@mui/icons-material/Business";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PersonIcon from "@mui/icons-material/Person";
 
 export default function MappingOffice() {
   const user = getStoredUser();
@@ -171,7 +172,7 @@ export default function MappingOffice() {
                             <span className="text-sm font-bold text-slate-900">{o.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center text-xs font-bold text-slate-600">{o.active_user_count} Users</td>
+                        <td className="px-6 py-4 text-center text-xs font-bold text-slate-600"><PersonIcon sx={{ fontSize: 14 }} /> {o.active_user_count}</td>
                         <td className="px-6 py-4 text-center">{o.latitude && o.longitude ? <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">{o.latitude}, {o.longitude}</span> : "-"}</td>
                         <td className="px-6 py-4"><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${o.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}><div className={`h-1.5 w-1.5 rounded-full ${o.status === "active" ? "bg-emerald-500" : "bg-rose-500"}`} />{o.status}</span></td>
                         <td className="px-6 py-4 text-right">
@@ -208,7 +209,7 @@ export default function MappingOffice() {
                     <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase ${o.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{o.status}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
-                    <p><span className="font-black text-slate-400 uppercase">Users:</span> {o.active_user_count}</p>
+                    <p><span className="font-black text-slate-400 uppercase"><PersonIcon sx={{ fontSize: 12 }} /> Users:</span> {o.active_user_count}</p>
                     <p><span className="font-black text-slate-400 uppercase">Coord:</span> {o.latitude ? `${o.latitude}, ${o.longitude}` : "-"}</p>
                   </div>
                   <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">

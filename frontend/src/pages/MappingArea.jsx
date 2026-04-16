@@ -33,6 +33,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PersonIcon from "@mui/icons-material/Person";
+import ApartmentIcon from "@mui/icons-material/Apartment";
 
 export default function MappingArea() {
   const user = getStoredUser();
@@ -252,8 +254,8 @@ export default function MappingArea() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex flex-col items-center gap-1 text-[10px] font-black text-slate-500">
-                            <span title="Users">👤 {c.active_user_count}</span>
-                            <span title="STOs">🏢 {c.sto_count}</span>
+                            <span title="Users"><PersonIcon sx={{ fontSize: 14 }} /> {c.active_user_count}</span>
+                            <span title="STOs"><ApartmentIcon sx={{ fontSize: 14 }} /> {c.sto_count}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
@@ -353,13 +355,13 @@ export default function MappingArea() {
                   <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
                     <p>
                       <span className="font-black text-slate-400 uppercase">
-                        Users:
+                        <PersonIcon sx={{ fontSize: 12 }} /> Users:
                       </span>{" "}
                       {c.active_user_count}
                     </p>
                     <p>
                       <span className="font-black text-slate-400 uppercase">
-                        STOs:
+                        <ApartmentIcon sx={{ fontSize: 12 }} /> STOs:
                       </span>{" "}
                       {c.sto_count}
                     </p>

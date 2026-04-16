@@ -27,6 +27,14 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import InfoIcon from "@mui/icons-material/Info";
 import HubIcon from "@mui/icons-material/Hub";
 import PrintIcon from "@mui/icons-material/Print";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import BoltIcon from "@mui/icons-material/Bolt";
+import PublicIcon from "@mui/icons-material/Public";
+import SearchIcon from "@mui/icons-material/Search";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import FolderIcon from "@mui/icons-material/Folder";
+import AddIcon from "@mui/icons-material/Add";
 
 export default function InventoryDashboard() {
   const navigate = useNavigate();
@@ -335,25 +343,25 @@ export default function InventoryDashboard() {
               {
                 title: "TOTAL PERANGKAT",
                 value: stats?.stats?.totalDevices ?? 0,
-                icon: "📦",
+                icon: <InventoryIcon />,
                 color: "bg-blue-600",
               },
               {
                 title: "KONDISI BAIK",
                 value: stats?.stats?.statusBaik ?? 0,
-                icon: "🛡️",
+                icon: <VerifiedIcon />,
                 color: "bg-emerald-500",
               },
               {
                 title: "PERLU ATENSI",
                 value: stats?.stats?.perluPerhatian ?? 0,
-                icon: "⚡",
+                icon: <BoltIcon />,
                 color: "bg-amber-500",
               },
               {
                 title: "CAKUPAN AREA",
                 value: stats?.stats?.areaTercoverCount ?? 0,
-                icon: "🌍",
+                icon: <PublicIcon />,
                 color: "bg-indigo-500",
               },
             ].map((c, i) => (
@@ -385,7 +393,7 @@ export default function InventoryDashboard() {
             {/* Top Row: Wide Search Input */}
             <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl px-4 md:px-5 py-3 md:py-3.5 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100/50 transition-all group">
               <span className="text-slate-400 group-focus-within:text-blue-500 transition-colors text-lg md:text-xl">
-                🔎
+                <SearchIcon />
               </span>
               <input
                 className="bg-transparent outline-none text-xs md:text-sm font-bold w-full text-slate-700 placeholder:text-slate-400"
@@ -479,7 +487,7 @@ export default function InventoryDashboard() {
                   className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm shrink-0"
                   title="Reset Semua"
                 >
-                  🔄
+                  <RefreshIcon />
                 </button>
               </div>
             </div>
@@ -490,7 +498,7 @@ export default function InventoryDashboard() {
             <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-lg md:text-xl shrink-0">
-                  📁
+                  <FolderIcon />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-base md:text-lg font-bold text-slate-900 tracking-tight truncate">
@@ -508,7 +516,7 @@ export default function InventoryDashboard() {
                     onClick={handleOpenAdd}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
                   >
-                    ➕ NEW DEVICE
+                    <AddIcon fontSize="small" /> NEW DEVICE
                   </button>
                 )}
               </div>
@@ -564,7 +572,7 @@ export default function InventoryDashboard() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center font-bold group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
-                              📡
+                              <RouterIcon />
                             </div>
                             <div>
                               <p className="text-sm font-black text-slate-900 tracking-tight group-hover:text-blue-700 transition-colors">
@@ -664,7 +672,7 @@ export default function InventoryDashboard() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                          📡
+                          <RouterIcon />
                         </div>
                         <div>
                           <h3 className="text-sm font-black text-slate-900 leading-tight">

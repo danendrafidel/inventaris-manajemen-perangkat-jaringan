@@ -5,6 +5,12 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import PeopleIcon from "@mui/icons-material/People";
+import MapIcon from "@mui/icons-material/Map";
+import InventoryIcon from "@mui/icons-material/Inventory";
+import BuildIcon from "@mui/icons-material/Build";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,7 +82,7 @@ export default function Sidebar() {
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <span className="text-lg opacity-70">📊</span> Dashboard
+              <DashboardIcon fontSize="small" /> Dashboard
             </Link>
 
             {isAdminOrOfficer && (
@@ -90,7 +96,7 @@ export default function Sidebar() {
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <span className="text-lg">👥</span> Kelola Pengguna
+                  <PeopleIcon fontSize="small" /> Kelola Pengguna
                 </Link>
 
                 <div className="flex flex-col gap-1">
@@ -103,7 +109,7 @@ export default function Sidebar() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">🗺️</span> Mapping Area
+                      <MapIcon fontSize="small" /> Mapping Area
                     </div>
                     {isAreaOpen ? (
                       <KeyboardArrowUpIcon sx={{ fontSize: 18 }} />
@@ -162,7 +168,7 @@ export default function Sidebar() {
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <span className="text-lg">📦</span> Inventaris
+              <InventoryIcon fontSize="small" /> Inventaris
             </Link>
 
             <div className="flex flex-col gap-1">
@@ -175,7 +181,7 @@ export default function Sidebar() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">🛠️</span> PMR
+                  <BuildIcon fontSize="small" /> PMR
                 </div>
                 {isPmrOpen ? (
                   <KeyboardArrowUpIcon sx={{ fontSize: 18 }} />
@@ -217,9 +223,9 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm uppercase tracking-widest"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm uppercase tracking-widest"
             >
-              LOGOUT SYSTEM
+              <LogoutIcon fontSize="small" /> LOGOUT SYSTEM
             </button>
           </div>
         </div>
