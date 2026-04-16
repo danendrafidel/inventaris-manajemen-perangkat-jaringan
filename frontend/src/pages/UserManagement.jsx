@@ -50,7 +50,7 @@ export default function UserManagement() {
     nik: "",
     role: "",
     area: "",
-    office_id: null,
+    office_id: "",
   });
   const [newPassword, setNewPassword] = useState("");
   const [notification, setNotification] = useState({
@@ -607,23 +607,17 @@ export default function UserManagement() {
                   <select
                     required
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
-                    value={formData.office_id}
+                    value={formData.office_id || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, office_id: e.target.value })
                     }
                   >
                     <option value="">Pilih Kantor</option>
-                    {options.offices.map((off) =>
-                      typeof off === "string" ? (
-                        <option key={off} value={off}>
-                          {off}
-                        </option>
-                      ) : (
-                        <option key={off.val} value={off.val}>
-                          {off.label}
-                        </option>
-                      ),
-                    )}
+                    {options.offices.map((off) => (
+                      <option key={off.val} value={off.val}>
+                        {off.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

@@ -28,8 +28,13 @@ function handleError(res, error, defaultMessage) {
 exports.login = async (req, res) => {
   try {
     const { identity, password } = req.body;
-    const query =
-      "SELECT * FROM users WHERE (username = $1 OR email = $1) AND password = $2 AND status = 'active'";
+    const query = `
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+             o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
+      FROM users u
+      LEFT JOIN offices o ON u.office_id = o.id
+      WHERE (u.username = $1 OR u.email = $1) AND u.password = $2 AND u.status = 'active'
+    `;
     const { rows } = await db.query(query, [identity, password]);
 
     if (rows.length === 0) {
@@ -50,6 +55,8 @@ exports.login = async (req, res) => {
         area: user.area,
         kantor: user.kantor,
         office_id: user.office_id,
+        kantor_latitude: user.kantor_latitude,
+        kantor_longitude: user.kantor_longitude,
       },
     });
   } catch (error) {
@@ -60,12 +67,13 @@ exports.login = async (req, res) => {
 exports.getInventoryOptions = async (req, res) => {
   try {
     const { role, email } = req.query;
-    const [areas, stos, statuses, deviceTypes, roles] = await Promise.all([
+    const [areas, stos, statuses, deviceTypes, roles, offices] = await Promise.all([
       db.query("SELECT DISTINCT name FROM areas"),
       db.query("SELECT DISTINCT name FROM stos"),
       db.query("SELECT DISTINCT status FROM inventory_devices"),
       db.query("SELECT DISTINCT device_type FROM inventory_devices"),
       db.query("SELECT DISTINCT role FROM users"),
+      db.query("SELECT id, name FROM offices WHERE status = 'active' ORDER BY name ASC"),
     ]);
 
     res.json({
@@ -76,11 +84,10 @@ exports.getInventoryOptions = async (req, res) => {
         statuses: statuses.rows.map((r) => r.status),
         deviceTypes: deviceTypes.rows.map((r) => r.device_type),
         roles: roles.rows.map((r) => r.role),
-        offices: [
-            { val: 1, label: "Kantor Pusat" },
-            { val: 2, label: "Kantor Witel" },
-            { val: 3, label: "Kantor Regional" }
-        ]
+        offices: offices.rows.map((r) => ({
+          val: r.id,
+          label: r.name
+        }))
       },
     });
   } catch (error) {
