@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const cache = require('../config/cache');
 
 function mapDeviceFromDB(row) {
   return {
@@ -23,6 +24,14 @@ function mapDeviceFromDB(row) {
 function handleError(res, error, defaultMessage) {
   console.error(error);
   res.status(500).json({ success: false, message: defaultMessage });
+}
+
+function invalidateAllStats() {
+    cache.invalidate('inventory:');
+    cache.invalidate('areas:');
+    cache.invalidate('stos:');
+    cache.invalidate('offices:');
+    cache.invalidate('dashboard:');
 }
 
 exports.login = async (req, res) => {
@@ -67,6 +76,10 @@ exports.login = async (req, res) => {
 exports.getInventoryOptions = async (req, res) => {
   try {
     const { role, email } = req.query;
+    const cacheKey = `inventory:options:${role || 'all'}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json({ success: true, data: cached, source: 'cache' });
+
     const [areas, stos, statuses, deviceTypes, roles, offices] = await Promise.all([
       db.query("SELECT DISTINCT name FROM areas"),
       db.query("SELECT DISTINCT name FROM stos"),
@@ -76,20 +89,20 @@ exports.getInventoryOptions = async (req, res) => {
       db.query("SELECT id, name FROM offices WHERE status = 'active' ORDER BY name ASC"),
     ]);
 
-    res.json({
-      success: true,
-      data: {
-        areas: areas.rows.map((r) => r.name),
-        stos: stos.rows.map((r) => r.name),
-        statuses: statuses.rows.map((r) => r.status),
-        deviceTypes: deviceTypes.rows.map((r) => r.device_type),
-        roles: roles.rows.map((r) => r.role),
-        offices: offices.rows.map((r) => ({
-          val: r.id,
-          label: r.name
-        }))
-      },
-    });
+    const data = {
+      areas: areas.rows.map((r) => r.name),
+      stos: stos.rows.map((r) => r.name),
+      statuses: statuses.rows.map((r) => r.status),
+      deviceTypes: deviceTypes.rows.map((r) => r.device_type),
+      roles: roles.rows.map((r) => r.role),
+      offices: offices.rows.map((r) => ({
+        val: r.id,
+        label: r.name
+      }))
+    };
+    
+    cache.set(cacheKey, data);
+    res.json({ success: true, data });
   } catch (error) {
     handleError(res, error, "Gagal memuat opsi filter");
   }
@@ -98,6 +111,10 @@ exports.getInventoryOptions = async (req, res) => {
 exports.getInventoryStats = async (req, res) => {
   try {
     const { area } = req.query;
+    const cacheKey = `inventory:stats:${area || 'all'}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json({ success: true, data: cached, source: 'cache' });
+
     let params = [];
     let whereClause = "";
     if (area) {
@@ -112,17 +129,17 @@ exports.getInventoryStats = async (req, res) => {
       db.query(`SELECT COUNT(DISTINCT area) FROM inventory_devices ${whereClause}`, params),
     ]);
 
-    res.json({
-        success: true,
-        data: {
-            stats: {
-                totalDevices: parseInt(totalDevices.rows[0].count),
-                statusBaik: parseInt(statusBaik.rows[0].count),
-                perluPerhatian: parseInt(perluPerhatian.rows[0].count),
-                areaTercoverCount: parseInt(areaTercover.rows[0].count),
-            }
+    const data = {
+        stats: {
+            totalDevices: parseInt(totalDevices.rows[0].count),
+            statusBaik: parseInt(statusBaik.rows[0].count),
+            perluPerhatian: parseInt(perluPerhatian.rows[0].count),
+            areaTercoverCount: parseInt(areaTercover.rows[0].count),
         }
-    });
+    };
+    
+    cache.set(cacheKey, data, 60000); // 1 minute TTL for stats
+    res.json({ success: true, data });
   } catch (error) {
     handleError(res, error, "Gagal memuat statistik inventaris");
   }
@@ -190,6 +207,7 @@ exports.createDevice = async (req, res) => {
       deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort || 0, idlePort || 0,
     ]);
 
+    invalidateAllStats();
     res.json({
       success: true,
       data: mapDeviceFromDB(rows[0]),
@@ -227,6 +245,7 @@ exports.updateDevice = async (req, res) => {
         .json({ success: false, message: "Perangkat tidak ditemukan" });
     }
 
+    invalidateAllStats();
     res.json({ success: true, message: "Perangkat berhasil diperbarui" });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui perangkat");
@@ -248,6 +267,7 @@ exports.deleteDevice = async (req, res) => {
         .json({ success: false, message: "Perangkat tidak ditemukan" });
     }
     
+    invalidateAllStats();
     res.json({ success: true, message: "Perangkat berhasil dihapus" });
   } catch (error) {
     handleError(res, error, "Gagal menghapus perangkat");
@@ -291,6 +311,7 @@ exports.createUser = async (req, res) => {
       office_id || null,
     ]);
     
+    invalidateAllStats();
     res.json({ success: true, message: "User berhasil dibuat" });
   } catch (error) {
     handleError(res, error, "Gagal membuat user");
@@ -322,6 +343,7 @@ exports.updateUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan" });
     }
+    invalidateAllStats();
     res.json({ success: true, message: "User berhasil diperbarui" });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui user");
@@ -367,6 +389,7 @@ exports.toggleUserStatus = async (req, res) => {
       [newStatus, id],
     );
 
+    invalidateAllStats();
     res.json({ success: true, message: `User berhasil ${newStatus}` });
   } catch (error) {
     handleError(res, error, "Gagal mengubah status user");
@@ -433,6 +456,7 @@ exports.updateProfile = async (req, res) => {
       WHERE u.id = $1
     `, [id]);
 
+    invalidateAllStats();
     res.json({
       success: true,
       data: fullProfile[0],
@@ -446,6 +470,10 @@ exports.updateProfile = async (req, res) => {
 exports.getDashboard = async (req, res) => {
   try {
     const { area } = req.query;
+    const cacheKey = `dashboard:stats:${area || 'all'}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json({ success: true, data: cached, source: 'cache' });
+
     let whereClause = "WHERE 1=1";
     const params = [];
 
@@ -473,9 +501,7 @@ exports.getDashboard = async (req, res) => {
     }
     const stoCount = await db.query(stoQuery, stoParams);
 
-    res.json({
-      success: true,
-      data: {
+    const data = {
         lastLogin: new Date().toISOString(),
         stats: {
           totalUsers: parseInt(userCount.rows[0].count),
@@ -489,8 +515,10 @@ exports.getDashboard = async (req, res) => {
           loansSuffix: "loans",
           unitsSuffix: "units",
         },
-      },
-    });
+    };
+    
+    cache.set(cacheKey, data, 300000); // 5 minutes TTL
+    res.json({ success: true, data });
   } catch (error) {
     handleError(res, error, "Gagal mengambil data dashboard");
   }
