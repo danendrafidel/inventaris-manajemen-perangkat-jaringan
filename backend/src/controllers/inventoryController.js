@@ -12,8 +12,10 @@ function mapDeviceFromDB(row) {
     serialNumber: row.serial_number,
     status: row.status,
     room: row.room,
-    area: row.area,
-    sto: row.sto,
+    area: row.area_name || row.area,
+    area_id: row.area_id,
+    sto: row.sto_name || row.sto,
+    sto_id: row.sto_id,
     totalPort: row.total_port,
     idlePort: row.idle_port,
     createdAt: row.created_at,
@@ -38,9 +40,11 @@ exports.login = async (req, res) => {
   try {
     const { identity, password } = req.body;
     const query = `
-      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area_id, u.status, u.office_id,
+             a.name as area_name,
              o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
       FROM users u
+      LEFT JOIN areas a ON u.area_id = a.id
       LEFT JOIN offices o ON u.office_id = o.id
       WHERE (u.username = $1 OR u.email = $1) AND u.password = $2 AND u.status = 'active'
     `;
@@ -61,7 +65,8 @@ exports.login = async (req, res) => {
         username: user.username,
         name: user.name,
         role: user.role,
-        area: user.area,
+        area: user.area_name,
+        area_id: user.area_id,
         kantor: user.kantor,
         office_id: user.office_id,
         kantor_latitude: user.kantor_latitude,
@@ -81,8 +86,8 @@ exports.getInventoryOptions = async (req, res) => {
     if (cached) return res.json({ success: true, data: cached, source: 'cache' });
 
     const [areas, stos, statuses, deviceTypes, roles, offices] = await Promise.all([
-      db.query("SELECT DISTINCT name FROM areas"),
-      db.query("SELECT DISTINCT name FROM stos"),
+      db.query("SELECT id, name FROM areas WHERE status = 'active' ORDER BY name ASC"),
+      db.query("SELECT id, name, area_id FROM stos WHERE status = 'active' ORDER BY name ASC"),
       db.query("SELECT DISTINCT status FROM inventory_devices"),
       db.query("SELECT DISTINCT device_type FROM inventory_devices"),
       db.query("SELECT DISTINCT role FROM users"),
@@ -90,8 +95,8 @@ exports.getInventoryOptions = async (req, res) => {
     ]);
 
     const data = {
-      areas: areas.rows.map((r) => r.name),
-      stos: stos.rows.map((r) => r.name),
+      areas: areas.rows.map((r) => ({ id: r.id, name: r.name })),
+      stos: stos.rows.map((r) => ({ id: r.id, name: r.name, area_id: r.area_id })),
       statuses: statuses.rows.map((r) => r.status),
       deviceTypes: deviceTypes.rows.map((r) => r.device_type),
       roles: roles.rows.map((r) => r.role),
@@ -110,23 +115,23 @@ exports.getInventoryOptions = async (req, res) => {
 
 exports.getInventoryStats = async (req, res) => {
   try {
-    const { area } = req.query;
-    const cacheKey = `inventory:stats:${area || 'all'}`;
+    const { area_id } = req.query;
+    const cacheKey = `inventory:stats:${area_id || 'all'}`;
     const cached = cache.get(cacheKey);
     if (cached) return res.json({ success: true, data: cached, source: 'cache' });
 
     let params = [];
     let whereClause = "";
-    if (area) {
-        params.push(area);
-        whereClause = "WHERE area = $1";
+    if (area_id) {
+        params.push(area_id);
+        whereClause = "WHERE area_id = $1";
     }
 
     const [totalDevices, statusBaik, perluPerhatian, areaTercover] = await Promise.all([
       db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause}`, params),
-      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area ? 'AND' : 'WHERE'} status = 'OPERATED'`, params),
-      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area ? 'AND' : 'WHERE'} status IN ('MAINTENANCE', 'PROBLEM')`, params),
-      db.query(`SELECT COUNT(DISTINCT area) FROM inventory_devices ${whereClause}`, params),
+      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? 'AND' : 'WHERE'} status = 'OPERATED'`, params),
+      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? 'AND' : 'WHERE'} status IN ('MAINTENANCE', 'PROBLEM')`, params),
+      db.query(`SELECT COUNT(DISTINCT area_id) FROM inventory_devices ${whereClause}`, params),
     ]);
 
     const data = {
@@ -147,33 +152,41 @@ exports.getInventoryStats = async (req, res) => {
 
 exports.fetchInventoryDevices = async (req, res) => {
   try {
-    const { search, sto, area, status, page, limit } = req.query;
+    const { search, sto_id, area_id, status, page, limit } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
     let where = [];
     let params = [];
     
     if (search) {
       params.push(`%${search}%`);
-      where.push(`(device_id ILIKE $${params.length} OR name ILIKE $${params.length} OR serial_number ILIKE $${params.length})`);
+      where.push(`(i.device_id ILIKE $${params.length} OR i.name ILIKE $${params.length} OR i.serial_number ILIKE $${params.length})`);
     }
-    if (sto) {
-      params.push(sto);
-      where.push(`sto = $${params.length}`);
+    if (sto_id) {
+      params.push(sto_id);
+      where.push(`i.sto_id = $${params.length}`);
     }
-    if (area) {
-      params.push(area);
-      where.push(`area = $${params.length}`);
+    if (area_id) {
+      params.push(area_id);
+      where.push(`i.area_id = $${params.length}`);
     }
     if (status) {
       params.push(status);
-      where.push(`status = $${params.length}`);
+      where.push(`i.status = $${params.length}`);
     }
     
     const whereClause = where.length > 0 ? "WHERE " + where.join(" AND ") : "";
     
     const [total, items] = await Promise.all([
-      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause}`, params),
-      db.query(`SELECT * FROM inventory_devices ${whereClause} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`, [...params, parseInt(limit), offset])
+      db.query(`SELECT COUNT(*) FROM inventory_devices i ${whereClause}`, params),
+      db.query(`
+        SELECT i.*, a.name as area_name, s.name as sto_name 
+        FROM inventory_devices i
+        LEFT JOIN areas a ON i.area_id = a.id
+        LEFT JOIN stos s ON i.sto_id = s.id
+        ${whereClause} 
+        ORDER BY i.created_at DESC 
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      `, [...params, parseInt(limit), offset])
     ]);
     
     res.json({
@@ -191,20 +204,20 @@ exports.fetchInventoryDevices = async (req, res) => {
 exports.createDevice = async (req, res) => {
   try {
     const {
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort, idlePort
     } = req.body;
 
     const query = `
       INSERT INTO inventory_devices (
         device_id, ip, name, device_type, storage_location, 
-        serial_number, status, room, area, sto, 
+        serial_number, status, room, area_id, sto_id, 
         total_port, idle_port
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
 
     const { rows } = await db.query(query, [
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort || 0, idlePort || 0,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort || 0, idlePort || 0,
     ]);
 
     invalidateAllStats();
@@ -222,21 +235,21 @@ exports.updateDevice = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort, idlePort
     } = req.body;
 
     const query = `
       UPDATE inventory_devices SET
         device_id = $1, ip = $2, name = $3, device_type = $4, 
         storage_location = $5, serial_number = $6, status = $7, room = $8, 
-        area = $9, sto = $10, 
+        area_id = $9, sto_id = $10, 
         total_port = $11, idle_port = $12, updated_at = CURRENT_TIMESTAMP
       WHERE id = $13
       RETURNING *
     `;
 
     const { rows } = await db.query(query, [
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area, sto, totalPort, idlePort, id,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort || 0, idlePort || 0, id,
     ]);
 
     if (rows.length === 0) {
@@ -246,7 +259,11 @@ exports.updateDevice = async (req, res) => {
     }
 
     invalidateAllStats();
-    res.json({ success: true, message: "Perangkat berhasil diperbarui" });
+    res.json({ 
+      success: true, 
+      message: "Perangkat berhasil diperbarui",
+      data: mapDeviceFromDB(rows[0])
+    });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui perangkat");
   }
@@ -278,9 +295,11 @@ exports.deleteDevice = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const query = `
-      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area_id, u.status, u.office_id,
+             a.name as area,
              o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
       FROM users u
+      LEFT JOIN areas a ON u.area_id = a.id
       LEFT JOIN offices o ON u.office_id = o.id
       ORDER BY u.created_at DESC
     `;
@@ -293,10 +312,10 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, email, nik, role, area, office_id } =
+    const { username, password, name, email, nik, role, area_id, office_id } =
       req.body;
     const query = `
-      INSERT INTO users (username, password, name, email, nik, role, area, office_id, status)
+      INSERT INTO users (username, password, name, email, nik, role, area_id, office_id, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')
       RETURNING id
     `;
@@ -307,7 +326,7 @@ exports.createUser = async (req, res) => {
       email,
       nik,
       role,
-      area,
+      area_id || null,
       office_id || null,
     ]);
     
@@ -321,10 +340,10 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, role, area, office_id } = req.body;
+    const { name, email, nik, role, area_id, office_id } = req.body;
     const query = `
       UPDATE users SET 
-        name = $1, email = $2, nik = $3, role = $4, area = $5, office_id = $6,
+        name = $1, email = $2, nik = $3, role = $4, area_id = $5, office_id = $6,
         updated_at = CURRENT_TIMESTAMP 
       WHERE id = $7
     `;
@@ -333,7 +352,7 @@ exports.updateUser = async (req, res) => {
       email,
       nik,
       role,
-      area,
+      area_id || null,
       office_id || null,
       id,
     ]);
@@ -400,9 +419,11 @@ exports.getProfile = async (req, res) => {
   try {
     const { id } = req.params;
     const query = `
-      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area_id, u.status, u.office_id,
+             a.name as area,
              o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
       FROM users u
+      LEFT JOIN areas a ON u.area_id = a.id
       LEFT JOIN offices o ON u.office_id = o.id
       WHERE u.id = $1
     `;
@@ -423,20 +444,20 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, nik, area, office_id } = req.body;
+    const { name, email, nik, area_id, office_id } = req.body;
 
     const query = `
       UPDATE users SET 
-        name = $1, email = $2, nik = $3, area = $4, office_id = $5,
+        name = $1, email = $2, nik = $3, area_id = $4, office_id = $5,
         updated_at = CURRENT_TIMESTAMP 
       WHERE id = $6
-      RETURNING id, username, name, email, nik, role, area, office_id, status
+      RETURNING id, username, name, email, nik, role, area_id, office_id, status
     `;
     const { rows } = await db.query(query, [
       name,
       email,
       nik,
-      area,
+      area_id || null,
       office_id || null,
       id,
     ]);
@@ -449,9 +470,11 @@ exports.updateProfile = async (req, res) => {
 
     // Fetch the full profile after update to include joined data
     const { rows: fullProfile } = await db.query(`
-      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area, u.status, u.office_id,
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area_id, u.status, u.office_id,
+             a.name as area,
              o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
       FROM users u
+      LEFT JOIN areas a ON u.area_id = a.id
       LEFT JOIN offices o ON u.office_id = o.id
       WHERE u.id = $1
     `, [id]);
@@ -467,26 +490,109 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+// PMR REPORTS
+exports.createPmrReport = async (req, res) => {
+  try {
+    const {
+      user_id,
+      device_id,
+      maintenance_date,
+      status,
+      action,
+      notes,
+      distance,
+      fuel_cost,
+    } = req.body;
+
+    const query = `
+      INSERT INTO pmr_reports (
+        user_id, device_id, maintenance_date, status, action, notes, distance, fuel_cost
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `;
+
+    const { rows } = await db.query(query, [
+      user_id,
+      device_id,
+      maintenance_date,
+      status,
+      action,
+      notes,
+      distance || 0,
+      fuel_cost || 0,
+    ]);
+
+    invalidateAllStats();
+    res.json({
+      success: true,
+      data: rows[0],
+      message: "Laporan PMR berhasil dikirim",
+    });
+  } catch (error) {
+    handleError(res, error, "Gagal mengirim laporan PMR");
+  }
+};
+
+exports.getAllPmrReports = async (req, res) => {
+  try {
+    const { area_id, role, user_id } = req.query;
+    let where = [];
+    let params = [];
+
+    // Filter by area if provided (for officers)
+    if (area_id) {
+      params.push(area_id);
+      where.push(`u.area_id = $${params.length}`);
+    }
+
+    // Filter by user_id if provided (for regular users to see only their logs)
+    if (user_id && role !== 'admin' && role !== 'officer') {
+      params.push(user_id);
+      where.push(`p.user_id = $${params.length}`);
+    }
+
+    const whereClause = where.length > 0 ? "WHERE " + where.join(" AND ") : "";
+
+    const query = `
+      SELECT p.*, 
+             u.name as technician_name, a.name as technician_area,
+             d.name as device_name, d.device_id as device_code, s.name as device_sto
+      FROM pmr_reports p
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN areas a ON u.area_id = a.id
+      JOIN inventory_devices d ON p.device_id = d.id
+      LEFT JOIN stos s ON d.sto_id = s.id
+      ${whereClause}
+      ORDER BY p.maintenance_date DESC, p.created_at DESC
+    `;
+
+    const { rows } = await db.query(query, params);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    handleError(res, error, "Gagal mengambil log PMR");
+  }
+};
+
 exports.getDashboard = async (req, res) => {
   try {
-    const { area } = req.query;
-    const cacheKey = `dashboard:stats:${area || 'all'}`;
+    const { area_id } = req.query;
+    const cacheKey = `dashboard:stats:${area_id || 'all'}`;
     const cached = cache.get(cacheKey);
     if (cached) return res.json({ success: true, data: cached, source: 'cache' });
 
     let whereClause = "WHERE 1=1";
     const params = [];
 
-    if (area) {
-      params.push(area);
-      whereClause += ` AND area = $${params.length}`;
+    if (area_id) {
+      params.push(area_id);
+      whereClause += ` AND area_id = $${params.length}`;
     }
 
     let userQuery = "SELECT COUNT(*) FROM users";
     let userParams = [];
-    if (area) {
-      userQuery += " WHERE area = $1";
-      userParams.push(area);
+    if (area_id) {
+      userQuery += " WHERE area_id = $1";
+      userParams.push(area_id);
     }
     const userCount = await db.query(userQuery, userParams);
     
@@ -495,9 +601,9 @@ exports.getDashboard = async (req, res) => {
     
     let stoQuery = "SELECT COUNT(*) FROM stos";
     let stoParams = [];
-    if (area) {
-        stoQuery += " s JOIN areas a ON s.area_id = a.id WHERE a.name = $1";
-        stoParams.push(area);
+    if (area_id) {
+        stoQuery += " WHERE area_id = $1";
+        stoParams.push(area_id);
     }
     const stoCount = await db.query(stoQuery, stoParams);
 

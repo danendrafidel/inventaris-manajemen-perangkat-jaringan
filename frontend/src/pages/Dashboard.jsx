@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import { fetchDashboardSummary } from "../services/dashboardService";
 import Sidebar from "../components/Sidebar";
+import ErrorAlert from "../components/ErrorAlert";
+import Toast from "../components/Toast";
 
 import PeopleIcon from "@mui/icons-material/People";
 import RouterIcon from "@mui/icons-material/Router";
@@ -66,6 +68,11 @@ export default function Dashboard() {
   const [loadError, setLoadError] = useState("");
   const [dashboard, setDashboard] = useState(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [notification, setNotification] = useState({ open: false, message: "", severity: "error" });
+
+  const showNotify = (message, severity = "error") => {
+    setNotification({ open: true, message, severity });
+  };
 
   const roleLabel = useMemo(() => {
     const r = String(user?.role || "").toLowerCase();
@@ -83,18 +90,26 @@ export default function Dashboard() {
     // Apply role-based filtering for stats
     const params = new URLSearchParams();
     if (user.role !== "admin") {
-      params.set("area", user.area);
+      params.set("area_id", user.area_id);
     }
 
     fetchDashboardSummary(params.toString())
       .then(setDashboard)
-      .catch((err) => setLoadError(err.message));
+      .catch((err) => {
+        const message = err.message || "The server returned an unexpected response. Please try again later.";
+        setLoadError(message);
+        showNotify(message, "error");
+      });
   }, [user, navigate]);
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
+      <Toast
+        {...notification}
+        onClose={() => setNotification({ ...notification, open: false })}
+      />
       <Sidebar />
 
       {/* Admin Modal */}
@@ -229,11 +244,7 @@ export default function Dashboard() {
             <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
           </section>
 
-          {loadError && (
-            <div className="mb-6 rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-4 text-sm font-bold text-rose-700 shadow-sm animate-pulse">
-              ⚠️ {loadError}
-            </div>
-          )}
+          <ErrorAlert message={loadError} />
 
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

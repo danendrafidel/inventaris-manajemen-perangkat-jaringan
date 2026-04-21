@@ -19,8 +19,8 @@ exports.getAllAreas = async (req, res) => {
 
     const query = `
       SELECT c.*,
-             (SELECT COUNT(*) FROM inventory_devices inv WHERE inv.area = c.name) as device_count,
-             (SELECT COUNT(*) FROM users u WHERE u.area = c.name AND u.status = 'active') as active_user_count,
+             (SELECT COUNT(*) FROM inventory_devices inv WHERE inv.area_id = c.id) as device_count,
+             (SELECT COUNT(*) FROM users u WHERE u.area_id = c.id AND u.status = 'active') as active_user_count,
              (SELECT COUNT(*) FROM stos s WHERE s.area_id = c.id) as sto_count,
              COALESCE(c.status, 'active') as status, 
              c.id as generated_id
@@ -76,7 +76,11 @@ exports.updateArea = async (req, res) => {
       [name, latitude, longitude, id]
     );
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Area tidak ditemukan' });
+    
+    // Invalidate all related caches
     cache.invalidate('areas:');
+    cache.invalidate('stos:');
+    cache.invalidate('inventory:');
     cache.invalidate('inventory:options');
     res.json({ success: true, data: rows[0], message: 'Area berhasil diperbarui' });
   } catch (error) {
@@ -106,7 +110,7 @@ exports.getAllStos = async (req, res) => {
 
     const query = `
       SELECT s.*, c.name as area_name,
-             (SELECT COUNT(*) FROM inventory_devices inv WHERE inv.sto = s.name) as device_count,
+             (SELECT COUNT(*) FROM inventory_devices inv WHERE inv.sto_id = s.id) as device_count,
              COALESCE(s.status, 'active') as status, 
              CONCAT(c.id, '-', s.id) as generated_id
       FROM stos s 
@@ -247,6 +251,8 @@ exports.updateOffice = async (req, res) => {
       [name, latitude, longitude, id]
     );
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Kantor tidak ditemukan' });
+    
+    // Invalidate all related caches
     cache.invalidate('offices:');
     cache.invalidate('inventory:options');
     res.json({ success: true, data: rows[0], message: 'Kantor berhasil diperbarui' });

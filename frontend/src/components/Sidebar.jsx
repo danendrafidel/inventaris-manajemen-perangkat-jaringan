@@ -12,6 +12,11 @@ import InventoryIcon from "@mui/icons-material/Inventory";
 import BuildIcon from "@mui/icons-material/Build";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import PublicIcon from "@mui/icons-material/Public";
+import RouterIcon from "@mui/icons-material/Router";
+import BusinessIcon from "@mui/icons-material/Business";
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import HistoryIcon from "@mui/icons-material/History";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -124,35 +129,35 @@ export default function Sidebar() {
                       <Link
                         to="/mapping/area"
                         onClick={() => setIsOpen(false)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                           isActive("/mapping/area")
                             ? "bg-blue-50 text-blue-700"
                             : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                         }`}
                       >
-                        Area
+                        <PublicIcon sx={{ fontSize: 14 }} /> Area
                       </Link>
                       <Link
                         to="/mapping/sto"
                         onClick={() => setIsOpen(false)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                           isActive("/mapping/sto")
                             ? "bg-blue-50 text-blue-700"
                             : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                         }`}
                       >
-                        STO
+                        <RouterIcon sx={{ fontSize: 14 }} /> STO
                       </Link>
                       <Link
                         to="/mapping/office"
                         onClick={() => setIsOpen(false)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                           isActive("/mapping/office")
                             ? "bg-blue-50 text-blue-700"
                             : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                         }`}
                       >
-                        Kantor
+                        <BusinessIcon sx={{ fontSize: 14 }} /> Kantor
                       </Link>
                     </div>
                   )}
@@ -196,24 +201,24 @@ export default function Sidebar() {
                   <Link
                     to="/pmr"
                     onClick={() => setIsOpen(false)}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                       isActive("/pmr")
                         ? "bg-blue-50 text-blue-700"
                         : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                     }`}
                   >
-                    Formulir PMR
+                    <ListAltIcon sx={{ fontSize: 14 }} /> Formulir PMR
                   </Link>
                   <Link
                     to="/pmr/log"
                     onClick={() => setIsOpen(false)}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                       isActive("/pmr/log")
                         ? "bg-blue-50 text-blue-700"
                         : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                     }`}
                   >
-                    Log PMR
+                    <HistoryIcon sx={{ fontSize: 14 }} /> Log PMR
                   </Link>
                 </div>
               )}

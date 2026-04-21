@@ -9,6 +9,7 @@ import {
   toggleOfficeStatus,
 } from "../services/areaService";
 import Sidebar from "../components/Sidebar";
+import ErrorAlert from "../components/ErrorAlert";
 import Toast from "../components/Toast";
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,16 +33,50 @@ import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
 import MapIcon from "@mui/icons-material/Map";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 export default function MappingOffice() {
   const user = getStoredUser();
   const [offices, setOffices] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
   const [showModal, setShowModal] = useState(false);
   const [selectedOffice, setSelectedOffice] = useState(null);
   const [formData, setFormData] = useState({ name: "", latitude: "", longitude: "" });
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
   const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const sortedOffices = useMemo(() => {
+    let sortableItems = [...offices];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key] || "";
+        let bValue = b[sortConfig.key] || "";
+
+        if (typeof aValue === "string") aValue = aValue.toLowerCase();
+        if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [offices, sortConfig]);
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
 
   const stats = useMemo(() => ({
     total: offices.length,
@@ -67,7 +102,7 @@ export default function MappingOffice() {
       } else {
         showNotify("Lokasi tidak ditemukan, silakan isi manual", "warning");
       }
-    } catch (err) {
+    } catch {
       showNotify("Gagal menghubungi layanan peta", "error");
     } finally {
       setIsGeocoding(false);
@@ -76,11 +111,14 @@ export default function MappingOffice() {
 
   const loadData = async () => {
     setLoading(true);
+    setError("");
     try {
       const officeData = await fetchAllOffices();
       setOffices(officeData);
     } catch (err) {
-      showNotify(err.message, "error");
+      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      setError(message);
+      showNotify(message, "error");
     } finally {
       setLoading(false);
     }
@@ -101,7 +139,8 @@ export default function MappingOffice() {
       setShowModal(false);
       loadData();
     } catch (err) {
-      showNotify(err.message, "error");
+      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      showNotify(message, "error");
     }
   };
 
@@ -112,7 +151,8 @@ export default function MappingOffice() {
         showNotify("Kantor berhasil dihapus");
         loadData();
       } catch (err) {
-        showNotify(err.message, "error");
+        const message = err.message || "The server returned an unexpected response. Please try again later.";
+        showNotify(message, "error");
       }
     }
   };
@@ -123,7 +163,8 @@ export default function MappingOffice() {
       showNotify("Status kantor berhasil diubah");
       loadData();
     } catch (err) {
-      showNotify(err.message, "error");
+      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      showNotify(message, "error");
     }
   };
 
@@ -151,6 +192,7 @@ export default function MappingOffice() {
         </header>
 
         <main className="p-4 md:p-8">
+          <ErrorAlert message={error} onRetry={loadData} />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 {[
                     { title: "TOTAL KANTOR", value: stats.total, icon: <BusinessIcon />, color: "bg-slate-600" },
@@ -172,8 +214,28 @@ export default function MappingOffice() {
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">NAMA KANTOR</th>
+                    <th 
+                      onClick={() => handleSort('generated_id')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        ID
+                        {sortConfig.key === 'generated_id' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('name')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        NAMA KANTOR
+                        {sortConfig.key === 'name' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">ACTIVE USERS</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KOORDINAT</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">STATUS</th>
@@ -186,7 +248,7 @@ export default function MappingOffice() {
                   ) : offices.length === 0 ? (
                     <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-400 font-bold">Belum ada data Kantor</td></tr>
                   ) : (
-                    offices.map((o) => (
+                    sortedOffices.map((o) => (
                       <tr key={o.id} className="group hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4 text-xs font-black text-slate-900">{o.generated_id || o.id}</td>
                         <td className="px-6 py-4">
@@ -214,7 +276,7 @@ export default function MappingOffice() {
             
             {/* Mobile View */}
             <div className="md:hidden divide-y divide-slate-100">
-              {offices.map((o) => (
+              {sortedOffices.map((o) => (
                 <div key={o.id} className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">

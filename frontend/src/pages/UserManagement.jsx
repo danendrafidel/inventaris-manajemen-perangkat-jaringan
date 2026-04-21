@@ -10,6 +10,7 @@ import {
 } from "../services/userService";
 import { fetchInventoryOptions } from "../services/inventoryService";
 import Sidebar from "../components/Sidebar";
+import ErrorAlert from "../components/ErrorAlert";
 import Toast from "../components/Toast";
 
 // Icons
@@ -24,15 +25,18 @@ import GroupIcon from "@mui/icons-material/Group";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import BadgeIcon from "@mui/icons-material/Badge";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 export default function UserManagement() {
   const navigate = useNavigate();
   const currentUser = getStoredUser();
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
   const [options, setOptions] = useState({
     roles: [],
-    areas: [],
+    areas: [], // Now expected to be [{id, name}, ...]
     offices: [],
   });
 
@@ -49,7 +53,7 @@ export default function UserManagement() {
     email: "",
     nik: "",
     role: "",
-    area: "",
+    area_id: "",
     office_id: "",
   });
   const [newPassword, setNewPassword] = useState("");
@@ -58,6 +62,36 @@ export default function UserManagement() {
     message: "",
     severity: "success",
   });
+
+  const sortedUsers = useMemo(() => {
+    let sortableItems = [...users];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key] || "";
+        let bValue = b[sortConfig.key] || "";
+
+        if (typeof aValue === "string") aValue = aValue.toLowerCase();
+        if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [users, sortConfig]);
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
 
   const userStats = useMemo(() => ({
     total: users.length,
@@ -70,19 +104,8 @@ export default function UserManagement() {
     setNotification({ open: true, message, severity });
   };
 
-  useEffect(() => {
-    if (
-      !currentUser ||
-      (currentUser.role !== "admin" && currentUser.role !== "officer")
-    ) {
-      navigate("/dashboard");
-      return;
-    }
-    loadData();
-  }, []);
-
   const loadData = async () => {
-    setLoading(true);
+    setError("");
     try {
       const [u, o] = await Promise.all([
         fetchAllUsers(),
@@ -95,11 +118,21 @@ export default function UserManagement() {
         offices: Array.isArray(o?.offices) ? o.offices : [],
       });
     } catch (err) {
+      setError(err.message);
       showNotify(err.message, "error");
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (
+      !currentUser ||
+      (currentUser.role !== "admin" && currentUser.role !== "officer")
+    ) {
+      navigate("/dashboard");
+      return;
+    }
+    loadData();
+  }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -123,6 +156,15 @@ export default function UserManagement() {
     } catch (err) {
       showNotify(err.message, "error");
     }
+  };
+
+  const handleOpenEdit = (user) => {
+    setSelectedItem(user);
+    setFormData({ 
+      ...user,
+      area_id: user.area_id || "" 
+    });
+    setShowEditModal(true);
   };
 
   const handleChangePass = async (e) => {
@@ -205,6 +247,7 @@ export default function UserManagement() {
         </header>
 
         <main className="p-4 md:p-8 max-w-full overflow-hidden">
+          <ErrorAlert message={error} onRetry={loadData} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {[
               { title: "TOTAL USER", value: userStats.total, icon: <GroupIcon />, color: "bg-slate-600" },
@@ -230,20 +273,60 @@ export default function UserManagement() {
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      IDENTITAS
+                    <th 
+                      onClick={() => handleSort('name')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        IDENTITAS
+                        {sortConfig.key === 'name' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      KONTAK & NIK
+                    <th 
+                      onClick={() => handleSort('email')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        KONTAK & NIK
+                        {sortConfig.key === 'email' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      ROLE & AREA
+                    <th 
+                      onClick={() => handleSort('role')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        ROLE & AREA
+                        {sortConfig.key === 'role' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      KANTOR
+                    <th 
+                      onClick={() => handleSort('kantor')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        KANTOR
+                        {sortConfig.key === 'kantor' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      STATUS
+                    <th 
+                      onClick={() => handleSort('status')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        STATUS
+                        {sortConfig.key === 'status' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
                       AKSI
@@ -251,7 +334,7 @@ export default function UserManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {users.map((u) => (
+                  {sortedUsers.map((u) => (
                     <tr
                       key={u.id}
                       className="group hover:bg-slate-50/50 transition-colors"
@@ -567,6 +650,7 @@ export default function UserManagement() {
                     ROLE
                   </label>
                   <select
+                    required
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
                     value={formData.role}
                     onChange={(e) =>
@@ -574,7 +658,7 @@ export default function UserManagement() {
                     }
                   >
                     <option value="">Pilih Role</option>
-                    {options.roles.map((r) => (
+                    {["admin", "officer", "user"].map((r) => (
                       <option key={r} value={r}>
                         {r.toUpperCase()}
                       </option>
@@ -587,15 +671,15 @@ export default function UserManagement() {
                   </label>
                   <select
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
-                    value={formData.area}
+                    value={formData.area_id}
                     onChange={(e) =>
-                      setFormData({ ...formData, area: e.target.value })
+                      setFormData({ ...formData, area_id: e.target.value })
                     }
                   >
                     <option value="">Pilih Area</option>
                     {options.areas.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
+                      <option key={a.id} value={a.id}>
+                        {a.name}
                       </option>
                     ))}
                   </select>

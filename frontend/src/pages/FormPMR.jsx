@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import { fetchAllStos, fetchAllAreas } from "../services/areaService";
-import { fetchInventoryDevices } from "../services/inventoryService";
+import {
+  fetchInventoryDevices,
+  createPmrReport,
+} from "../services/inventoryService";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
+import ErrorAlert from "../components/ErrorAlert";
 import {
   MapContainer,
   TileLayer,
@@ -15,6 +19,15 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+
+// Icons
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import PersonIcon from "@mui/icons-material/Person";
+import BuildIcon from "@mui/icons-material/Build";
+import DescriptionIcon from "@mui/icons-material/Description";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SendIcon from "@mui/icons-material/Send";
+import RouterIcon from "@mui/icons-material/Router";
 
 // Fix for default leaflet markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -44,6 +57,8 @@ export default function FormPMR() {
   const [user] = useState(() => getStoredUser());
   const [stos, setStos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [origin, setOrigin] = useState({ name: "", lat: 0, lng: 0 });
   const [destination, setDestination] = useState(null);
@@ -53,6 +68,15 @@ export default function FormPMR() {
   const [searchTerm, setSearchTerm] = useState("");
   const [foundDevice, setFoundDevice] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
+
+  // PMR Form Fields
+  const [pmrForm, setPmrForm] = useState({
+    maintenance_date: new Date().toISOString().split("T")[0],
+    status: "Normal",
+    action: "",
+    notes: "",
+  });
+
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -70,6 +94,8 @@ export default function FormPMR() {
     }
 
     const loadData = async () => {
+      setLoading(true);
+      setError("");
       try {
         const [stoData, areaData] = await Promise.all([
           fetchAllStos(),
@@ -95,7 +121,10 @@ export default function FormPMR() {
           }
         }
       } catch (err) {
-        showNotify("Gagal memuat data pendukung", "error");
+        const message =
+          "The server returned an unexpected response. Please try again later.";
+        setError(message);
+        showNotify(message, "error");
       } finally {
         setLoading(false);
       }
@@ -143,9 +172,8 @@ export default function FormPMR() {
     if (!searchTerm) return;
     try {
       const params = { search: searchTerm };
-      // Restrict scope for non-admin users
       if (user.role !== "admin") {
-        params.area = user.area;
+        params.area_id = user.area_id;
       }
       const data = await fetchInventoryDevices(params);
       if (data.items.length > 0) {
@@ -153,9 +181,9 @@ export default function FormPMR() {
         showNotify(`Ditemukan ${data.items.length} perangkat`);
       } else {
         setSearchResults([]);
-        showNotify("Perangkat tidak ditemukan", "error");
+        showNotify("Perangkat tidak ditemukan di area Anda", "error");
       }
-    } catch (err) {
+    } catch {
       showNotify("Gagal mencari perangkat", "error");
     }
   };
@@ -174,6 +202,43 @@ export default function FormPMR() {
       showNotify(`Perangkat terpilih: ${device.name}`);
     } else {
       showNotify("Lokasi STO perangkat tidak valid", "error");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!foundDevice) {
+      showNotify("Pilih perangkat terlebih dahulu", "error");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await createPmrReport({
+        ...pmrForm,
+        user_id: user.id,
+        device_id: foundDevice.id,
+        distance,
+        fuel_cost: fuelCost,
+      });
+      showNotify("Laporan PMR Berhasil Dikirim!");
+      // Reset form
+      setPmrForm({
+        maintenance_date: new Date().toISOString().split("T")[0],
+        status: "Normal",
+        action: "",
+        notes: "",
+      });
+      setFoundDevice(null);
+      setDestination(null);
+      setSearchTerm("");
+    } catch (err) {
+      const message =
+        err.message ||
+        "The server returned an unexpected response. Please try again later.";
+      showNotify(message, "error");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -196,27 +261,26 @@ export default function FormPMR() {
                 PMR / <span className="text-blue-600">FORMULIR</span>
               </div>
               <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
-                Preventive Maintenance Perangkat
+                Laporan Preventive Maintenance
               </h1>
             </div>
           </div>
         </header>
 
         <main className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+          <ErrorAlert
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
+          {/* Header Card - Consistent with previous view */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-blue-200">
+              <div className="h-12 w-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-blue-200 uppercase">
                 {user?.name?.charAt(0)}
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  {user?.role === "admin"
-                    ? "Admin"
-                    : user?.role === "officer"
-                      ? "Officer"
-                      : user?.role === "petugas"
-                        ? "Petugas"
-                        : "Petugas Lapangan"}
+                  {user?.role?.toUpperCase()} {user?.area}
                 </p>
                 <h2 className="text-lg font-black text-slate-900">
                   {user?.name}
@@ -239,11 +303,12 @@ export default function FormPMR() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Sidebar Column (1/3) */}
             <div className="lg:col-span-1 space-y-6">
               <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-5">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Cari Perangkat
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Pilih Perangkat
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -255,7 +320,7 @@ export default function FormPMR() {
                     <button
                       type="button"
                       onClick={handleSearchDevice}
-                      className="px-4 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700"
+                      className="px-4 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all"
                     >
                       CARI
                     </button>
@@ -263,18 +328,19 @@ export default function FormPMR() {
                 </div>
 
                 {searchResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto border rounded-xl divide-y">
+                  <div className="max-h-40 overflow-y-auto border border-slate-100 rounded-xl divide-y">
                     {searchResults.map((d) => (
                       <button
                         key={d.id}
+                        type="button"
                         onClick={() => selectDevice(d)}
-                        className="w-full p-3 text-left text-xs font-bold hover:bg-indigo-50 border-b"
+                        className="w-full p-3 text-left hover:bg-blue-50 transition-colors"
                       >
-                        <div className="font-black text-slate-900">
+                        <div className="text-xs font-black text-slate-900 uppercase">
                           {d.name}
                         </div>
-                        <div className="text-[10px] text-slate-500">
-                          ID: {d.deviceId} | STO: {d.sto}
+                        <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
+                          {d.deviceId} · {d.sto}
                         </div>
                       </button>
                     ))}
@@ -282,14 +348,14 @@ export default function FormPMR() {
                 )}
 
                 {foundDevice && (
-                  <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 space-y-2">
+                  <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 space-y-2 animate-in fade-in zoom-in-95">
                     <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">
                       Detail Perangkat
                     </p>
                     <div className="grid grid-cols-1 gap-1 text-[11px] font-bold text-slate-700">
                       <p className="flex justify-between">
                         <span>Nama:</span>{" "}
-                        <span className="text-slate-900">
+                        <span className="text-slate-900 uppercase">
                           {foundDevice.name}
                         </span>
                       </p>
@@ -328,6 +394,12 @@ export default function FormPMR() {
                         </span>
                       </p>
                       <p className="flex justify-between">
+                        <span>Lokasi Penyimpanan:</span>{" "}
+                        <span className="text-slate-900">
+                          {foundDevice.storageLocation || "Tidak ada data"}
+                        </span>
+                      </p>
+                      <p className="flex justify-between">
                         <span>Area:</span>{" "}
                         <span className="text-slate-900">
                           {foundDevice.area}
@@ -356,20 +428,20 @@ export default function FormPMR() {
                 )}
 
                 {destination && (
-                  <div className="pt-4 border-t border-slate-100 space-y-4">
-                    <div className="flex items-center justify-between px-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase">
+                  <div className="pt-4 border-t border-slate-100 space-y-3 px-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                         Jarak Estimasi
                       </span>
-                      <span className="text-sm font-black text-blue-600">
+                      <span className="text-xs font-black text-blue-600">
                         {distance} KM
                       </span>
                     </div>
-                    <div className="flex items-center justify-between px-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase">
-                        Estimasi Biaya Bensin
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        Estimasi BBM
                       </span>
-                      <span className="text-sm font-black text-emerald-600">
+                      <span className="text-xs font-black text-emerald-600 uppercase">
                         Rp {fuelCost.toLocaleString()}
                       </span>
                     </div>
@@ -378,8 +450,10 @@ export default function FormPMR() {
               </div>
             </div>
 
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden h-[500px] relative">
+            {/* Content Column (2/3) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Map Preview */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden h-[400px] relative">
                 {loading ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
@@ -394,13 +468,8 @@ export default function FormPMR() {
                     {origin.lat !== 0 && (
                       <Marker position={[origin.lat, origin.lng]}>
                         <Popup>
-                          <div className="text-xs font-bold">
-                            <b>Kantor Asal</b>
-                            <br />
-                            {origin.name}
-                            <p className="text-[10px] text-slate-500 mt-1">
-                              {origin.lat.toFixed(4)}, {origin.lng.toFixed(4)}
-                            </p>
+                          <div className="text-[10px] font-black uppercase">
+                            Origin: {origin.name}
                           </div>
                         </Popup>
                       </Marker>
@@ -409,14 +478,8 @@ export default function FormPMR() {
                       <>
                         <Marker position={[destination.lat, destination.lng]}>
                           <Popup>
-                            <div className="text-xs font-bold">
-                              <b>STO Tujuan</b>
-                              <br />
-                              {destination.name}
-                              <p className="text-[10px] text-slate-500 mt-1">
-                                {destination.lat.toFixed(4)},{" "}
-                                {destination.lng.toFixed(4)}
-                              </p>
+                            <div className="text-[10px] font-black uppercase">
+                              Tujuan: {destination.name}
                             </div>
                           </Popup>
                         </Marker>
@@ -424,7 +487,7 @@ export default function FormPMR() {
                           positions={routeCoordinates}
                           color="#2563eb"
                           weight={5}
-                          opacity={0.8}
+                          opacity={0.7}
                         />
                         <MapRecenter
                           points={[
@@ -437,6 +500,137 @@ export default function FormPMR() {
                   </MapContainer>
                 )}
               </div>
+              {/* Redesigned Technical Form - Integrated here to maintain layout flow */}
+              {foundDevice && (
+                <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm animate-in fade-in zoom-in-95">
+                  <form onSubmit={handleSubmit} className="space-y-8">
+                    {/* Row 1: basic Info from screenshot 1 */}
+                    <div className="space-y-4 pb-8 border-b border-slate-100">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <DescriptionIcon sx={{ fontSize: 16 }} /> Informasi Umum
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <CalendarMonthIcon sx={{ fontSize: 14 }} /> Tanggal
+                            Maintenance
+                          </label>
+                          <input
+                            required
+                            type="date"
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.maintenance_date}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                maintenance_date: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <PersonIcon sx={{ fontSize: 14 }} /> Teknisi
+                            Lapangan
+                          </label>
+                          <div className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4 text-sm font-black text-slate-600 flex items-center gap-3">
+                            <div className="h-6 w-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black uppercase">
+                              {user?.name?.charAt(0)}
+                            </div>
+                            {user?.name}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* technical fields from screenshot 2 */}
+                    <div className="space-y-6">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircleIcon sx={{ fontSize: 16 }} /> Hasil
+                        Maintenance
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <CheckCircleIcon sx={{ fontSize: 14 }} /> Status
+                            Perangkat
+                          </label>
+                          <select
+                            required
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
+                            value={pmrForm.status}
+                            onChange={(e) =>
+                              setPmrForm({ ...pmrForm, status: e.target.value })
+                            }
+                          >
+                            <option>Normal</option>
+                            <option>Butuh Maintenance Lanjutan</option>
+                            <option>Rusak / Butuh Penggantian</option>
+                            <option>Mati Total</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <BuildIcon sx={{ fontSize: 14 }} /> Tindakan
+                            Maintenance
+                          </label>
+                          <select
+                            required
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
+                            value={pmrForm.action}
+                            onChange={(e) =>
+                              setPmrForm({ ...pmrForm, action: e.target.value })
+                            }
+                          >
+                            <option value="">Pilih Tindakan</option>
+                            <option>Pemasangan Baru</option>
+                            <option>Pemeliharaan Rutin</option>
+                            <option>Perbaikan</option>
+                            <option>Penggantian</option>
+                            <option>Pemindahan Perangkat</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                          <DescriptionIcon sx={{ fontSize: 14 }} /> Catatan
+                          Maintenance
+                        </label>
+                        <textarea
+                          rows={3}
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all resize-none"
+                          value={pmrForm.notes}
+                          onChange={(e) =>
+                            setPmrForm({ ...pmrForm, notes: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full py-5 rounded-[2rem] bg-slate-900 text-white text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                      >
+                        {submitting ? (
+                          "MENGIRIM..."
+                        ) : (
+                          <>
+                            <SendIcon sx={{ fontSize: 18 }} /> KIRIM LAPORAN PMR
+                          </>
+                        )}
+                      </button>
+                      <p className="text-[9px] text-center text-slate-400 mt-4 font-bold uppercase tracking-widest">
+                        Data logistik (jarak & bbm) akan tersimpan otomatis ke
+                        dalam sistem
+                      </p>
+                    </div>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         </main>

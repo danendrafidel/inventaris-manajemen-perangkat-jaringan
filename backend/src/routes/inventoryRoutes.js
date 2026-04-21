@@ -11,6 +11,10 @@ router.put('/inventory/devices/:id', inventoryController.updateDevice);
 router.delete('/inventory/devices/:id', inventoryController.deleteDevice);
 router.get('/dashboard', inventoryController.getDashboard);
 
+// PMR Routes
+router.post('/pmr', inventoryController.createPmrReport);
+router.get('/pmr', inventoryController.getAllPmrReports);
+
 // User Management Routes
 router.get('/users', inventoryController.getAllUsers);
 router.post('/users', inventoryController.createUser);

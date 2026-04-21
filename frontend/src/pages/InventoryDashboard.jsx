@@ -14,6 +14,7 @@ import {
 import Sidebar from "../components/Sidebar";
 import StatusPill from "../components/StatusPill";
 import Barcode from "../components/Barcode";
+import ErrorAlert from "../components/ErrorAlert";
 import Toast from "../components/Toast";
 
 // MUI Icons
@@ -35,12 +36,15 @@ import SearchIcon from "@mui/icons-material/Search";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import FolderIcon from "@mui/icons-material/Folder";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 export default function InventoryDashboard() {
   const navigate = useNavigate();
   const [user] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
   const [showFilters, setShowFilters] = useState(false);
 
   // Modal States
@@ -55,8 +59,8 @@ export default function InventoryDashboard() {
   const [items, setItems] = useState([]);
   const [options, setOptions] = useState({
     regions: [],
-    stos: [],
-    areas: [],
+    stos: [], // Now expected to be [{id, name, area_id}, ...]
+    areas: [], // Now expected to be [{id, name}, ...]
     statuses: [],
     deviceTypes: [],
   });
@@ -64,13 +68,13 @@ export default function InventoryDashboard() {
   const [search, setSearch] = useState("");
   const [draftSearch, setDraftSearch] = useState("");
   const [filters, setFilters] = useState({
-    sto: "",
-    area: "",
+    sto_id: "",
+    area_id: "",
     status: "",
   });
   const [draftFilters, setDraftFilters] = useState({
-    sto: "",
-    area: "",
+    sto_id: "",
+    area_id: "",
     status: "",
   });
   const [page, setPage] = useState(1);
@@ -86,11 +90,23 @@ export default function InventoryDashboard() {
     serialNumber: "",
     status: "",
     room: "",
-    area: "",
-    sto: "",
+    area_id: "",
+    sto_id: "",
     totalPort: "",
     idlePort: "",
   });
+
+  // Filtered STOs based on current Area selection
+  const filteredStosForDraft = useMemo(() => {
+    if (!draftFilters.area_id) return options.stos;
+    return options.stos.filter(s => s.area_id == draftFilters.area_id);
+  }, [options.stos, draftFilters.area_id]);
+
+  const filteredStosForForm = useMemo(() => {
+    if (!formData.area_id) return options.stos;
+    return options.stos.filter(s => s.area_id == formData.area_id);
+  }, [options.stos, formData.area_id]);
+
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -111,23 +127,55 @@ export default function InventoryDashboard() {
     [total, limit],
   );
 
+  const sortedItems = useMemo(() => {
+    let sortableItems = [...items];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key] || "";
+        let bValue = b[sortConfig.key] || "";
+
+        if (typeof aValue === "string") aValue = aValue.toLowerCase();
+        if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [items, sortConfig]);
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
   useEffect(() => {
     if (user) {
-      // Define base filter params based on user role
-      const roleParams = {};
-      if (role !== "admin") {
-        roleParams.area = user.area;
-      }
-
-      loadData(roleParams);
+      loadData();
     } else navigate("/", { replace: true });
   }, [user, page, search, filters]);
 
-  const loadData = async (roleParams = {}) => {
+  const loadData = async () => {
     setLoading(true);
+    setError("");
+
+    // Define base filter params based on user role
+    const roleParams = {};
+    if (role !== "admin") {
+      roleParams.area_id = user.area_id;
+    }
+
     try {
       const [s, o, d] = await Promise.all([
-        fetchInventoryStats({ role, email: user.email, ...roleParams }),
+        fetchInventoryStats({ role, email: user.email, ...roleParams, area_id: filters.area_id || roleParams.area_id }),
         fetchInventoryOptions({ role, email: user.email }),
         fetchInventoryDevices({
           role,
@@ -145,6 +193,7 @@ export default function InventoryDashboard() {
       setTotal(d.total);
     } catch (err) {
       setError(err.message);
+      showNotify(err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -160,8 +209,8 @@ export default function InventoryDashboard() {
       serialNumber: "",
       status: "OPERATED",
       room: "",
-      area: "",
-      sto: "",
+      area_id: "",
+      sto_id: "",
       totalPort: "",
       idlePort: "",
     });
@@ -170,7 +219,11 @@ export default function InventoryDashboard() {
 
   const handleOpenEdit = (item) => {
     setSelectedItem(item);
-    setFormData({ ...item });
+    setFormData({ 
+      ...item,
+      area_id: item.area_id || "",
+      sto_id: item.sto_id || ""
+    });
     setShowEditModal(true);
     setShowDetailModal(false);
   };
@@ -280,7 +333,11 @@ export default function InventoryDashboard() {
   };
 
   const handleDraftFilterChange = (key, value) => {
-    setDraftFilters((prev) => ({ ...prev, [key]: value }));
+    setDraftFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "area_id") next.sto_id = ""; // Reset STO if Area changes
+      return next;
+    });
   };
 
   const handleApplyFilters = () => {
@@ -290,7 +347,7 @@ export default function InventoryDashboard() {
   };
 
   const handleResetFilters = () => {
-    const initial = { sto: "", area: "", status: "" };
+    const initial = { sto_id: "", area_id: "", status: "" };
     setDraftFilters(initial);
     setFilters(initial);
     setSearch("");
@@ -337,6 +394,7 @@ export default function InventoryDashboard() {
         </header>
 
         <main className="p-4 md:p-8 max-w-full overflow-hidden">
+          <ErrorAlert message={error} onRetry={() => loadData()} />
           {/* Stats */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             {[
@@ -416,15 +474,15 @@ export default function InventoryDashboard() {
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "0.85rem",
                   }}
-                  value={draftFilters.area}
+                  value={draftFilters.area_id}
                   onChange={(e) =>
-                    handleDraftFilterChange("area", e.target.value)
+                    handleDraftFilterChange("area_id", e.target.value)
                   }
                 >
                   <option value="">Area</option>
                   {options.areas.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
+                    <option key={a.id} value={a.id}>
+                      {a.name}
                     </option>
                   ))}
                 </select>
@@ -438,15 +496,15 @@ export default function InventoryDashboard() {
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "0.85rem",
                   }}
-                  value={draftFilters.sto}
+                  value={draftFilters.sto_id}
                   onChange={(e) =>
-                    handleDraftFilterChange("sto", e.target.value)
+                    handleDraftFilterChange("sto_id", e.target.value)
                   }
                 >
                   <option value="">STO</option>
-                  {options.stos.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                  {filteredStosForDraft.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
                     </option>
                   ))}
                 </select>
@@ -527,17 +585,49 @@ export default function InventoryDashboard() {
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      DEVICE IDENTITY
+                    <th 
+                      onClick={() => handleSort('name')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        DEVICE IDENTITY
+                        {sortConfig.key === 'name' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                      ID / SERIAL
+                    <th 
+                      onClick={() => handleSort('deviceId')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        ID / SERIAL
+                        {sortConfig.key === 'deviceId' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      LOCATION
+                    <th 
+                      onClick={() => handleSort('area')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        LOCATION
+                        {sortConfig.key === 'area' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      HEALTH STATUS
+                    <th 
+                      onClick={() => handleSort('status')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        HEALTH STATUS
+                        {sortConfig.key === 'status' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
                       PORTS (IDLE/TOT)
@@ -554,7 +644,7 @@ export default function InventoryDashboard() {
                         <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
                       </td>
                     </tr>
-                  ) : items.length === 0 ? (
+                  ) : sortedItems.length === 0 ? (
                     <tr>
                       <td
                         colSpan={6}
@@ -564,7 +654,7 @@ export default function InventoryDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    items.map((item) => (
+                    sortedItems.map((item) => (
                       <tr
                         key={item.id}
                         className="group hover:bg-slate-50/50 transition-colors"
@@ -662,12 +752,12 @@ export default function InventoryDashboard() {
                 <div className="py-20 text-center">
                   <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
                 </div>
-              ) : items.length === 0 ? (
+              ) : sortedItems.length === 0 ? (
                 <div className="py-20 text-center text-xs font-bold text-slate-400 uppercase">
                   No matching records found
                 </div>
               ) : (
-                items.map((item) => (
+                sortedItems.map((item) => (
                   <div key={item.id} className="p-4 space-y-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
@@ -934,15 +1024,19 @@ export default function InventoryDashboard() {
                     </label>
                     <select
                       className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all"
-                      value={formData.area}
+                      value={formData.area_id}
                       onChange={(e) =>
-                        setFormData({ ...formData, area: e.target.value })
+                        setFormData({ 
+                          ...formData, 
+                          area_id: e.target.value,
+                          sto_id: "" // Reset STO when area changes
+                        })
                       }
                     >
                       <option value="">Pilih Area</option>
                       {options.areas.map((v) => (
-                        <option key={v} value={v}>
-                          {v}
+                        <option key={v.id} value={v.id}>
+                          {v.name}
                         </option>
                       ))}
                     </select>
@@ -953,15 +1047,15 @@ export default function InventoryDashboard() {
                     </label>
                     <select
                       className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-white px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all"
-                      value={formData.sto}
+                      value={formData.sto_id}
                       onChange={(e) =>
-                        setFormData({ ...formData, sto: e.target.value })
+                        setFormData({ ...formData, sto_id: e.target.value })
                       }
                     >
                       <option value="">Pilih STO</option>
-                      {options.stos.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
+                      {filteredStosForForm.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
                         </option>
                       ))}
                     </select>

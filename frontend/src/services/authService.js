@@ -1,5 +1,16 @@
 import { API_BASE } from "../constants";
 
+async function handleResponse(response) {
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    if (!response.ok) throw new Error(data.message || "Request failed");
+    return data;
+  } catch (e) {
+    throw new Error("The server returned an unexpected response. Please try again later.");
+  }
+}
+
 const STORAGE_KEY = "auth-user";
 
 export async function login(identity, password) {
@@ -11,10 +22,10 @@ export async function login(identity, password) {
     body: JSON.stringify({ identity, password }),
   });
 
-  const data = await response.json();
+  const data = await handleResponse(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || "Username/Email atau password salah");
+  if (!data.success) {
+    throw new Error(data.message || "Invalid credentials");
   }
 
   return data.user;

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, persistUser } from "../services/authService";
 import telkomLogo from "../assets/Logo Telkom.png";
+import ErrorAlert from "../components/ErrorAlert";
+import Toast from "../components/Toast";
 import AnalyticsIcon from "@mui/icons-material/Analytics";
 import StorageIcon from "@mui/icons-material/Storage";
 import BuildIcon from "@mui/icons-material/Build";
@@ -18,6 +20,11 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notification, setNotification] = useState({ open: false, message: "", severity: "error" });
+
+  const showNotify = (message, severity = "error") => {
+    setNotification({ open: true, message, severity });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +36,9 @@ export default function LoginPage() {
       persistUser(user, remember);
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Terjadi kesalahan saat login");
+      const message = err.message || "Terjadi kesalahan saat login";
+      setError(message);
+      showNotify(message, "error");
     } finally {
       setLoading(false);
     }
@@ -37,6 +46,10 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-slate-50 overflow-hidden px-4 py-12 md:py-0">
+      <Toast
+        {...notification}
+        onClose={() => setNotification({ ...notification, open: false })}
+      />
       {/* Background blobs / shapes - More "busy" animations */}
       <div className="absolute top-0 -left-10 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
       <div className="absolute top-0 -right-10 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
@@ -115,11 +128,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {error && (
-            <div className="mb-8 rounded-2xl border-l-4 border-rose-500 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700 animate-in fade-in slide-in-from-top-2">
-              ⚠️ {error}
-            </div>
-          )}
+          <ErrorAlert message={error} />
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2 opacity-0 animate-fade-in-up animation-delay-200">

@@ -9,6 +9,7 @@ import {
 import { fetchInventoryOptions } from "../services/inventoryService";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
+import ErrorAlert from "../components/ErrorAlert";
 
 // Icons
 import EditIcon from "@mui/icons-material/Edit";
@@ -75,7 +76,7 @@ export default function Profile() {
         name: p.name,
         email: p.email,
         nik: p.nik || "",
-        area: p.area || "",
+        area_id: p.area_id || "",
         office_id: p.office_id || "",
       });
       setOptions({
@@ -83,8 +84,9 @@ export default function Profile() {
         offices: Array.isArray(o?.offices) ? o.offices : [],
       });
     } catch (err) {
-      showNotify(err.message, "error");
-      setLoadError(err.message || "Gagal memuat profil");
+      const message = err.message || "Gagal memuat profil";
+      showNotify(message, "error");
+      setLoadError(message);
     } finally {
       setLoading(false);
     }
@@ -103,7 +105,8 @@ export default function Profile() {
       setIsEditing(false);
       showNotify("Profil berhasil diperbarui");
     } catch (err) {
-      showNotify(err.message, "error");
+      const message = err.message || "Gagal memperbarui profil";
+      showNotify(message, "error");
     }
   };
 
@@ -119,7 +122,8 @@ export default function Profile() {
       setPasswords({ current: "", new: "", confirm: "" });
       showNotify("Password berhasil diubah");
     } catch (err) {
-      showNotify(err.message, "error");
+      const message = err.message || "Gagal mengubah password";
+      showNotify(message, "error");
     }
   };
 
@@ -157,20 +161,7 @@ export default function Profile() {
             </div>
           )}
 
-          {loadError && (
-            <div className="mb-6 rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
-              ⚠️ {loadError}
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={loadData}
-                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white hover:bg-rose-700"
-                >
-                  Coba Lagi
-                </button>
-              </div>
-            </div>
-          )}
+          <ErrorAlert message={loadError} onRetry={loadData} />
 
           {!profile && !loading && !loadError ? (
             <div className="rounded-4xl md:rounded-[2.5rem] border border-slate-200 bg-white p-8 text-center text-slate-500">
@@ -288,15 +279,15 @@ export default function Profile() {
                   <select
                     disabled={!isEditing}
                     className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
-                    value={formData.area}
+                    value={formData.area_id}
                     onChange={(e) =>
-                      setFormData({ ...formData, area: e.target.value })
+                      setFormData({ ...formData, area_id: e.target.value })
                     }
                   >
                     <option value="">Pilih Area</option>
                     {options.areas.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
+                      <option key={a.id} value={a.id}>
+                        {a.name}
                       </option>
                     ))}
                   </select>
