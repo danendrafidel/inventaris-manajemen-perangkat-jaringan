@@ -72,9 +72,28 @@ export default function FormPMR() {
   // PMR Form Fields
   const [pmrForm, setPmrForm] = useState({
     maintenance_date: new Date().toISOString().split("T")[0],
-    status: "Normal",
+    status: "Baik",
     action: "",
     notes: "",
+    // Data Perangkat (Editable)
+    device_type: "",
+    serial_number: "",
+    sto: "",
+    room: "",
+    ip: "",
+    // Detail Port
+    port_capacity: "",
+    port_idle: "",
+    port_lan: "",
+    port_sfp: "",
+    port_good: "",
+    port_bad: "",
+    port_notes: "",
+    // Tes Koneksi
+    ping_dns: "",
+    attenuation: "",
+    ping_client: "",
+    speed_test: "",
   });
 
   const [notification, setNotification] = useState({
@@ -199,6 +218,19 @@ export default function FormPMR() {
       });
       setSearchResults([]);
       setSearchTerm(device.name);
+
+      // Pre-fill form with device data
+      setPmrForm((prev) => ({
+        ...prev,
+        device_type: device.deviceType || "",
+        serial_number: device.serialNumber || "",
+        sto: device.sto || "",
+        room: device.room || "",
+        ip: device.ip || "",
+        port_capacity: device.totalPort || "",
+        port_idle: device.idlePort || "",
+      }));
+
       showNotify(`Perangkat terpilih: ${device.name}`);
     } else {
       showNotify("Lokasi STO perangkat tidak valid", "error");
@@ -225,9 +257,28 @@ export default function FormPMR() {
       // Reset form
       setPmrForm({
         maintenance_date: new Date().toISOString().split("T")[0],
-        status: "Normal",
+        status: "Baik",
         action: "",
         notes: "",
+        // Data Perangkat
+        device_type: "",
+        serial_number: "",
+        sto: "",
+        room: "",
+        ip: "",
+        // Detail Port
+        port_capacity: "",
+        port_idle: "",
+        port_lan: "",
+        port_sfp: "",
+        port_good: "",
+        port_bad: "",
+        port_notes: "",
+        // Tes Koneksi
+        ping_dns: "",
+        attenuation: "",
+        ping_client: "",
+        speed_test: "",
       });
       setFoundDevice(null);
       setDestination(null);
@@ -505,7 +556,7 @@ export default function FormPMR() {
                 <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm animate-in fade-in zoom-in-95">
                   <form onSubmit={handleSubmit} className="space-y-8">
                     {/* Row 1: basic Info from screenshot 1 */}
-                    <div className="space-y-4 pb-8 border-b border-slate-100">
+                    <div className="space-y-4 pb-4">
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
                         <DescriptionIcon sx={{ fontSize: 16 }} /> Informasi Umum
                       </h3>
@@ -543,8 +594,286 @@ export default function FormPMR() {
                       </div>
                     </div>
 
+                    {/* Data Perangkat Segment */}
+                    <div className="space-y-6 pt-4 border-t border-slate-100">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <RouterIcon sx={{ fontSize: 16 }} /> Data Perangkat
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Tipe
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.device_type}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                device_type: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Serial Number
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.serial_number}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                serial_number: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            STO
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.sto}
+                            onChange={(e) =>
+                              setPmrForm({ ...pmrForm, sto: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Ruang
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.room}
+                            onChange={(e) =>
+                              setPmrForm({ ...pmrForm, room: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            IP Address
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.ip}
+                            onChange={(e) =>
+                              setPmrForm({ ...pmrForm, ip: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detail Port Segment */}
+                    <div className="space-y-6 pt-8 border-t border-slate-100">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <BuildIcon sx={{ fontSize: 16 }} /> Detail Port
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Kapasitas Port
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.port_capacity}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                port_capacity: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Port Idle
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.port_idle}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                port_idle: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Port LAN
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.port_lan}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                port_lan: e.target.value,
+                              })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Port SFP
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.port_sfp}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                port_sfp: e.target.value,
+                              })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Port Baik
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.port_good}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                port_good: e.target.value,
+                              })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Port Rusak
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.port_bad}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                port_bad: e.target.value,
+                              })
+                            }
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="md:col-span-3 lg:col-span-4 space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Keterangan Port
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.port_notes}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                port_notes: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tes Koneksi Segment */}
+                    <div className="space-y-6 pt-8 border-t border-slate-100">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircleIcon sx={{ fontSize: 16 }} /> Tes Koneksi
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Ping DNS
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.ping_dns}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                ping_dns: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Redaman
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.attenuation}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                attenuation: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Ping Client
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.ping_client}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                ping_client: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                            Speed Test
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+                            value={pmrForm.speed_test}
+                            onChange={(e) =>
+                              setPmrForm({
+                                ...pmrForm,
+                                speed_test: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* technical fields from screenshot 2 */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 pt-8 border-t border-slate-100">
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
                         <CheckCircleIcon sx={{ fontSize: 16 }} /> Hasil
                         Maintenance
@@ -563,10 +892,9 @@ export default function FormPMR() {
                               setPmrForm({ ...pmrForm, status: e.target.value })
                             }
                           >
-                            <option>Normal</option>
-                            <option>Butuh Maintenance Lanjutan</option>
-                            <option>Rusak / Butuh Penggantian</option>
-                            <option>Mati Total</option>
+                            <option>Baik</option>
+                            <option>Perlu Perbaikan</option>
+                            <option>Rusak</option>
                           </select>
                         </div>
 
