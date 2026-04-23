@@ -143,7 +143,7 @@ export default function MappingSto() {
       setStos(stoData);
       setAreas(areaData);
     } catch (err) {
-      const message = "The server returned an unexpected response. Please try again later.";
+      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       setError(message);
       showNotify(message, "error");
     } finally {
@@ -178,7 +178,7 @@ export default function MappingSto() {
       setShowModal(false);
       loadData();
     } catch (err) {
-      const message = "The server returned an unexpected response. Please try again later.";
+      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -190,7 +190,7 @@ export default function MappingSto() {
         showNotify("STO berhasil dihapus");
         loadData();
       } catch (err) {
-        const message = "The server returned an unexpected response. Please try again later.";
+        const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
         showNotify(message, "error");
       }
     }
@@ -202,7 +202,7 @@ export default function MappingSto() {
       showNotify("Status STO berhasil diubah");
       loadData();
     } catch (err) {
-      const message = "The server returned an unexpected response. Please try again later.";
+      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -242,12 +242,12 @@ export default function MappingSto() {
                 }}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
               >
-                <AddIcon sx={{ fontSize: 18 }} /> ADD STO
+                <AddIcon sx={{ fontSize: 18 }} /> TAMBAH STO
               </button>
               <Link
                 to="/profile"
                 className="h-9 w-9 rounded-xl bg-linear-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 uppercase hover:scale-110 transition-transform text-sm"
-                title="View Profile"
+                title="Lihat Profil"
               >
                 {user?.name?.charAt(0)}
               </Link>
@@ -260,8 +260,8 @@ export default function MappingSto() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 {[
                     { title: "TOTAL STO", value: stats.total, icon: <RouterIcon />, color: "bg-slate-600" },
-                    { title: "ACTIVE", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
-                    { title: "INACTIVE", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
+                    { title: "AKTIF", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
+                    { title: "TIDAK AKTIF", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
                 ].map((s, i) => (
                     <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
@@ -293,7 +293,7 @@ export default function MappingSto() {
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
-                        STO NAME
+                        NAMA STO
                         {sortConfig.key === 'name' && (
                           sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
                         )}
@@ -311,16 +311,16 @@ export default function MappingSto() {
                       </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                      STATISTICS
+                      STATISTIK
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                      COORDINATES
+                      KOORDINAT
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       STATUS
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
-                      ACTIONS
+                      AKSI
                     </th>
                   </tr>
                 </thead>
@@ -331,7 +331,7 @@ export default function MappingSto() {
                         colSpan={7}
                         className="px-6 py-10 text-center animate-pulse text-slate-400 font-bold"
                       >
-                        Loading...
+                        Memuat...
                       </td>
                     </tr>
                   ) : (
@@ -379,8 +379,8 @@ export default function MappingSto() {
                               className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${s.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`}
                               title={
                                 s.status === "active"
-                                  ? "Deactivate"
-                                  : "Activate"
+                                  ? "Nonaktifkan"
+                                  : "Aktifkan"
                               }
                             >
                               {s.status === "active" ? (
@@ -408,7 +408,7 @@ export default function MappingSto() {
                             <button
                               onClick={() => handleDelete(s.id)}
                               className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
-                              title="Delete"
+                              title="Hapus"
                             >
                               <DeleteIcon sx={{ fontSize: 16 }} />
                             </button>
@@ -516,10 +516,10 @@ export default function MappingSto() {
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-slate-900">
-                    {selectedSto ? "Update STO" : "Add STO"}
+                    {selectedSto ? "Update STO" : "Tambah STO"}
                   </h2>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Manage Infrastructure
+                    Kelola Infrastruktur
                   </p>
                 </div>
               </div>
@@ -534,7 +534,7 @@ export default function MappingSto() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-                  STO NAME
+                  NAMA STO
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -544,20 +544,20 @@ export default function MappingSto() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="Example: Pedurungan"
+                    placeholder="Contoh: Pedurungan"
                   />
                   <button
                     type="button"
                     onClick={handleGeocode}
                     className="px-4 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all"
                   >
-                    {isGeocoding ? "..." : "SEARCH"}
+                    {isGeocoding ? "..." : "CARI"}
                   </button>
                 </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-                  SELECT AREA
+                  PILIH AREA
                 </label>
                 <select
                   required
@@ -567,7 +567,7 @@ export default function MappingSto() {
                     setFormData({ ...formData, area_id: e.target.value })
                   }
                 >
-                  <option value="">-- Select Area --</option>
+                  <option value="">-- Pilih Area --</option>
                   {areas.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name}
@@ -624,7 +624,7 @@ export default function MappingSto() {
                 type="submit"
                 className="w-full py-4 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all"
               >
-                Save
+                SIMPAN
               </button>
             </form>
           </div>

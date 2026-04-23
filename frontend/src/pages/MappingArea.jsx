@@ -117,12 +117,12 @@ export default function MappingArea() {
           latitude: data[0].lat,
           longitude: data[0].lon,
         }));
-        showNotify("Location found!");
+        showNotify("Lokasi ditemukan!");
       } else {
-        showNotify("Location not found, please enter manually", "warning");
+        showNotify("Lokasi tidak ditemukan, silakan isi manual", "warning");
       }
     } catch {
-      showNotify("Failed to contact mapping service", "error");
+      showNotify("Gagal menghubungi layanan peta", "error");
     } finally {
       setIsGeocoding(false);
     }
@@ -135,7 +135,7 @@ export default function MappingArea() {
       const areaData = await fetchAllAreas();
       setAreas(areaData);
     } catch (err) {
-      const message = "The server returned an unexpected response. Please try again later.";
+      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       setError(message);
       showNotify(message, "error");
     } finally {
@@ -152,16 +152,16 @@ export default function MappingArea() {
     try {
       if (selectedArea) {
         await updateArea(selectedArea.id, formData);
-        showNotify("Area updated successfully");
+        showNotify("Area berhasil diperbarui");
       } else {
         await createArea(formData);
-        showNotify("Area added successfully");
+        showNotify("Area berhasil ditambahkan");
       }
       setShowModal(false);
       await loadData();
       window.dispatchEvent(new Event('areas-updated'));
     } catch (err) {
-      const message = "The server returned an unexpected response. Please try again later.";
+      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -169,16 +169,16 @@ export default function MappingArea() {
   const handleDelete = async (id) => {
     if (
       window.confirm(
-        "Delete this Area? All related STO data will also be deleted.",
+        "Hapus Area ini? Semua data STO terkait juga akan dihapus.",
       )
     ) {
       try {
         await deleteArea(id);
-        showNotify("Area deleted successfully");
+        showNotify("Area berhasil dihapus");
         loadData();
         window.dispatchEvent(new Event('areas-updated'));
       } catch (err) {
-        const message = "The server returned an unexpected response. Please try again later.";
+        const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
         showNotify(message, "error");
       }
     }
@@ -187,10 +187,10 @@ export default function MappingArea() {
   const handleToggleStatus = async (id) => {
     try {
       await toggleAreaStatus(id);
-      showNotify("Area status changed successfully");
+      showNotify("Status area berhasil diubah");
       loadData();
     } catch (err) {
-      const message = "The server returned an unexpected response. Please try again later.";
+      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -213,7 +213,7 @@ export default function MappingArea() {
                 MAPPING / <span className="text-blue-600">AREA</span>
               </div>
               <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
-                Manage Areas
+                Kelola Area
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -225,12 +225,12 @@ export default function MappingArea() {
                 }}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
               >
-                <AddIcon sx={{ fontSize: 18 }} /> ADD AREA
+                <AddIcon sx={{ fontSize: 18 }} /> TAMBAH AREA
               </button>
               <Link
                 to="/profile"
                 className="h-9 w-9 rounded-xl bg-linear-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 uppercase hover:scale-110 transition-transform text-sm"
-                title="View Profile"
+                title="Lihat Profil"
               >
                 {user?.name?.charAt(0)}
               </Link>
@@ -242,9 +242,9 @@ export default function MappingArea() {
           <ErrorAlert message={error} onRetry={loadData} />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 {[
-                    { title: "TOTAL AREAS", value: stats.total, icon: <PublicIcon />, color: "bg-slate-600" },
-                    { title: "ACTIVE", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
-                    { title: "INACTIVE", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
+                    { title: "TOTAL AREA", value: stats.total, icon: <PublicIcon />, color: "bg-slate-600" },
+                    { title: "AKTIF", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
+                    { title: "TIDAK AKTIF", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
                 ].map((s, i) => (
                     <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
@@ -277,23 +277,23 @@ export default function MappingArea() {
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
-                        AREA NAME
+                        NAMA AREA
                         {sortConfig.key === 'name' && (
                           sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
                         )}
                       </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                      STATISTICS
+                      STATISTIK
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
-                      COORDINATES
+                      KOORDINAT
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       STATUS
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
-                      ACTIONS
+                      AKSI
                     </th>
                   </tr>
                 </thead>
@@ -304,7 +304,7 @@ export default function MappingArea() {
                         colSpan={6}
                         className="px-6 py-10 text-center animate-pulse text-slate-400 font-bold"
                       >
-                        Loading...
+                        Memuat...
                       </td>
                     </tr>
                   ) : areas.length === 0 ? (
@@ -313,7 +313,7 @@ export default function MappingArea() {
                         colSpan={6}
                         className="px-6 py-10 text-center text-slate-400 font-bold"
                       >
-                        No data available
+                        Tidak ada data
                       </td>
                     </tr>
                   ) : (
@@ -367,8 +367,8 @@ export default function MappingArea() {
                               className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${c.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`}
                               title={
                                 c.status === "active"
-                                  ? "Deactivate"
-                                  : "Activate"
+                                  ? "Nonaktifkan"
+                                  : "Aktifkan"
                               }
                             >
                               {c.status === "active" ? (
@@ -395,7 +395,7 @@ export default function MappingArea() {
                             <button
                               onClick={() => handleDelete(c.id)}
                               className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
-                              title="Delete"
+                              title="Hapus"
                             >
                               <DeleteIcon sx={{ fontSize: 16 }} />
                             </button>
@@ -438,7 +438,7 @@ export default function MappingArea() {
                   <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
                     <p>
                       <span className="font-black text-slate-400 uppercase">
-                        <PersonIcon sx={{ fontSize: 12 }} /> Users:
+                        <PersonIcon sx={{ fontSize: 12 }} /> User:
                       </span>{" "}
                       {c.active_user_count}
                     </p>
@@ -508,10 +508,10 @@ export default function MappingArea() {
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-slate-900">
-                    {selectedArea ? "Update Area" : "Add Area"}
+                    {selectedArea ? "Update Area" : "Tambah Area"}
                   </h2>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Manage Region
+                    Kelola Wilayah
                   </p>
                 </div>
               </div>
@@ -526,7 +526,7 @@ export default function MappingArea() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-                  AREA NAME
+                  NAMA AREA
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -536,14 +536,14 @@ export default function MappingArea() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="Example: Semarang"
+                    placeholder="Contoh: Semarang"
                   />
                   <button
                     type="button"
                     onClick={handleGeocode}
                     className="px-4 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all"
                   >
-                    {isGeocoding ? "..." : "SEARCH"}
+                    {isGeocoding ? "..." : "CARI"}
                   </button>
                 </div>
               </div>
@@ -596,7 +596,7 @@ export default function MappingArea() {
                 type="submit"
                 className="w-full py-4 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all"
               >
-                {selectedArea ? "SAVE CHANGES" : "ADD AREA"}
+                {selectedArea ? "SIMPAN PERUBAHAN" : "TAMBAH AREA"}
               </button>
             </form>
           </div>

@@ -535,7 +535,7 @@ exports.createPmrReport = async (req, res) => {
 
 exports.getAllPmrReports = async (req, res) => {
   try {
-    const { area_id, role, user_id } = req.query;
+    const { area_id, role, user_id, search, sto_id, status, start_date, end_date } = req.query;
     let where = [];
     let params = [];
 
@@ -549,6 +549,31 @@ exports.getAllPmrReports = async (req, res) => {
     if (user_id && role !== 'admin' && role !== 'officer') {
       params.push(user_id);
       where.push(`p.user_id = $${params.length}`);
+    }
+
+    if (search) {
+      params.push(`%${search}%`);
+      where.push(`(u.name ILIKE $${params.length} OR d.name ILIKE $${params.length} OR d.device_id ILIKE $${params.length})`);
+    }
+
+    if (sto_id) {
+      params.push(sto_id);
+      where.push(`d.sto_id = $${params.length}`);
+    }
+
+    if (status) {
+      params.push(status);
+      where.push(`p.status = $${params.length}`);
+    }
+
+    if (start_date) {
+      params.push(start_date);
+      where.push(`p.maintenance_date >= $${params.length}`);
+    }
+
+    if (end_date) {
+      params.push(end_date);
+      where.push(`p.maintenance_date <= $${params.length}`);
     }
 
     const whereClause = where.length > 0 ? "WHERE " + where.join(" AND ") : "";

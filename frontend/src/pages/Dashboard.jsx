@@ -96,7 +96,7 @@ export default function Dashboard() {
     fetchDashboardSummary(params.toString())
       .then(setDashboard)
       .catch((err) => {
-        const message = err.message || "The server returned an unexpected response. Please try again later.";
+        const message = err.message || "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
         setLoadError(message);
         showNotify(message, "error");
       });
@@ -187,10 +187,10 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
                 <span>Dashboard</span>
                 <span>/</span>
-                <span className="text-blue-600">OVERVIEW</span>
+                <span className="text-blue-600">GAMBARAN UMUM</span>
               </div>
               <h1 className="text-lg md:text-xl font-extrabold text-slate-900 tracking-tight">
-                Dashboard Overview
+                Gambaran Umum Dashboard
               </h1>
             </div>
           </div>
@@ -231,10 +231,10 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4 md:gap-6 text-[10px] md:text-xs font-bold text-blue-100">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    SYSTEM ACTIVE
+                    SISTEM AKTIF
                   </div>
                   <div className="hidden xs:block h-4 w-px bg-white/20" />
-                  <div className="hidden xs:block">VERSION 1.0</div>
+                  <div className="hidden xs:block">VERSI 1.0</div>
                 </div>
               </div>
             </div>
@@ -249,28 +249,28 @@ export default function Dashboard() {
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
-              title="TOTAL USERS"
+              title="TOTAL PENGGUNA"
               value={dashboard?.stats?.totalUsers ?? 0}
               suffix={dashboard?.meta?.usersSuffix}
               icon={<PeopleIcon />}
               tone="pink"
             />
             <StatCard
-              title="MANAGED DEVICES"
+              title="PERANGKAT DIKELOLA"
               value={dashboard?.stats?.totalDevices ?? 0}
               suffix={dashboard?.meta?.devicesSuffix}
               icon={<RouterIcon />}
               tone="blue"
             />
             <StatCard
-              title="ACTIVE LOANS"
+              title="PEMINJAMAN AKTIF"
               value={dashboard?.stats?.activeLoans ?? 0}
               suffix={dashboard?.meta?.loansSuffix}
               icon={<AssignmentIcon />}
               tone="emerald"
             />
             <StatCard
-              title="UNITS"
+              title="UNIT"
               value={dashboard?.stats?.units ?? 0}
               suffix={dashboard?.meta?.unitsSuffix}
               icon={<ApartmentIcon />}
@@ -283,10 +283,10 @@ export default function Dashboard() {
             <div className="lg:col-span-2 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                  System Summary
+                  Ringkasan Sistem
                 </h3>
                 <span className="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-200">
-                  Information System
+                  Sistem Informasi
                 </span>
               </div>
               <p className="text-slate-600 leading-relaxed font-medium text-base mb-8">
@@ -299,18 +299,18 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-2xl bg-slate-50 p-5 border border-slate-100 group hover:border-emerald-200 transition-colors">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                    Security Status
+                    Status Keamanan
                   </p>
                   <p className="text-sm font-bold text-emerald-600">
-                    ENCRYPTED & SECURE
+                    TERENKRIPSI & AMAN
                   </p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 p-5 border border-slate-100 group hover:border-blue-200 transition-colors">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                    Database Sync
+                    Sinkronisasi Database
                   </p>
                   <p className="text-sm font-bold text-blue-600">
-                    REAL-TIME ACTIVE
+                    AKTIF REAL-TIME
                   </p>
                 </div>
               </div>

@@ -147,11 +147,16 @@ export async function createPmrReport(pmrData) {
   return data.data;
 }
 
-export async function fetchPmrReports({ area_id, role, user_id } = {}) {
+export async function fetchPmrReports({ area_id, role, user_id, search = "", sto_id = "", status = "", start_date = "", end_date = "" } = {}) {
   const params = new URLSearchParams();
   if (area_id) params.set("area_id", area_id);
   if (role) params.set("role", role);
   if (user_id) params.set("user_id", user_id);
+  if (search) params.set("search", search);
+  if (sto_id) params.set("sto_id", sto_id);
+  if (status) params.set("status", status);
+  if (start_date) params.set("start_date", start_date);
+  if (end_date) params.set("end_date", end_date);
 
   const response = await fetch(`${API_BASE}/api/pmr?${params.toString()}`);
   const data = await handleResponse(response);
