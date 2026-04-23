@@ -13,7 +13,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
-export default function LogPMR() {
+export default function LaporanPMR() {
   const [user] = useState(() => getStoredUser());
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,10 +66,10 @@ export default function LogPMR() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                PMR / <span className="text-blue-600">LOG HISTORY</span>
+                PMR / <span className="text-blue-600">LAPORAN</span>
               </div>
               <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
-                Riwayat Preventive Maintenance
+                Laporan Preventive Maintenance
               </h1>
             </div>
             <button 

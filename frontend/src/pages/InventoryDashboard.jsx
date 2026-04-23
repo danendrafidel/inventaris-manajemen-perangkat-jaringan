@@ -44,7 +44,10 @@ export default function InventoryDashboard() {
   const [user] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "asc",
+  });
   const [showFilters, setShowFilters] = useState(false);
 
   // Modal States
@@ -99,12 +102,12 @@ export default function InventoryDashboard() {
   // Filtered STOs based on current Area selection
   const filteredStosForDraft = useMemo(() => {
     if (!draftFilters.area_id) return options.stos;
-    return options.stos.filter(s => s.area_id == draftFilters.area_id);
+    return options.stos.filter((s) => s.area_id == draftFilters.area_id);
   }, [options.stos, draftFilters.area_id]);
 
   const filteredStosForForm = useMemo(() => {
     if (!formData.area_id) return options.stos;
-    return options.stos.filter(s => s.area_id == formData.area_id);
+    return options.stos.filter((s) => s.area_id == formData.area_id);
   }, [options.stos, formData.area_id]);
 
   const [notification, setNotification] = useState({
@@ -116,6 +119,8 @@ export default function InventoryDashboard() {
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
   };
+
+  const DEVICE_STATUSES = ["OPERATED", "MAINTENANCE", "RUSAK"];
 
   const role = user?.role;
   const canEdit = role === "admin" || role === "officer";
@@ -158,16 +163,27 @@ export default function InventoryDashboard() {
   };
 
   useEffect(() => {
-    if (user) {
-      loadData();
-    } else navigate("/", { replace: true });
-  }, [user, page, search, filters]);
+    if (!user) {
+      navigate("/", { replace: true });
+      return;
+    }
+    
+    // Only set default filters if they are not yet set
+    if (role !== "admin" && !filters.area_id && user.area_id) {
+        const defaultFilters = { ...filters, area_id: user.area_id };
+        setFilters(defaultFilters);
+        setDraftFilters(defaultFilters);
+        return; // The next effect trigger will call loadData with the new filters
+    }
+    
+    loadData();
+  }, [user, page, search, filters, role]);
 
   const loadData = async () => {
+    console.log("Fetching data with filters:", filters);
     setLoading(true);
     setError("");
 
-    // Define base filter params based on user role
     const roleParams = {};
     if (role !== "admin") {
       roleParams.area_id = user.area_id;
@@ -175,7 +191,12 @@ export default function InventoryDashboard() {
 
     try {
       const [s, o, d] = await Promise.all([
-        fetchInventoryStats({ role, email: user.email, ...roleParams, area_id: filters.area_id || roleParams.area_id }),
+        fetchInventoryStats({
+          role,
+          email: user.email,
+          ...roleParams,
+          area_id: filters.area_id || roleParams.area_id,
+        }),
         fetchInventoryOptions({ role, email: user.email }),
         fetchInventoryDevices({
           role,
@@ -192,6 +213,7 @@ export default function InventoryDashboard() {
       setItems(d.items);
       setTotal(d.total);
     } catch (err) {
+      console.error("Fetch error:", err);
       setError(err.message);
       showNotify(err.message, "error");
     } finally {
@@ -219,10 +241,10 @@ export default function InventoryDashboard() {
 
   const handleOpenEdit = (item) => {
     setSelectedItem(item);
-    setFormData({ 
+    setFormData({
       ...item,
       area_id: item.area_id || "",
-      sto_id: item.sto_id || ""
+      sto_id: item.sto_id || "",
     });
     setShowEditModal(true);
     setShowDetailModal(false);
@@ -347,7 +369,11 @@ export default function InventoryDashboard() {
   };
 
   const handleResetFilters = () => {
-    const initial = { sto_id: "", area_id: "", status: "" };
+    const initial = {
+      sto_id: "",
+      area_id: role !== "admin" ? user.area_id : "",
+      status: "",
+    };
     setDraftFilters(initial);
     setFilters(initial);
     setSearch("");
@@ -412,7 +438,7 @@ export default function InventoryDashboard() {
               },
               {
                 title: "PERLU ATENSI",
-                value: stats?.stats?.perluPerhatian ?? 0,
+                value: (stats?.stats?.perluPerhatian ?? 0) + (items.filter(i => i.status === "RUSAK").length),
                 icon: <BoltIcon />,
                 color: "bg-amber-500",
               },
@@ -466,7 +492,11 @@ export default function InventoryDashboard() {
             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-center gap-3 flex-1">
                 <select
-                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
+                  className={`w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all appearance-none pr-10 ${
+                    role !== "admin"
+                      ? "opacity-50 cursor-not-allowed bg-slate-100"
+                      : "cursor-pointer"
+                  }`}
                   style={{
                     backgroundImage:
                       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
@@ -474,7 +504,8 @@ export default function InventoryDashboard() {
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "0.85rem",
                   }}
-                  value={draftFilters.area_id}
+                  value={role !== "admin" ? user.area_id : draftFilters.area_id}
+                  disabled={role !== "admin"}
                   onChange={(e) =>
                     handleDraftFilterChange("area_id", e.target.value)
                   }
@@ -510,27 +541,26 @@ export default function InventoryDashboard() {
                 </select>
 
                 <select
-                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
-                  style={{
-                    backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 0.75rem center",
-                    backgroundSize: "0.85rem",
-                  }}
-                  value={draftFilters.status}
-                  onChange={(e) =>
-                    handleDraftFilterChange("status", e.target.value)
-                  }
+                className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 0.75rem center",
+                  backgroundSize: "0.85rem",
+                }}
+                value={draftFilters.status}
+                onChange={(e) =>
+                  handleDraftFilterChange("status", e.target.value)
+                }
                 >
-                  <option value="">Status</option>
-                  {options.statuses.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <option value="">Status</option>
+                {DEVICE_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+                </select>              </div>
 
               <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
                 <button
@@ -585,48 +615,60 @@ export default function InventoryDashboard() {
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th 
-                      onClick={() => handleSort('name')}
+                    <th
+                      onClick={() => handleSort("name")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         DEVICE IDENTITY
-                        {sortConfig.key === 'name' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "name" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('deviceId')}
+                    <th
+                      onClick={() => handleSort("deviceId")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center justify-center gap-1">
                         ID / SERIAL
-                        {sortConfig.key === 'deviceId' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "deviceId" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('area')}
+                    <th
+                      onClick={() => handleSort("area")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         LOCATION
-                        {sortConfig.key === 'area' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "area" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('status')}
+                    <th
+                      onClick={() => handleSort("status")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         HEALTH STATUS
-                        {sortConfig.key === 'status' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "status" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
@@ -877,7 +919,7 @@ export default function InventoryDashboard() {
 
       {/* Form Modal (Add / Edit) */}
       {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
             onClick={() =>
@@ -1004,7 +1046,7 @@ export default function InventoryDashboard() {
                         setFormData({ ...formData, status: e.target.value })
                       }
                     >
-                      {options.statuses.map((s) => (
+                      {DEVICE_STATUSES.map((s) => (
                         <option key={s} value={s}>
                           {s}
                         </option>
@@ -1026,10 +1068,10 @@ export default function InventoryDashboard() {
                       className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all"
                       value={formData.area_id}
                       onChange={(e) =>
-                        setFormData({ 
-                          ...formData, 
+                        setFormData({
+                          ...formData,
                           area_id: e.target.value,
-                          sto_id: "" // Reset STO when area changes
+                          sto_id: "", // Reset STO when area changes
                         })
                       }
                     >
@@ -1153,7 +1195,7 @@ export default function InventoryDashboard() {
 
       {/* Complete Detail Modal */}
       {showDetailModal && selectedItem && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-2 md:p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-2 md:p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300"
             onClick={() => setShowDetailModal(false)}
@@ -1320,7 +1362,7 @@ export default function InventoryDashboard() {
       )}
       {/* Barcode Preview Modal */}
       {showBarcodeModal && selectedItem && (
-        <div className="fixed inset-0 z-[2010] flex items-center justify-center p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2010 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300"
             onClick={() => setShowBarcodeModal(false)}

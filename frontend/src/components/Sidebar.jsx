@@ -210,15 +210,15 @@ export default function Sidebar() {
                     <ListAltIcon sx={{ fontSize: 14 }} /> Formulir PMR
                   </Link>
                   <Link
-                    to="/pmr/log"
+                    to="/pmr/laporan"
                     onClick={() => setIsOpen(false)}
                     className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-                      isActive("/pmr/log")
+                      isActive("/pmr/laporan")
                         ? "bg-blue-50 text-blue-700"
                         : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                     }`}
                   >
-                    <HistoryIcon sx={{ fontSize: 14 }} /> Log PMR
+                    <HistoryIcon sx={{ fontSize: 14 }} /> Laporan PMR
                   </Link>
                 </div>
               )}

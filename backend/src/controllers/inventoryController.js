@@ -569,7 +569,7 @@ exports.getAllPmrReports = async (req, res) => {
     const { rows } = await db.query(query, params);
     res.json({ success: true, data: rows });
   } catch (error) {
-    handleError(res, error, "Gagal mengambil log PMR");
+    handleError(res, error, "Gagal mengambil Laporan PMR");
   }
 };
 

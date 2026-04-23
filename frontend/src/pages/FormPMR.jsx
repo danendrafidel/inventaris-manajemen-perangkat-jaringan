@@ -582,7 +582,6 @@ export default function FormPMR() {
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                             <PersonIcon sx={{ fontSize: 14 }} /> Teknisi
-                            Lapangan
                           </label>
                           <div className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4 text-sm font-black text-slate-600 flex items-center gap-3">
                             <div className="h-6 w-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black uppercase">
@@ -941,7 +940,7 @@ export default function FormPMR() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-5 rounded-[2rem] bg-slate-900 text-white text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                        className="w-full py-5 rounded-4xl bg-slate-900 text-white text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                       >
                         {submitting ? (
                           "MENGIRIM..."

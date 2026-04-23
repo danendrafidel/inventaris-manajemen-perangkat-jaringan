@@ -8,7 +8,7 @@ import MappingArea from "./pages/MappingArea";
 import MappingSto from "./pages/MappingSto";
 import MappingOffice from "./pages/MappingOffice";
 import FormPMR from './pages/FormPMR'
-import LogPMR from './pages/LogPMR'
+import LaporanPMR from './pages/LaporanPMR'
 import { getStoredUser } from './services/authService'
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
@@ -44,10 +44,10 @@ function App() {
           }
         />
         <Route
-          path="/pmr/log"
+          path="/pmr/laporan"
           element={
             <ProtectedRoute>
-              <LogPMR />
+              <LaporanPMR />
             </ProtectedRoute>
           }
         />
