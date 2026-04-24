@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStoredUser, persistUser } from "../services/authService";
 import {
@@ -54,6 +54,11 @@ export default function Profile() {
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
   };
+
+  const filteredOffices = useMemo(() => {
+    if (!formData.area_id) return options.offices;
+    return options.offices.filter((off) => off.area_id == formData.area_id);
+  }, [options.offices, formData.area_id]);
 
   useEffect(() => {
     if (!storedUser) {
@@ -306,7 +311,7 @@ export default function Profile() {
                     }
                   >
                     <option value="">Pilih Kantor</option>
-                    {options.offices.map((off) => (
+                    {filteredOffices.map((off) => (
                       <option key={off.val} value={off.val}>
                         {off.label}
                       </option>
