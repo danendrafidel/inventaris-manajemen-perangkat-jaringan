@@ -344,8 +344,8 @@ export default function LaporanPMR() {
                   }
                 >
                   <option value="">Semua Status</option>
-                  <option value="Baik">Baik</option>
-                  <option value="Perlu Perbaikan">Perlu Perbaikan</option>
+                  <option value="Operated">Operated</option>
+                  <option value="Maintenance">Maintenance</option>
                   <option value="Rusak">Rusak</option>
                 </select>
               </div>
@@ -430,8 +430,8 @@ export default function LaporanPMR() {
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase ${
-                            report.status === 'Baik' ? 'bg-emerald-50 text-emerald-700' : 
-                            report.status === 'Perlu Perbaikan' ? 'bg-amber-50 text-amber-700' :
+                            report.status === 'Operated' ? 'bg-emerald-50 text-emerald-700' : 
+                            report.status === 'Maintenance' ? 'bg-amber-50 text-amber-700' :
                             'bg-rose-50 text-rose-700'
                           }`}>
                             {report.status}

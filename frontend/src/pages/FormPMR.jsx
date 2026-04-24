@@ -891,8 +891,8 @@ export default function FormPMR() {
                               setPmrForm({ ...pmrForm, status: e.target.value })
                             }
                           >
-                            <option>Baik</option>
-                            <option>Perlu Perbaikan</option>
+                            <option>Operated</option>
+                            <option>Maintenance</option>
                             <option>Rusak</option>
                           </select>
                         </div>

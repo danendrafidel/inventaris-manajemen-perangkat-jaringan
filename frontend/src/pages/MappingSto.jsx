@@ -71,7 +71,7 @@ export default function MappingSto() {
 
   const displayStos = useMemo(() => {
     if (isAdmin) return stos;
-    if (isOfficer) return stos.filter(s => s.area_id == user?.area_id);
+    if (isOfficer) return stos.filter((s) => s.area_id == user?.area_id);
     return [];
   }, [stos, isAdmin, isOfficer, user?.area_id]);
 
@@ -190,8 +190,8 @@ export default function MappingSto() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isOfficer && formData.area_id != user?.area_id) {
-       showNotify("Anda hanya dapat mengelola STO di area Anda", "error");
-       return;
+      showNotify("Anda hanya dapat mengelola STO di area Anda", "error");
+      return;
     }
 
     try {
@@ -212,7 +212,7 @@ export default function MappingSto() {
   };
 
   const handleDelete = async (id) => {
-    const sto = stos.find(s => s.id === id);
+    const sto = stos.find((s) => s.id === id);
     if (!canManage(sto)) return;
 
     if (window.confirm("Hapus STO ini?")) {
@@ -229,7 +229,7 @@ export default function MappingSto() {
   };
 
   const handleToggleStatus = async (id) => {
-    const sto = stos.find(s => s.id === id);
+    const sto = stos.find((s) => s.id === id);
     if (!canManage(sto)) return;
 
     try {
@@ -628,7 +628,7 @@ export default function MappingSto() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="Contoh: Pedurungan"
+                    placeholder="Contoh: Kebalen"
                   />
                   <button
                     type="button"
@@ -646,7 +646,7 @@ export default function MappingSto() {
                 <select
                   required
                   disabled={isOfficer}
-                  className={`w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none ${isOfficer ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none ${isOfficer ? "opacity-70 cursor-not-allowed" : ""}`}
                   value={formData.area_id}
                   onChange={(e) =>
                     setFormData({ ...formData, area_id: e.target.value })

@@ -167,15 +167,15 @@ export default function InventoryDashboard() {
       navigate("/", { replace: true });
       return;
     }
-    
+
     // Only set default filters if they are not yet set
     if (role !== "admin" && !filters.area_id && user.area_id) {
-        const defaultFilters = { ...filters, area_id: user.area_id };
-        setFilters(defaultFilters);
-        setDraftFilters(defaultFilters);
-        return; // The next effect trigger will call loadData with the new filters
+      const defaultFilters = { ...filters, area_id: user.area_id };
+      setFilters(defaultFilters);
+      setDraftFilters(defaultFilters);
+      return; // The next effect trigger will call loadData with the new filters
     }
-    
+
     loadData();
   }, [user, page, search, filters, role]);
 
@@ -438,7 +438,9 @@ export default function InventoryDashboard() {
               },
               {
                 title: "PERLU ATENSI",
-                value: (stats?.stats?.perluPerhatian ?? 0) + (items.filter(i => i.status === "RUSAK").length),
+                value:
+                  (stats?.stats?.perluPerhatian ?? 0) +
+                  items.filter((i) => i.status === "RUSAK").length,
                 icon: <BoltIcon />,
                 color: "bg-amber-500",
               },
@@ -517,7 +519,6 @@ export default function InventoryDashboard() {
                     </option>
                   ))}
                 </select>
-
                 <select
                   className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
                   style={{
@@ -539,28 +540,28 @@ export default function InventoryDashboard() {
                     </option>
                   ))}
                 </select>
-
                 <select
-                className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
-                style={{
-                  backgroundImage:
-                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 0.75rem center",
-                  backgroundSize: "0.85rem",
-                }}
-                value={draftFilters.status}
-                onChange={(e) =>
-                  handleDraftFilterChange("status", e.target.value)
-                }
+                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
+                  style={{
+                    backgroundImage:
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 0.75rem center",
+                    backgroundSize: "0.85rem",
+                  }}
+                  value={draftFilters.status}
+                  onChange={(e) =>
+                    handleDraftFilterChange("status", e.target.value)
+                  }
                 >
-                <option value="">Status</option>
-                {DEVICE_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-                </select>              </div>
+                  <option value="">Status</option>
+                  {DEVICE_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>{" "}
+              </div>
 
               <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
                 <button
@@ -1065,9 +1066,9 @@ export default function InventoryDashboard() {
                       AREA
                     </label>
                     <select
-                      className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== 'admin' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" ? "opacity-70 cursor-not-allowed" : ""}`}
                       value={formData.area_id}
-                      disabled={role !== 'admin'}
+                      disabled={role !== "admin"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
