@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import { fetchPmrReports, fetchInventoryOptions } from "../services/inventoryService";
 import Sidebar from "../components/Sidebar";
@@ -28,6 +29,7 @@ import SpeedIcon from "@mui/icons-material/Speed";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
 
 export default function LaporanPMR() {
+  const navigate = useNavigate();
   const [user] = useState(() => getStoredUser());
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -354,20 +356,24 @@ export default function LaporanPMR() {
       <div className="flex-1 md:ml-64">
         <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                PMR / <span className="text-blue-600">LAPORAN</span>
+            <div className="flex items-center gap-4">
+              <div className="w-10 md:hidden" />
+              <div>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                  PMR / <span className="text-blue-600">LAPORAN</span>
+                </div>
+                <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
+                  Laporan Preventive Maintenance
+                </h1>
               </div>
-              <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
-                Laporan Preventive Maintenance
-              </h1>
             </div>
-            <button 
-              onClick={loadData}
-              className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-4 py-2 text-xs font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+            <Link
+              to="/profile"
+              className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold tracking-tighter shadow-md shadow-blue-200 uppercase hover:scale-110 transition-transform text-sm md:text-base"
+              title="Lihat Profil"
             >
-              <HistoryIcon sx={{ fontSize: 16 }} /> REFRESH
-            </button>
+              {user.name?.charAt(0)}
+            </Link>
           </div>
         </header>
 
@@ -385,18 +391,18 @@ export default function LaporanPMR() {
                 onClick: () => handleResetFilters()
               },
               {
-                title: "STATUS BAIK",
+                title: "STATUS OPERATED",
                 value: stats.normal,
                 icon: <VerifiedIcon />,
                 color: "bg-emerald-500",
-                onClick: () => setStatusFilter("Baik")
+                onClick: () => setStatusFilter("Operated")
               },
               {
                 title: "PERLU ATENSI",
                 value: stats.perhatian,
                 icon: <BoltIcon />,
                 color: "bg-amber-500",
-                onClick: () => setStatusFilter("Perlu Perbaikan")
+                onClick: () => setStatusFilter("Maintenance")
               },
               {
                 title: "TOTAL TEKNISI",
@@ -416,12 +422,12 @@ export default function LaporanPMR() {
                     <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">
                       {c.title}
                     </p>
-                    <p className="text-3xl font-black text-slate-900">
+                    <p className="text-2xl md:text-3xl font-black text-slate-900">
                       {c.value}
                     </p>
                   </div>
                   <div
-                    className={`h-12 w-12 rounded-xl flex items-center justify-center text-xl shadow-lg ${c.color} text-white`}
+                    className={`h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center text-lg md:text-xl shadow-lg ${c.color} text-white`}
                   >
                     {c.icon}
                   </div>
@@ -560,28 +566,28 @@ export default function LaporanPMR() {
           </section>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[900px]">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">WAKTU</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">PERANGKAT</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">TEKNISI</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">STATUS</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">TINDAKAN</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">AKSI</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-10 text-center text-slate-400 font-bold animate-pulse">
+                      <td colSpan={5} className="px-6 py-10 text-center text-slate-400 font-bold animate-pulse">
                         Memuat riwayat maintenance...
                       </td>
                     </tr>
                   ) : reports.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-20 text-center">
+                      <td colSpan={5} className="px-6 py-20 text-center">
                         <div className="flex flex-col items-center gap-2">
                           <HistoryIcon sx={{ fontSize: 48 }} className="text-slate-200" />
                           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada riwayat PMR</p>
@@ -627,11 +633,6 @@ export default function LaporanPMR() {
                             {report.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <p className="text-xs font-medium text-slate-600 line-clamp-1 max-w-[200px]" title={report.action}>
-                            {report.action}
-                          </p>
-                        </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button 
@@ -656,6 +657,74 @@ export default function LaporanPMR() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {loading ? (
+                 <div className="p-10 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs">
+                    Memuat Data...
+                 </div>
+              ) : reports.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                    Tidak ada laporan
+                </div>
+              ) : (
+                reports.map((report) => (
+                  <div key={report.id} className="p-4 space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                          <StorageIcon sx={{ fontSize: 20 }} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-slate-900 uppercase">{report.device_name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{report.device_code}</p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[8px] font-black uppercase ${
+                        report.status === 'Operated' ? 'bg-emerald-50 text-emerald-700' : 
+                        report.status === 'Maintenance' ? 'bg-amber-50 text-amber-700' :
+                        'bg-rose-50 text-rose-700'
+                      }`}>
+                        {report.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 rounded-2xl p-3">
+                       <div>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Waktu</p>
+                          <p className="text-[10px] font-bold text-slate-700">
+                            {new Date(report.maintenance_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} · {new Date(report.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                       </div>
+                       <div>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Teknisi</p>
+                          <p className="text-[10px] font-bold text-slate-700 truncate">{report.technician_name}</p>
+                       </div>
+                       <div className="col-span-2">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Lokasi STO</p>
+                          <p className="text-[10px] font-bold text-slate-700">{report.device_sto}</p>
+                       </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleViewDetail(report)}
+                        className="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2"
+                      >
+                        <VisibilityIcon sx={{ fontSize: 14 }} /> DETAIL
+                      </button>
+                      <button 
+                        onClick={() => handlePrint(report)}
+                        className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                      >
+                        <FileDownloadIcon sx={{ fontSize: 14 }} /> PDF
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </main>
       </div>
@@ -667,10 +736,10 @@ export default function LaporanPMR() {
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={() => setShowDetailModal(false)}
           />
-          <div className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] flex flex-col">
-            <header className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-4">
-                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
+          <div className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[95vh] md:max-h-[90vh] flex flex-col">
+            <header className="p-5 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
                   selectedReport.status === 'Operated' ? 'bg-emerald-500 shadow-emerald-100' :
                   selectedReport.status === 'Maintenance' ? 'bg-amber-500 shadow-amber-100' :
                   'bg-rose-500 shadow-rose-100'
@@ -678,14 +747,14 @@ export default function LaporanPMR() {
                   <HistoryIcon />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Detail Laporan PMR</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Laporan ID: PMR-{selectedReport.id}</p>
+                  <h2 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">Detail Laporan PMR</h2>
+                  <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Laporan ID: PMR-{selectedReport.id}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                 <button 
                   onClick={() => handlePrint(selectedReport)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] md:text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
                 >
                   <PrintIcon sx={{ fontSize: 16 }} /> CETAK PDF
                 </button>
@@ -698,8 +767,8 @@ export default function LaporanPMR() {
               </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6 md:p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex-1 overflow-y-auto p-5 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 {/* Section 1: General Info */}
                 <div className="space-y-6">
                   <div className="space-y-3">
@@ -707,7 +776,7 @@ export default function LaporanPMR() {
                       <PublicIcon sx={{ fontSize: 14 }} /> Informasi Umum
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-[9px] font-bold text-slate-400 uppercase">Tanggal</p>
                           <p className="text-sm font-black text-slate-700">
@@ -740,9 +809,9 @@ export default function LaporanPMR() {
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <LocalGasStationIcon sx={{ fontSize: 14 }} /> Logistik & Perjalanan
                     </h3>
-                    <div className="bg-slate-50 rounded-2xl p-5 flex items-center justify-between">
+                    <div className="bg-slate-50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
+                        <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
                           <RouteIcon sx={{ fontSize: 20 }} />
                         </div>
                         <div>
@@ -750,7 +819,7 @@ export default function LaporanPMR() {
                           <p className="text-sm font-black text-slate-700">{selectedReport.distance} KM</p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="sm:text-right">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Estimasi BBM</p>
                         <p className="text-sm font-black text-emerald-600">Rp {selectedReport.fuel_cost?.toLocaleString()}</p>
                       </div>
@@ -765,7 +834,7 @@ export default function LaporanPMR() {
                       <RouterIcon sx={{ fontSize: 14 }} /> Detail Perangkat
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-[9px] font-bold text-slate-400 uppercase">Nama / Tipe</p>
                           <p className="text-sm font-black text-slate-700 uppercase">{selectedReport.device_name} ({selectedReport.device_type})</p>
@@ -790,7 +859,7 @@ export default function LaporanPMR() {
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <LanIcon sx={{ fontSize: 14 }} /> Kapasitas Port
                     </h3>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {[
                         { label: 'Total', val: selectedReport.port_capacity, color: 'text-slate-700' },
                         { label: 'Idle', val: selectedReport.port_idle, color: 'text-slate-400' },
