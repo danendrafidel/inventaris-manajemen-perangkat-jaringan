@@ -501,14 +501,44 @@ exports.createPmrReport = async (req, res) => {
       status,
       action,
       notes,
+      // Data Perangkat
+      device_type,
+      serial_number,
+      sto,
+      room,
+      ip,
+      // Detail Port
+      port_capacity,
+      port_idle,
+      port_lan,
+      port_sfp,
+      port_good,
+      port_bad,
+      port_notes,
+      // Tes Koneksi
+      ping_dns,
+      attenuation,
+      ping_client,
+      speed_test,
+      // Logistik
       distance,
       fuel_cost,
     } = req.body;
 
     const query = `
       INSERT INTO pmr_reports (
-        user_id, device_id, maintenance_date, status, action, notes, distance, fuel_cost
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        user_id, device_id, maintenance_date, status, action, notes,
+        device_type, serial_number, sto, room, ip,
+        port_capacity, port_idle, port_lan, port_sfp, port_good, port_bad, port_notes,
+        ping_dns, attenuation, ping_client, speed_test,
+        distance, fuel_cost
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, 
+        $7, $8, $9, $10, $11, 
+        $12, $13, $14, $15, $16, $17, $18, 
+        $19, $20, $21, $22, 
+        $23, $24
+      )
       RETURNING *
     `;
 
@@ -519,6 +549,22 @@ exports.createPmrReport = async (req, res) => {
       status,
       action,
       notes,
+      device_type,
+      serial_number,
+      sto,
+      room,
+      ip,
+      port_capacity || 0,
+      port_idle || 0,
+      port_lan || 0,
+      port_sfp || 0,
+      port_good || 0,
+      port_bad || 0,
+      port_notes,
+      ping_dns,
+      attenuation,
+      ping_client,
+      speed_test,
       distance || 0,
       fuel_cost || 0,
     ]);

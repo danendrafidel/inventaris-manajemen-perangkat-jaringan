@@ -19,6 +19,13 @@ import VerifiedIcon from "@mui/icons-material/Verified";
 import BoltIcon from "@mui/icons-material/Bolt";
 import PublicIcon from "@mui/icons-material/Public";
 import RouterIcon from "@mui/icons-material/Router";
+import CloseIcon from "@mui/icons-material/Close";
+import PrintIcon from "@mui/icons-material/Print";
+import LocalGasStationIcon from "@mui/icons-material/LocalGasStation";
+import RouteIcon from "@mui/icons-material/Route";
+import LanIcon from "@mui/icons-material/Lan";
+import SpeedIcon from "@mui/icons-material/Speed";
+import ThermostatIcon from "@mui/icons-material/Thermostat";
 
 export default function LaporanPMR() {
   const [user] = useState(() => getStoredUser());
@@ -53,11 +60,194 @@ export default function LaporanPMR() {
     end_date: "",
   });
 
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
   };
 
   const role = user?.role;
+
+  const handleViewDetail = (report) => {
+    setSelectedReport(report);
+    setShowDetailModal(true);
+  };
+
+  const handlePrint = (report) => {
+    const printWindow = window.open("", "_blank");
+    const date = new Date(report.maintenance_date).toLocaleDateString('id-ID', { 
+      day: '2-digit', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Laporan PMR - ${report.device_name}</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; color: #333; }
+            .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+            .header h1 { margin: 0; color: #1e40af; }
+            .section { margin-bottom: 25px; }
+            .section-title { font-weight: bold; font-size: 14px; text-transform: uppercase; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+            .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; }
+            .field { margin-bottom: 8px; }
+            .label { font-size: 11px; color: #888; font-weight: bold; text-transform: uppercase; }
+            .value { font-size: 13px; font-weight: bold; margin-top: 2px; }
+            .status-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+            .status-Operated { background: #ecfdf5; color: #065f46; }
+            .status-Maintenance { background: #fffbeb; color: #92400e; }
+            .status-Rusak { background: #fef2f2; color: #991b1b; }
+            .notes { background: #f8fafc; padding: 15px; border-radius: 10px; font-size: 13px; font-style: italic; line-height: 1.5; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>LAPORAN PREVENTIVE MAINTENANCE</h1>
+            <p>Sistem Manajemen Inventaris Perangkat Jaringan</p>
+          </div>
+
+          <div class="section">
+            <div class="grid">
+              <div class="field">
+                <div class="label">Tanggal Maintenance</div>
+                <div class="value">${date}</div>
+              </div>
+              <div class="field">
+                <div class="label">Status Perangkat</div>
+                <div class="status-tag status-${report.status}">${report.status}</div>
+              </div>
+              <div class="field">
+                <div class="label">Teknisi Lapangan</div>
+                <div class="value">${report.technician_name}</div>
+              </div>
+              <div class="field">
+                <div class="label">Area / Lokasi</div>
+                <div class="value">${report.technician_area}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Informasi Perangkat</div>
+            <div class="grid">
+              <div class="field">
+                <div class="label">Nama Perangkat</div>
+                <div class="value">${report.device_name}</div>
+              </div>
+              <div class="field">
+                <div class="label">ID / Serial Number</div>
+                <div class="value">${report.device_code} / ${report.serial_number}</div>
+              </div>
+              <div class="field">
+                <div class="label">IP Address</div>
+                <div class="value">${report.ip}</div>
+              </div>
+              <div class="field">
+                <div class="label">Lokasi / STO</div>
+                <div class="value">${report.device_sto} - ${report.room}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Detail Kapasitas Port</div>
+            <div class="grid" style="grid-template-cols: 1fr 1fr 1fr 1fr;">
+              <div class="field">
+                <div class="label">Total Port</div>
+                <div class="value">${report.port_capacity}</div>
+              </div>
+              <div class="field">
+                <div class="label">Port Idle</div>
+                <div class="value">${report.port_idle}</div>
+              </div>
+              <div class="field">
+                <div class="label">Port LAN</div>
+                <div class="value">${report.port_lan || 0}</div>
+              </div>
+              <div class="field">
+                <div class="label">Port SFP</div>
+                <div class="value">${report.port_sfp || 0}</div>
+              </div>
+              <div class="field">
+                <div class="label">Port Baik</div>
+                <div class="value" style="color: #059669;">${report.port_good || 0}</div>
+              </div>
+              <div class="field">
+                <div class="label">Port Rusak</div>
+                <div class="value" style="color: #dc2626;">${report.port_bad || 0}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Hasil Tes Koneksi</div>
+            <div class="grid">
+              <div class="field">
+                <div class="label">Ping DNS</div>
+                <div class="value">${report.ping_dns || '-'}</div>
+              </div>
+              <div class="field">
+                <div class="label">Redaman (Attenuation)</div>
+                <div class="value">${report.attenuation || '-'}</div>
+              </div>
+              <div class="field">
+                <div class="label">Ping Client</div>
+                <div class="value">${report.ping_client || '-'}</div>
+              </div>
+              <div class="field">
+                <div class="label">Speed Test</div>
+                <div class="value">${report.speed_test || '-'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Tindakan & Catatan</div>
+            <div class="field">
+              <div class="label">Tindakan Diambil</div>
+              <div class="value">${report.action}</div>
+            </div>
+            <div class="field" style="margin-top: 15px;">
+              <div class="label">Catatan Tambahan</div>
+              <div class="notes">${report.notes || 'Tidak ada catatan tambahan.'}</div>
+            </div>
+          </div>
+
+          <div class="section" style="margin-top: 50px;">
+            <div class="grid">
+              <div style="text-align: center;">
+                <p style="font-size: 12px;">Mengetahui,</p>
+                <div style="height: 80px;"></div>
+                <p style="font-weight: bold; text-decoration: underline;">( ............................ )</p>
+                <p style="font-size: 10px;">Petugas Area</p>
+              </div>
+              <div style="text-align: center;">
+                <p style="font-size: 12px;">Teknisi Pelaksana,</p>
+                <div style="height: 80px;"></div>
+                <p style="font-weight: bold; text-decoration: underline;">${report.technician_name}</p>
+                <p style="font-size: 10px;">NIK: ${report.user_nik || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -444,10 +634,18 @@ export default function LaporanPMR() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm" title="Lihat Detail">
+                            <button 
+                              onClick={() => handleViewDetail(report)}
+                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm" 
+                              title="Lihat Detail"
+                            >
                               <VisibilityIcon sx={{ fontSize: 16 }} />
                             </button>
-                            <button className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm" title="Download PDF">
+                            <button 
+                              onClick={() => handlePrint(report)}
+                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm" 
+                              title="Download PDF"
+                            >
                               <FileDownloadIcon sx={{ fontSize: 16 }} />
                             </button>
                           </div>
@@ -461,6 +659,212 @@ export default function LaporanPMR() {
           </div>
         </main>
       </div>
+
+      {/* Detail Modal */}
+      {showDetailModal && selectedReport && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
+            onClick={() => setShowDetailModal(false)}
+          />
+          <div className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+            <header className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
+                  selectedReport.status === 'Operated' ? 'bg-emerald-500 shadow-emerald-100' :
+                  selectedReport.status === 'Maintenance' ? 'bg-amber-500 shadow-amber-100' :
+                  'bg-rose-500 shadow-rose-100'
+                }`}>
+                  <HistoryIcon />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Detail Laporan PMR</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Laporan ID: PMR-{selectedReport.id}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => handlePrint(selectedReport)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                >
+                  <PrintIcon sx={{ fontSize: 16 }} /> CETAK PDF
+                </button>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="h-10 w-10 rounded-xl bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-all flex items-center justify-center"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-6 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Section 1: General Info */}
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <PublicIcon sx={{ fontSize: 14 }} /> Informasi Umum
+                    </h3>
+                    <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Tanggal</p>
+                          <p className="text-sm font-black text-slate-700">
+                            {new Date(selectedReport.maintenance_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Status Akhir</p>
+                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+                            selectedReport.status === 'Operated' ? 'bg-emerald-100 text-emerald-700' :
+                            selectedReport.status === 'Maintenance' ? 'bg-amber-100 text-amber-700' :
+                            'bg-rose-100 text-rose-700'
+                          }`}>
+                            {selectedReport.status}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Teknisi</p>
+                          <p className="text-sm font-black text-slate-700">{selectedReport.technician_name}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Area</p>
+                          <p className="text-sm font-black text-slate-700">{selectedReport.technician_area}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <LocalGasStationIcon sx={{ fontSize: 14 }} /> Logistik & Perjalanan
+                    </h3>
+                    <div className="bg-slate-50 rounded-2xl p-5 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
+                          <RouteIcon sx={{ fontSize: 20 }} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Jarak Tempuh</p>
+                          <p className="text-sm font-black text-slate-700">{selectedReport.distance} KM</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Estimasi BBM</p>
+                        <p className="text-sm font-black text-emerald-600">Rp {selectedReport.fuel_cost?.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Device Info */}
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <RouterIcon sx={{ fontSize: 14 }} /> Detail Perangkat
+                    </h3>
+                    <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Nama / Tipe</p>
+                          <p className="text-sm font-black text-slate-700 uppercase">{selectedReport.device_name} ({selectedReport.device_type})</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">ID / SN</p>
+                          <p className="text-sm font-black text-slate-700 uppercase">{selectedReport.device_code}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">IP Address</p>
+                          <p className="text-sm font-black text-slate-700">{selectedReport.ip}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Lokasi / STO</p>
+                          <p className="text-sm font-black text-slate-700">{selectedReport.device_sto} · {selectedReport.room}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <LanIcon sx={{ fontSize: 14 }} /> Kapasitas Port
+                    </h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Total', val: selectedReport.port_capacity, color: 'text-slate-700' },
+                        { label: 'Idle', val: selectedReport.port_idle, color: 'text-slate-400' },
+                        { label: 'LAN', val: selectedReport.port_lan || 0, color: 'text-blue-600' },
+                        { label: 'SFP', val: selectedReport.port_sfp || 0, color: 'text-indigo-600' },
+                        { label: 'Baik', val: selectedReport.port_good || 0, color: 'text-emerald-600' },
+                        { label: 'Rusak', val: selectedReport.port_bad || 0, color: 'text-rose-600' },
+                      ].map((p, idx) => (
+                        <div key={idx} className="bg-slate-50 rounded-xl p-3 text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5">{p.label}</p>
+                          <p className={`text-sm font-black ${p.color}`}>{p.val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Connectivity Test */}
+                <div className="md:col-span-2 space-y-3">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <SpeedIcon sx={{ fontSize: 14 }} /> Hasil Tes Koneksi
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
+                      <p className="text-[9px] font-bold text-blue-400 uppercase mb-1">Ping DNS</p>
+                      <p className="text-sm font-black text-blue-700">{selectedReport.ping_dns || '-'}</p>
+                    </div>
+                    <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4">
+                      <p className="text-[9px] font-bold text-indigo-400 uppercase mb-1">Redaman</p>
+                      <p className="text-sm font-black text-indigo-700">{selectedReport.attenuation || '-'}</p>
+                    </div>
+                    <div className="bg-violet-50/50 border border-violet-100 rounded-2xl p-4">
+                      <p className="text-[9px] font-bold text-violet-400 uppercase mb-1">Ping Client</p>
+                      <p className="text-sm font-black text-violet-700">{selectedReport.ping_client || '-'}</p>
+                    </div>
+                    <div className="bg-cyan-50/50 border border-cyan-100 rounded-2xl p-4">
+                      <p className="text-[9px] font-bold text-cyan-400 uppercase mb-1">Speed Test</p>
+                      <p className="text-sm font-black text-cyan-700">{selectedReport.speed_test || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: Action & Notes */}
+                <div className="md:col-span-2 space-y-3">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <BuildIcon sx={{ fontSize: 14 }} /> Tindakan & Catatan
+                  </h3>
+                  <div className="bg-slate-900 rounded-3xl p-6 text-white space-y-4 shadow-xl">
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-1">Tindakan Maintenance</p>
+                      <p className="text-sm font-black text-blue-400 uppercase tracking-tight">{selectedReport.action}</p>
+                    </div>
+                    <div className="pt-4 border-t border-slate-800">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-2">Catatan Teknisi</p>
+                      <p className="text-sm text-slate-300 leading-relaxed italic">
+                        "{selectedReport.notes || 'Tidak ada catatan tambahan untuk laporan ini.'}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <footer className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+               <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-8 py-3 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200"
+                >
+                  Tutup Detail
+                </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
