@@ -195,11 +195,12 @@ exports.getAllOffices = async (req, res) => {
     if (cachedData) return res.json({ success: true, data: cachedData, source: 'cache' });
 
     const query = `
-      SELECT o.*,
+      SELECT o.*, a.name as area_name,
              (SELECT COUNT(*) FROM users u WHERE u.office_id = o.id AND u.status = 'active') as active_user_count,
              COALESCE(o.status, 'active') as status, 
              o.id as generated_id
       FROM offices o 
+      LEFT JOIN areas a ON o.area_id = a.id
       ORDER BY o.name ASC
     `;
     const { rows } = await db.query(query);
@@ -229,10 +230,10 @@ exports.toggleOfficeStatus = async (req, res) => {
 
 exports.createOffice = async (req, res) => {
   try {
-    const { name, latitude, longitude } = req.body;
+    const { name, area_id, latitude, longitude } = req.body;
     const { rows } = await db.query(
-      'INSERT INTO offices (name, latitude, longitude, status) VALUES ($1, $2, $3, \'active\') RETURNING id, name',
-      [name, latitude, longitude]
+      'INSERT INTO offices (name, area_id, latitude, longitude, status) VALUES ($1, $2, $3, $4, \'active\') RETURNING id, name',
+      [name, area_id, latitude, longitude]
     );
     cache.invalidate('offices:');
     cache.invalidate('inventory:options');
@@ -245,10 +246,10 @@ exports.createOffice = async (req, res) => {
 exports.updateOffice = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, latitude, longitude } = req.body;
+    const { name, area_id, latitude, longitude } = req.body;
     const { rows } = await db.query(
-      'UPDATE offices SET name = $1, latitude = $2, longitude = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
-      [name, latitude, longitude, id]
+      'UPDATE offices SET name = $1, area_id = $2, latitude = $3, longitude = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *',
+      [name, area_id, latitude, longitude, id]
     );
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Kantor tidak ditemukan' });
     

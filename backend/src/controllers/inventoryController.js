@@ -91,7 +91,7 @@ exports.getInventoryOptions = async (req, res) => {
       db.query("SELECT DISTINCT status FROM inventory_devices"),
       db.query("SELECT DISTINCT device_type FROM inventory_devices"),
       db.query("SELECT DISTINCT role FROM users"),
-      db.query("SELECT id, name FROM offices WHERE status = 'active' ORDER BY name ASC"),
+      db.query("SELECT id, name, area_id FROM offices WHERE status = 'active' ORDER BY name ASC"),
     ]);
 
     const data = {
@@ -102,7 +102,8 @@ exports.getInventoryOptions = async (req, res) => {
       roles: roles.rows.map((r) => r.role),
       offices: offices.rows.map((r) => ({
         val: r.id,
-        label: r.name
+        label: r.name,
+        area_id: r.area_id
       }))
     };
     
@@ -391,7 +392,7 @@ exports.changePassword = async (req, res) => {
 
 exports.toggleUserStatus = async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
     const { rows } = await db.query("SELECT status, username FROM users WHERE id = $1", [
       id,
     ]);

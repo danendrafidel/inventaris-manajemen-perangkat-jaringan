@@ -147,8 +147,11 @@ export default function MappingArea() {
     loadData();
   }, []);
 
+  const isAdmin = user?.role === "admin";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isAdmin) return;
     try {
       if (selectedArea) {
         await updateArea(selectedArea.id, formData);
@@ -167,6 +170,7 @@ export default function MappingArea() {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) return;
     if (
       window.confirm(
         "Hapus Area ini? Semua data STO terkait juga akan dihapus.",
@@ -185,6 +189,7 @@ export default function MappingArea() {
   };
 
   const handleToggleStatus = async (id) => {
+    if (!isAdmin) return;
     try {
       await toggleAreaStatus(id);
       showNotify("Status area berhasil diubah");
@@ -217,16 +222,18 @@ export default function MappingArea() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setSelectedArea(null);
-                  setFormData({ name: "", latitude: "", longitude: "" });
-                  setShowModal(true);
-                }}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
-              >
-                <AddIcon sx={{ fontSize: 18 }} /> TAMBAH AREA
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setSelectedArea(null);
+                    setFormData({ name: "", latitude: "", longitude: "" });
+                    setShowModal(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+                >
+                  <AddIcon sx={{ fontSize: 18 }} /> TAMBAH AREA
+                </button>
+              )}
               <Link
                 to="/profile"
                 className="h-9 w-9 rounded-xl bg-linear-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 uppercase hover:scale-110 transition-transform text-sm"
@@ -293,7 +300,7 @@ export default function MappingArea() {
                       STATUS
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
-                      AKSI
+                      {isAdmin ? "AKSI" : ""}
                     </th>
                   </tr>
                 </thead>
@@ -301,7 +308,7 @@ export default function MappingArea() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={isAdmin ? 6 : 5}
                         className="px-6 py-10 text-center animate-pulse text-slate-400 font-bold"
                       >
                         Memuat...
@@ -310,7 +317,7 @@ export default function MappingArea() {
                   ) : areas.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={isAdmin ? 6 : 5}
                         className="px-6 py-10 text-center text-slate-400 font-bold"
                       >
                         Tidak ada data
@@ -361,45 +368,47 @@ export default function MappingArea() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleToggleStatus(c.id)}
-                              className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${c.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`}
-                              title={
-                                c.status === "active"
-                                  ? "Nonaktifkan"
-                                  : "Aktifkan"
-                              }
-                            >
-                              {c.status === "active" ? (
-                                <BlockIcon sx={{ fontSize: 16 }} />
-                              ) : (
-                                <CheckCircleIcon sx={{ fontSize: 16 }} />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedArea(c);
-                                setFormData({
-                                  name: c.name,
-                                  latitude: c.latitude || "",
-                                  longitude: c.longitude || "",
-                                });
-                                setShowModal(true);
-                              }}
-                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all"
-                              title="Edit"
-                            >
-                              <EditIcon sx={{ fontSize: 16 }} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(c.id)}
-                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
-                              title="Hapus"
-                            >
-                              <DeleteIcon sx={{ fontSize: 16 }} />
-                            </button>
-                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleToggleStatus(c.id)}
+                                className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${c.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`}
+                                title={
+                                  c.status === "active"
+                                    ? "Nonaktifkan"
+                                    : "Aktifkan"
+                                }
+                              >
+                                {c.status === "active" ? (
+                                  <BlockIcon sx={{ fontSize: 16 }} />
+                                ) : (
+                                  <CheckCircleIcon sx={{ fontSize: 16 }} />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedArea(c);
+                                  setFormData({
+                                    name: c.name,
+                                    latitude: c.latitude || "",
+                                    longitude: c.longitude || "",
+                                  });
+                                  setShowModal(true);
+                                }}
+                                className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all"
+                                title="Edit"
+                              >
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(c.id)}
+                                className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                                title="Hapus"
+                              >
+                                <DeleteIcon sx={{ fontSize: 16 }} />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -455,38 +464,40 @@ export default function MappingArea() {
                       {c.latitude ? `${c.latitude}, ${c.longitude}` : "-"}
                     </p>
                   </div>
-                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
-                    <button
-                      onClick={() => handleToggleStatus(c.id)}
-                      className={`h-8 w-8 rounded-lg border flex items-center justify-center ${c.status === "active" ? "text-rose-600 border-rose-200" : "text-emerald-600 border-emerald-200"}`}
-                    >
-                      {c.status === "active" ? (
-                        <BlockIcon sx={{ fontSize: 16 }} />
-                      ) : (
-                        <CheckCircleIcon sx={{ fontSize: 16 }} />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedArea(c);
-                        setFormData({
-                          name: c.name,
-                          latitude: c.latitude || "",
-                          longitude: c.longitude || "",
-                        });
-                        setShowModal(true);
-                      }}
-                      className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600"
-                    >
-                      <EditIcon sx={{ fontSize: 16 }} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(c.id)}
-                      className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600"
-                    >
-                      <DeleteIcon sx={{ fontSize: 16 }} />
-                    </button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
+                      <button
+                        onClick={() => handleToggleStatus(c.id)}
+                        className={`h-8 w-8 rounded-lg border flex items-center justify-center ${c.status === "active" ? "text-rose-600 border-rose-200" : "text-emerald-600 border-emerald-200"}`}
+                      >
+                        {c.status === "active" ? (
+                          <BlockIcon sx={{ fontSize: 16 }} />
+                        ) : (
+                          <CheckCircleIcon sx={{ fontSize: 16 }} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedArea(c);
+                          setFormData({
+                            name: c.name,
+                            latitude: c.latitude || "",
+                            longitude: c.longitude || "",
+                          });
+                          setShowModal(true);
+                        }}
+                        className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600"
+                      >
+                        <EditIcon sx={{ fontSize: 16 }} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(c.id)}
+                        className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600"
+                      >
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

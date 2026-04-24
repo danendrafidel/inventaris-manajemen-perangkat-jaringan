@@ -33,7 +33,10 @@ export default function UserManagement() {
   const currentUser = getStoredUser();
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "asc",
+  });
   const [options, setOptions] = useState({
     roles: [],
     areas: [], // Now expected to be [{id, name}, ...]
@@ -63,8 +66,18 @@ export default function UserManagement() {
     severity: "success",
   });
 
+  const isAdmin = currentUser?.role === "admin";
+  const isOfficer = currentUser?.role === "officer";
+
+  const displayUsers = useMemo(() => {
+    if (isAdmin) return users;
+    if (isOfficer)
+      return users.filter((u) => u.area_id == currentUser?.area_id);
+    return [];
+  }, [users, isAdmin, isOfficer, currentUser?.area_id]);
+
   const sortedUsers = useMemo(() => {
-    let sortableItems = [...users];
+    let sortableItems = [...displayUsers];
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         let aValue = a[sortConfig.key] || "";
@@ -83,7 +96,7 @@ export default function UserManagement() {
       });
     }
     return sortableItems;
-  }, [users, sortConfig]);
+  }, [displayUsers, sortConfig]);
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -93,12 +106,15 @@ export default function UserManagement() {
     setSortConfig({ key, direction });
   };
 
-  const userStats = useMemo(() => ({
-    total: users.length,
-    admin: users.filter(u => u.role === 'admin').length,
-    officer: users.filter(u => u.role === 'officer').length,
-    user: users.filter(u => u.role === 'user').length,
-  }), [users]);
+  const userStats = useMemo(
+    () => ({
+      total: displayUsers.length,
+      admin: displayUsers.filter((u) => u.role === "admin").length,
+      officer: displayUsers.filter((u) => u.role === "officer").length,
+      user: displayUsers.filter((u) => u.role === "user").length,
+    }),
+    [displayUsers],
+  );
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
@@ -136,8 +152,11 @@ export default function UserManagement() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    const payload = { ...formData };
+    if (isOfficer) payload.area_id = currentUser.area_id;
+
     try {
-      await createUser(formData);
+      await createUser(payload);
       setShowAddModal(false);
       showNotify("User berhasil dibuat");
       loadData();
@@ -148,8 +167,11 @@ export default function UserManagement() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    const payload = { ...formData };
+    if (isOfficer) payload.area_id = currentUser.area_id;
+
     try {
-      await updateUser(selectedUser.id, formData);
+      await updateUser(selectedUser.id, payload);
       setShowEditModal(false);
       showNotify("Data user diperbarui");
       loadData();
@@ -160,9 +182,9 @@ export default function UserManagement() {
 
   const handleOpenEdit = (user) => {
     setSelectedItem(user);
-    setFormData({ 
+    setFormData({
       ...user,
-      area_id: user.area_id || "" 
+      area_id: user.area_id || "",
     });
     setShowEditModal(true);
   };
@@ -188,6 +210,26 @@ export default function UserManagement() {
       showNotify(err.message, "error");
     }
   };
+
+  const filteredOffices = useMemo(() => {
+    console.log(
+      "Filtering offices. Selected Area ID:",
+      formData.area_id,
+      "Total offices available:",
+      options.offices.length,
+    );
+
+    if (!formData.area_id) {
+      return options.offices;
+    }
+
+    const filtered = options.offices.filter((off) => {
+      return off.area_id == formData.area_id;
+    });
+
+    console.log("Filtered offices count:", filtered.length);
+    return filtered;
+  }, [options.offices, formData.area_id]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -225,7 +267,7 @@ export default function UserManagement() {
                     email: "",
                     nik: "",
                     role: "",
-                    area: "",
+                    area_id: isOfficer ? currentUser.area_id : "",
                     office_id: "",
                   });
                   setShowAddModal(true);
@@ -250,17 +292,46 @@ export default function UserManagement() {
           <ErrorAlert message={error} onRetry={loadData} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {[
-              { title: "TOTAL USER", value: userStats.total, icon: <GroupIcon />, color: "bg-slate-600" },
-              { title: "ADMIN", value: userStats.admin, icon: <AdminPanelSettingsIcon />, color: "bg-rose-500" },
-              { title: "OFFICER", value: userStats.officer, icon: <BadgeIcon />, color: "bg-blue-600" },
-              { title: "USER", value: userStats.user, icon: <PersonOutlineIcon />, color: "bg-emerald-500" },
+              {
+                title: "TOTAL USER",
+                value: userStats.total,
+                icon: <GroupIcon />,
+                color: "bg-slate-600",
+              },
+              {
+                title: "ADMIN",
+                value: userStats.admin,
+                icon: <AdminPanelSettingsIcon />,
+                color: "bg-rose-500",
+              },
+              {
+                title: "OFFICER",
+                value: userStats.officer,
+                icon: <BadgeIcon />,
+                color: "bg-blue-600",
+              },
+              {
+                title: "USER",
+                value: userStats.user,
+                icon: <PersonOutlineIcon />,
+                color: "bg-emerald-500",
+              },
             ].map((stat, i) => (
-              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
+              <div
+                key={i}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between"
+              >
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">{stat.title}</p>
-                  <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">
+                    {stat.title}
+                  </p>
+                  <p className="text-2xl font-black text-slate-900">
+                    {stat.value}
+                  </p>
                 </div>
-                <div className={`h-10 w-10 rounded-xl ${stat.color} text-white flex items-center justify-center shadow-lg`}>
+                <div
+                  className={`h-10 w-10 rounded-xl ${stat.color} text-white flex items-center justify-center shadow-lg`}
+                >
                   {stat.icon}
                 </div>
               </div>
@@ -273,59 +344,74 @@ export default function UserManagement() {
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th 
-                      onClick={() => handleSort('name')}
+                    <th
+                      onClick={() => handleSort("name")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         IDENTITAS
-                        {sortConfig.key === 'name' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "name" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('email')}
+                    <th
+                      onClick={() => handleSort("email")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         KONTAK & NIK
-                        {sortConfig.key === 'email' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "email" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('role')}
+                    <th
+                      onClick={() => handleSort("role")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         ROLE & AREA
-                        {sortConfig.key === 'role' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "role" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('kantor')}
+                    <th
+                      onClick={() => handleSort("kantor")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         KANTOR
-                        {sortConfig.key === 'kantor' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "kantor" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('status')}
+                    <th
+                      onClick={() => handleSort("status")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         STATUS
-                        {sortConfig.key === 'status' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "status" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
@@ -435,7 +521,7 @@ export default function UserManagement() {
 
             {/* Mobile Card View */}
             <div className="md:hidden divide-y divide-slate-100">
-              {users.map((u) => (
+              {sortedUsers.map((u) => (
                 <div key={u.id} className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -670,7 +756,9 @@ export default function UserManagement() {
                     Area
                   </label>
                   <select
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
+                    required
+                    disabled={isOfficer}
+                    className={`w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none ${isOfficer ? "opacity-70 cursor-not-allowed" : ""}`}
                     value={formData.area_id}
                     onChange={(e) =>
                       setFormData({ ...formData, area_id: e.target.value })
@@ -697,7 +785,7 @@ export default function UserManagement() {
                     }
                   >
                     <option value="">Pilih Kantor</option>
-                    {options.offices.map((off) => (
+                    {filteredOffices.map((off) => (
                       <option key={off.val} value={off.val}>
                         {off.label}
                       </option>

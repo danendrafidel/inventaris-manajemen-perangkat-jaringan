@@ -7,6 +7,7 @@ import {
   updateOffice,
   deleteOffice,
   toggleOfficeStatus,
+  fetchAllAreas,
 } from "../services/areaService";
 import Sidebar from "../components/Sidebar";
 import ErrorAlert from "../components/ErrorAlert";
@@ -35,21 +36,32 @@ import PersonIcon from "@mui/icons-material/Person";
 import MapIcon from "@mui/icons-material/Map";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import PublicIcon from "@mui/icons-material/Public";
 
 export default function MappingOffice() {
   const user = getStoredUser();
   const [offices, setOffices] = useState([]);
+  const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
   const [showModal, setShowModal] = useState(false);
   const [selectedOffice, setSelectedOffice] = useState(null);
-  const [formData, setFormData] = useState({ name: "", latitude: "", longitude: "" });
+  const [formData, setFormData] = useState({ name: "", area_id: "", latitude: "", longitude: "" });
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
+  const isAdmin = user?.role === "admin";
+  const isOfficer = user?.role === "officer";
+
+  const displayOffices = useMemo(() => {
+    if (isAdmin) return offices;
+    if (isOfficer) return offices.filter(o => o.area_id == user?.area_id);
+    return [];
+  }, [offices, isAdmin, isOfficer, user?.area_id]);
+
   const sortedOffices = useMemo(() => {
-    let sortableItems = [...offices];
+    let sortableItems = [...displayOffices];
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         let aValue = a[sortConfig.key] || "";
@@ -68,7 +80,7 @@ export default function MappingOffice() {
       });
     }
     return sortableItems;
-  }, [offices, sortConfig]);
+  }, [displayOffices, sortConfig]);
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -79,10 +91,16 @@ export default function MappingOffice() {
   };
 
   const stats = useMemo(() => ({
-    total: offices.length,
-    active: offices.filter(o => o.status === 'active').length,
-    inactive: offices.filter(o => o.status !== 'active').length,
-  }), [offices]);
+    total: displayOffices.length,
+    active: displayOffices.filter(o => o.status === 'active').length,
+    inactive: displayOffices.filter(o => o.status !== 'active').length,
+  }), [displayOffices]);
+
+  const canManage = (office) => {
+    if (isAdmin) return true;
+    if (isOfficer && office.area_id == user?.area_id) return true;
+    return false;
+  };
 
   const showNotify = (message, severity = "success") => setNotification({ open: true, message, severity });
 
@@ -113,8 +131,12 @@ export default function MappingOffice() {
     setLoading(true);
     setError("");
     try {
-      const officeData = await fetchAllOffices();
+      const [officeData, areaData] = await Promise.all([
+        fetchAllOffices(),
+        fetchAllAreas()
+      ]);
       setOffices(officeData);
+      setAreas(areaData.filter(a => a.status === 'active'));
     } catch (err) {
       const message = err.message || "The server returned an unexpected response. Please try again later.";
       setError(message);
@@ -128,6 +150,11 @@ export default function MappingOffice() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isOfficer && formData.area_id != user?.area_id) {
+        showNotify("Anda hanya dapat mengelola Kantor di area Anda", "error");
+        return;
+    }
+    
     try {
       if (selectedOffice) {
         await updateOffice(selectedOffice.id, formData);
@@ -145,6 +172,9 @@ export default function MappingOffice() {
   };
 
   const handleDelete = async (id) => {
+    const office = offices.find(o => o.id === id);
+    if (!canManage(office)) return;
+
     if (window.confirm("Hapus Kantor ini?")) {
       try {
         await deleteOffice(id);
@@ -158,6 +188,9 @@ export default function MappingOffice() {
   };
 
   const handleToggleStatus = async (id) => {
+    const office = offices.find(o => o.id === id);
+    if (!canManage(office)) return;
+
     try {
       await toggleOfficeStatus(id);
       showNotify("Status kantor berhasil diubah");
@@ -181,7 +214,19 @@ export default function MappingOffice() {
               <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">Pengelola Kantor</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => { setSelectedOffice(null); setFormData({ name: "", latitude: "", longitude: "" }); setShowModal(true); }} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+              <button 
+                onClick={() => { 
+                  setSelectedOffice(null); 
+                  setFormData({ 
+                    name: "", 
+                    area_id: isOfficer ? user?.area_id : "",
+                    latitude: "", 
+                    longitude: "" 
+                  }); 
+                  setShowModal(true); 
+                }} 
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+              >
                 <AddIcon sx={{ fontSize: 18 }} /> TAMBAH KANTOR
               </button>
               <Link to="/profile" className="h-9 w-9 rounded-xl bg-linear-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 uppercase hover:scale-110 transition-transform text-sm" title="Lihat Profil">
@@ -236,6 +281,17 @@ export default function MappingOffice() {
                         )}
                       </div>
                     </th>
+                    <th 
+                      onClick={() => handleSort('area_name')}
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        AREA
+                        {sortConfig.key === 'area_name' && (
+                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        )}
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">ACTIVE USERS</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KOORDINAT</th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">STATUS</th>
@@ -244,9 +300,9 @@ export default function MappingOffice() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr><td colSpan={6} className="px-6 py-10 text-center animate-pulse text-slate-400 font-bold">Memuat data...</td></tr>
+                    <tr><td colSpan={7} className="px-6 py-10 text-center animate-pulse text-slate-400 font-bold">Memuat data...</td></tr>
                   ) : offices.length === 0 ? (
-                    <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-400 font-bold">Belum ada data Kantor</td></tr>
+                    <tr><td colSpan={7} className="px-6 py-10 text-center text-slate-400 font-bold">Belum ada data Kantor</td></tr>
                   ) : (
                     sortedOffices.map((o) => (
                       <tr key={o.id} className="group hover:bg-slate-50/50 transition-colors">
@@ -257,15 +313,23 @@ export default function MappingOffice() {
                             <span className="text-sm font-bold text-slate-900">{o.name}</span>
                           </div>
                         </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <PublicIcon sx={{ fontSize: 14 }} className="text-slate-400" />
+                            <span className="text-xs font-bold text-slate-600">{o.area_name || "-"}</span>
+                          </div>
+                        </td>
                         <td className="px-6 py-4 text-center text-xs font-bold text-slate-600"><PersonIcon sx={{ fontSize: 14 }} /> {o.active_user_count}</td>
                         <td className="px-6 py-4 text-center">{o.latitude && o.longitude ? <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">{o.latitude}, {o.longitude}</span> : "-"}</td>
                         <td className="px-6 py-4"><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${o.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}><div className={`h-1.5 w-1.5 rounded-full ${o.status === "active" ? "bg-emerald-500" : "bg-rose-500"}`} />{o.status}</span></td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => handleToggleStatus(o.id)} className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${o.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`} title={o.status === "active" ? "Nonaktifkan" : "Aktifkan"}>{o.status === "active" ? <BlockIcon sx={{ fontSize: 16 }} /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}</button>
-                            <button onClick={() => { setSelectedOffice(o); setFormData({ name: o.name, latitude: o.latitude || "", longitude: o.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all" title="Edit"><EditIcon sx={{ fontSize: 16 }} /></button>
-                            <button onClick={() => handleDelete(o.id)} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all" title="Hapus"><DeleteIcon sx={{ fontSize: 16 }} /></button>
-                          </div>
+                          {canManage(o) && (
+                            <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => handleToggleStatus(o.id)} className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${o.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`} title={o.status === "active" ? "Nonaktifkan" : "Aktifkan"}>{o.status === "active" ? <BlockIcon sx={{ fontSize: 16 }} /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}</button>
+                              <button onClick={() => { setSelectedOffice(o); setFormData({ name: o.name, area_id: o.area_id || "", latitude: o.latitude || "", longitude: o.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all" title="Edit"><EditIcon sx={{ fontSize: 16 }} /></button>
+                              <button onClick={() => handleDelete(o.id)} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all" title="Hapus"><DeleteIcon sx={{ fontSize: 16 }} /></button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -288,7 +352,7 @@ export default function MappingOffice() {
                             ID: {o.generated_id || o.id}
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">{o.status}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{o.area_name || "Tanpa Area"}</p>
                       </div>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase ${o.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{o.status}</span>
@@ -297,17 +361,19 @@ export default function MappingOffice() {
                     <p><span className="font-black text-slate-400 uppercase"><PersonIcon sx={{ fontSize: 12 }} /> Users:</span> {o.active_user_count}</p>
                     <p><span className="font-black text-slate-400 uppercase"><MapIcon sx={{ fontSize: 12 }} /> Coord:</span> {o.latitude ? `${o.latitude}, ${o.longitude}` : "-"}</p>
                   </div>
-                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
-                    <button onClick={() => handleToggleStatus(o.id)} className={`h-8 w-8 rounded-lg border flex items-center justify-center ${o.status === 'active' ? 'text-rose-600 border-rose-200' : 'text-emerald-600 border-emerald-200'}`}>
-                      {o.status === "active" ? <BlockIcon sx={{ fontSize: 16 }} /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}
-                    </button>
-                    <button onClick={() => { setSelectedOffice(o); setFormData({ name: o.name, latitude: o.latitude || "", longitude: o.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600">
-                      <EditIcon sx={{ fontSize: 16 }} />
-                    </button>
-                    <button onClick={() => handleDelete(o.id)} className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600">
-                      <DeleteIcon sx={{ fontSize: 16 }} />
-                    </button>
-                  </div>
+                  {canManage(o) && (
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
+                      <button onClick={() => handleToggleStatus(o.id)} className={`h-8 w-8 rounded-lg border flex items-center justify-center ${o.status === 'active' ? 'text-rose-600 border-rose-200' : 'text-emerald-600 border-emerald-200'}`}>
+                        {o.status === "active" ? <BlockIcon sx={{ fontSize: 16 }} /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}
+                      </button>
+                      <button onClick={() => { setSelectedOffice(o); setFormData({ name: o.name, area_id: o.area_id || "", latitude: o.latitude || "", longitude: o.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600">
+                        <EditIcon sx={{ fontSize: 16 }} />
+                      </button>
+                      <button onClick={() => handleDelete(o.id)} className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600">
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -342,6 +408,30 @@ export default function MappingOffice() {
                   <button type="button" onClick={handleGeocode} className="px-4 rounded-xl bg-blue-50 text-blue-600 text-[10px] font-black uppercase border border-blue-100 hover:bg-blue-100 transition-all">{isGeocoding ? "..." : "CARI"}</button>
                 </div>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">AREA</label>
+                <select 
+                  required 
+                  disabled={isOfficer}
+                  className={`w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 appearance-none ${isOfficer ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  value={formData.area_id}
+                  onChange={e => setFormData({...formData, area_id: e.target.value})}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1rem'
+                  }}
+                >
+                  <option value="">Pilih Area</option>
+                  {areas.map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+...
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">LATITUDE</label><input type="number" step="any" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} /></div>
                 <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">LONGITUDE</label><input type="number" step="any" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} /></div>

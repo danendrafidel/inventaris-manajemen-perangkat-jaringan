@@ -123,9 +123,9 @@ export default function InventoryDashboard() {
   const DEVICE_STATUSES = ["OPERATED", "MAINTENANCE", "RUSAK"];
 
   const role = user?.role;
-  const canEdit = role === "admin" || role === "officer";
-  const canDelete = role === "admin" || role === "officer";
-  const canAdd = role === "admin" || role === "officer";
+  const canEdit = role === "admin" || role === "officer" || role === "user";
+  const canDelete = role === "admin" || role === "officer" || role === "user";
+  const canAdd = role === "admin" || role === "officer" || role === "user";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -231,7 +231,7 @@ export default function InventoryDashboard() {
       serialNumber: "",
       status: "OPERATED",
       room: "",
-      area_id: "",
+      area_id: role !== "admin" ? user.area_id : "",
       sto_id: "",
       totalPort: "",
       idlePort: "",
@@ -1065,8 +1065,9 @@ export default function InventoryDashboard() {
                       AREA
                     </label>
                     <select
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all"
+                      className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== 'admin' ? 'opacity-70 cursor-not-allowed' : ''}`}
                       value={formData.area_id}
+                      disabled={role !== 'admin'}
                       onChange={(e) =>
                         setFormData({
                           ...formData,

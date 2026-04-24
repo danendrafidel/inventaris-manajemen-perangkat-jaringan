@@ -32,10 +32,10 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
+import PublicIcon from "@mui/icons-material/Public";
 import RouterIcon from "@mui/icons-material/Router";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import SettingsInputComponentIcon from "@mui/icons-material/SettingsInputComponent";
 import MapIcon from "@mui/icons-material/Map";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -47,7 +47,10 @@ export default function MappingSto() {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "asc",
+  });
   const [showModal, setShowModal] = useState(false);
   const [selectedSto, setSelectedSto] = useState(null);
   const [formData, setFormData] = useState({
@@ -63,8 +66,17 @@ export default function MappingSto() {
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
+  const isAdmin = user?.role === "admin";
+  const isOfficer = user?.role === "officer";
+
+  const displayStos = useMemo(() => {
+    if (isAdmin) return stos;
+    if (isOfficer) return stos.filter(s => s.area_id == user?.area_id);
+    return [];
+  }, [stos, isAdmin, isOfficer, user?.area_id]);
+
   const sortedStos = useMemo(() => {
-    let sortableItems = [...stos];
+    let sortableItems = [...displayStos];
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         let aValue = a[sortConfig.key] || "";
@@ -83,7 +95,13 @@ export default function MappingSto() {
       });
     }
     return sortableItems;
-  }, [stos, sortConfig]);
+  }, [displayStos, sortConfig]);
+
+  const canManage = (sto) => {
+    if (isAdmin) return true;
+    if (isOfficer && sto.area_id == user?.area_id) return true;
+    return false;
+  };
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -93,11 +111,14 @@ export default function MappingSto() {
     setSortConfig({ key, direction });
   };
 
-  const stats = useMemo(() => ({
-    total: stos.length,
-    active: stos.filter(s => s.status === 'active').length,
-    inactive: stos.filter(s => s.status !== 'active').length,
-  }), [stos]);
+  const stats = useMemo(
+    () => ({
+      total: displayStos.length,
+      active: displayStos.filter((s) => s.status === "active").length,
+      inactive: displayStos.filter((s) => s.status !== "active").length,
+    }),
+    [displayStos],
+  );
 
   const showNotify = (message, severity = "success") =>
     setNotification({ open: true, message, severity });
@@ -143,7 +164,8 @@ export default function MappingSto() {
       setStos(stoData);
       setAreas(areaData);
     } catch (err) {
-      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+      const message =
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       setError(message);
       showNotify(message, "error");
     } finally {
@@ -158,15 +180,20 @@ export default function MappingSto() {
       loadData();
     };
 
-    window.addEventListener('areas-updated', handleUpdateSignal);
+    window.addEventListener("areas-updated", handleUpdateSignal);
 
     return () => {
-      window.removeEventListener('areas-updated', handleUpdateSignal);
+      window.removeEventListener("areas-updated", handleUpdateSignal);
     };
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isOfficer && formData.area_id != user?.area_id) {
+       showNotify("Anda hanya dapat mengelola STO di area Anda", "error");
+       return;
+    }
+
     try {
       if (selectedSto) {
         await updateSto(selectedSto.id, formData);
@@ -178,31 +205,40 @@ export default function MappingSto() {
       setShowModal(false);
       loadData();
     } catch (err) {
-      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+      const message =
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
 
   const handleDelete = async (id) => {
+    const sto = stos.find(s => s.id === id);
+    if (!canManage(sto)) return;
+
     if (window.confirm("Hapus STO ini?")) {
       try {
         await deleteSto(id);
         showNotify("STO berhasil dihapus");
         loadData();
       } catch (err) {
-        const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+        const message =
+          "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
         showNotify(message, "error");
       }
     }
   };
 
   const handleToggleStatus = async (id) => {
+    const sto = stos.find(s => s.id === id);
+    if (!canManage(sto)) return;
+
     try {
       await toggleStoStatus(id);
       showNotify("Status STO berhasil diubah");
       loadData();
     } catch (err) {
-      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+      const message =
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -229,12 +265,12 @@ export default function MappingSto() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
-                <button
+              <button
                 onClick={() => {
                   setSelectedSto(null);
                   setFormData({
                     name: "",
-                    area_id: "",
+                    area_id: isOfficer ? user?.area_id : "",
                     latitude: "",
                     longitude: "",
                   });
@@ -257,57 +293,92 @@ export default function MappingSto() {
 
         <main className="p-4 md:p-8">
           <ErrorAlert message={error} onRetry={loadData} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                {[
-                    { title: "TOTAL STO", value: stats.total, icon: <RouterIcon />, color: "bg-slate-600" },
-                    { title: "AKTIF", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
-                    { title: "TIDAK AKTIF", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
-                ].map((s, i) => (
-                    <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase">{s.title}</p>
-                            <p className="text-2xl font-black text-slate-900">{s.value}</p>
-                        </div>
-                        <div className={`h-10 w-10 rounded-xl ${s.color} text-white flex items-center justify-center shadow-lg`}>{s.icon}</div>
-                    </div>
-                ))}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {[
+              {
+                title: "TOTAL STO",
+                value: stats.total,
+                icon: <RouterIcon />,
+                color: "bg-slate-600",
+              },
+              {
+                title: "AKTIF",
+                value: stats.active,
+                icon: <CheckCircleIcon />,
+                color: "bg-emerald-500",
+              },
+              {
+                title: "TIDAK AKTIF",
+                value: stats.inactive,
+                icon: <BlockIcon />,
+                color: "bg-rose-500",
+              },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">
+                    {s.title}
+                  </p>
+                  <p className="text-2xl font-black text-slate-900">
+                    {s.value}
+                  </p>
+                </div>
+                <div
+                  className={`h-10 w-10 rounded-xl ${s.color} text-white flex items-center justify-center shadow-lg`}
+                >
+                  {s.icon}
+                </div>
+              </div>
+            ))}
+          </div>
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th 
-                      onClick={() => handleSort('generated_id')}
+                    <th
+                      onClick={() => handleSort("generated_id")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         ID
-                        {sortConfig.key === 'generated_id' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "generated_id" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('name')}
+                    <th
+                      onClick={() => handleSort("name")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         NAMA STO
-                        {sortConfig.key === 'name' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "name" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('area_name')}
+                    <th
+                      onClick={() => handleSort("area_name")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
-                        AREA
-                        {sortConfig.key === 'area_name' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        <PublicIcon sx={{ fontSize: 12 }} /> AREA
+                        {sortConfig.key === "area_name" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
@@ -349,12 +420,21 @@ export default function MappingSto() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-xs font-bold text-slate-700">
-                            {s.area_name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <PublicIcon
+                              sx={{ fontSize: 14 }}
+                              className="text-slate-400"
+                            />
+                            <p className="text-xs font-bold text-slate-700">
+                              {s.area_name}
+                            </p>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span title="Devices"><RouterIcon sx={{ fontSize: 14 }} /> {s.device_count}</span>
+                          <span title="Devices">
+                            <RouterIcon sx={{ fontSize: 14 }} />{" "}
+                            {s.device_count}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           {s.latitude && s.longitude ? (
@@ -373,46 +453,48 @@ export default function MappingSto() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleToggleStatus(s.id)}
-                              className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${s.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`}
-                              title={
-                                s.status === "active"
-                                  ? "Nonaktifkan"
-                                  : "Aktifkan"
-                              }
-                            >
-                              {s.status === "active" ? (
-                                <BlockIcon sx={{ fontSize: 16 }} />
-                              ) : (
-                                <CheckCircleIcon sx={{ fontSize: 16 }} />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedSto(s);
-                                setFormData({
-                                  name: s.name,
-                                  area_id: s.area_id,
-                                  latitude: s.latitude || "",
-                                  longitude: s.longitude || "",
-                                });
-                                setShowModal(true);
-                              }}
-                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all"
-                              title="Edit"
-                            >
-                              <EditIcon sx={{ fontSize: 16 }} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(s.id)}
-                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
-                              title="Hapus"
-                            >
-                              <DeleteIcon sx={{ fontSize: 16 }} />
-                            </button>
-                          </div>
+                          {canManage(s) && (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleToggleStatus(s.id)}
+                                className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${s.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`}
+                                title={
+                                  s.status === "active"
+                                    ? "Nonaktifkan"
+                                    : "Aktifkan"
+                                }
+                              >
+                                {s.status === "active" ? (
+                                  <BlockIcon sx={{ fontSize: 16 }} />
+                                ) : (
+                                  <CheckCircleIcon sx={{ fontSize: 16 }} />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedSto(s);
+                                  setFormData({
+                                    name: s.name,
+                                    area_id: s.area_id,
+                                    latitude: s.latitude || "",
+                                    longitude: s.longitude || "",
+                                  });
+                                  setShowModal(true);
+                                }}
+                                className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all"
+                                title="Edit"
+                              >
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(s.id)}
+                                className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                                title="Hapus"
+                              >
+                                <DeleteIcon sx={{ fontSize: 16 }} />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -462,39 +544,41 @@ export default function MappingSto() {
                       {s.latitude ? `${s.latitude}, ${s.longitude}` : "-"}
                     </p>
                   </div>
-                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
-                    <button
-                      onClick={() => handleToggleStatus(s.id)}
-                      className={`h-8 w-8 rounded-lg border flex items-center justify-center ${s.status === "active" ? "text-rose-600 border-rose-200" : "text-emerald-600 border-emerald-200"}`}
-                    >
-                      {s.status === "active" ? (
-                        <BlockIcon sx={{ fontSize: 16 }} />
-                      ) : (
-                        <CheckCircleIcon sx={{ fontSize: 16 }} />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedSto(s);
-                        setFormData({
-                          name: s.name,
-                          area_id: s.area_id,
-                          latitude: s.latitude || "",
-                          longitude: s.longitude || "",
-                        });
-                        setShowModal(true);
-                      }}
-                      className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600"
-                    >
-                      <EditIcon sx={{ fontSize: 16 }} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(s.id)}
-                      className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600"
-                    >
-                      <DeleteIcon sx={{ fontSize: 16 }} />
-                    </button>
-                  </div>
+                  {canManage(s) && (
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
+                      <button
+                        onClick={() => handleToggleStatus(s.id)}
+                        className={`h-8 w-8 rounded-lg border flex items-center justify-center ${s.status === "active" ? "text-rose-600 border-rose-200" : "text-emerald-600 border-emerald-200"}`}
+                      >
+                        {s.status === "active" ? (
+                          <BlockIcon sx={{ fontSize: 16 }} />
+                        ) : (
+                          <CheckCircleIcon sx={{ fontSize: 16 }} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedSto(s);
+                          setFormData({
+                            name: s.name,
+                            area_id: s.area_id,
+                            latitude: s.latitude || "",
+                            longitude: s.longitude || "",
+                          });
+                          setShowModal(true);
+                        }}
+                        className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600"
+                      >
+                        <EditIcon sx={{ fontSize: 16 }} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600"
+                      >
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -561,7 +645,8 @@ export default function MappingSto() {
                 </label>
                 <select
                   required
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none"
+                  disabled={isOfficer}
+                  className={`w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none ${isOfficer ? 'opacity-70 cursor-not-allowed' : ''}`}
                   value={formData.area_id}
                   onChange={(e) =>
                     setFormData({ ...formData, area_id: e.target.value })
