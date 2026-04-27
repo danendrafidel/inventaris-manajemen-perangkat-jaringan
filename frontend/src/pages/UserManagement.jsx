@@ -182,9 +182,15 @@ export default function UserManagement() {
 
   const handleOpenEdit = (user) => {
     setSelectedItem(user);
+    // Gunakan pemetaan eksplisit untuk menghindari data redundan masuk ke formData
     setFormData({
-      ...user,
+      username: user.username || "",
+      name: user.name || "",
+      email: user.email || "",
+      nik: user.nik || "",
+      role: user.role || "",
       area_id: user.area_id || "",
+      office_id: user.office_id || "",
     });
     setShowEditModal(true);
   };
@@ -761,7 +767,7 @@ export default function UserManagement() {
                     className={`w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none ${isOfficer ? "opacity-70 cursor-not-allowed" : ""}`}
                     value={formData.area_id}
                     onChange={(e) =>
-                      setFormData({ ...formData, area_id: e.target.value })
+                      setFormData({ ...formData, area_id: e.target.value, office_id: "" })
                     }
                   >
                     <option value="">Pilih Area</option>
