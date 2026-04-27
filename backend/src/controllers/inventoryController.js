@@ -725,7 +725,12 @@ exports.forgotPassword = async (req, res) => {
     // Simpan token di cache selama 1 jam
     cache.set(`reset:${token}`, email, 3600000);
 
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+    // Deteksi URL dasar secara dinamis
+    const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+    const host = req.headers['host'];
+    const baseUrl = process.env.FRONTEND_URL || `${protocol}://${host}`;
+    
+    const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: `"Inventaris Manajemen" <${process.env.SMTP_USER}>`,
