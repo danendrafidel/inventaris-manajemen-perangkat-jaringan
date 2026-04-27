@@ -412,15 +412,75 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.changePassword = async (req, res) => {
-// ... (tidak berubah)
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    const { rowCount } = await db.query(
+      "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+      [password, id],
+    );
+
+    if (rowCount === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User tidak ditemukan" });
+    }
+    res.json({ success: true, message: "Password berhasil diganti" });
+  } catch (error) {
+    handleError(res, error, "Gagal mengganti password");
+  }
 };
 
 exports.toggleUserStatus = async (req, res) => {
-// ... (tidak berubah)
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query("SELECT status, username FROM users WHERE id = $1", [
+      id,
+    ]);
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User tidak ditemukan" });
+    }
+
+    const newStatus = rows[0].status === "active" ? "inactive" : "active";
+    await db.query(
+      "UPDATE users SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+      [newStatus, id],
+    );
+
+    invalidateAllStats();
+    res.json({ success: true, message: `User berhasil ${newStatus}` });
+  } catch (error) {
+    handleError(res, error, "Gagal mengubah status user");
+  }
 };
 
 exports.getProfile = async (req, res) => {
-// ... (tidak berubah)
+  try {
+    const { id } = req.params;
+    const query = `
+      SELECT u.id, u.username, u.name, u.email, u.nik, u.role, u.area_id, u.status, u.office_id,
+             a.name as area,
+             o.name as kantor, o.latitude as kantor_latitude, o.longitude as kantor_longitude
+      FROM users u
+      LEFT JOIN areas a ON u.area_id = a.id
+      LEFT JOIN offices o ON u.office_id = o.id
+      WHERE u.id = $1
+    `;
+    const { rows } = await db.query(query, [id]);
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User tidak ditemukan" });
+    }
+
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    handleError(res, error, "Gagal mengambil profil");
+  }
 };
 
 exports.updateProfile = async (req, res) => {
