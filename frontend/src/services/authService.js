@@ -66,3 +66,25 @@ export function clearAuth() {
   localStorage.removeItem(STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
 }
+
+export async function forgotPassword(email) {
+  const response = await fetch(`${API_BASE}/api/forgot-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  return await handleResponse(response);
+}
+
+export async function resetPassword(token, newPassword) {
+  const response = await fetch(`${API_BASE}/api/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  return await handleResponse(response);
+}

@@ -1,5 +1,7 @@
 const db = require('../config/db');
 const cache = require('../config/cache');
+const mailer = require('../config/mailer');
+const crypto = require('crypto');
 
 function mapDeviceFromDB(row) {
   return {
@@ -699,5 +701,84 @@ exports.getDashboard = async (req, res) => {
     res.json({ success: true, data });
   } catch (error) {
     handleError(res, error, "Gagal mengambil data dashboard");
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    console.log(`[ForgotPassword] Request for: ${email}`);
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email harus diisi" });
+    }
+
+    const { rows } = await db.query("SELECT id, email, name FROM users WHERE email = $1", [email]);
+
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, message: "Email tidak terdaftar" });
+    }
+
+    const user = rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    // Simpan token di cache selama 1 jam
+    cache.set(`reset:${token}`, email, 3600000);
+
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+
+    const mailOptions = {
+      from: `"Inventaris Manajemen" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Permintaan Reset Password",
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Halo, ${user.name}</h2>
+          <p>Kami menerima permintaan untuk mereset password akun Anda.</p>
+          <p>Silakan klik tombol di bawah ini untuk mereset password Anda:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" style="background: #2563eb; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">Reset Password Saya</a>
+          </div>
+          <p style="font-size: 13px; color: #666;">Jika tombol di atas tidak berfungsi, salin dan tempel link berikut ke browser Anda:</p>
+          <p style="font-size: 12px; color: #2563eb; word-break: break-all;">${resetLink}</p>
+          <p style="font-size: 13px; color: #666; margin-top: 20px;">Link ini akan kadaluarsa dalam 1 jam.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 11px; color: #999; text-align: center;">Sistem Manajemen Inventaris Perangkat Jaringan</p>
+        </div>
+      `,
+    };
+
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.error("[MAILER ERROR] Konfigurasi SMTP_USER atau SMTP_PASS belum diset di .env");
+      return res.status(500).json({ success: false, message: "Konfigurasi server email belum lengkap. Hubungi Admin." });
+    }
+
+    await mailer.sendMail(mailOptions);
+    res.json({ success: true, message: "Link reset password telah dikirim ke email Anda" });
+  } catch (error) {
+    handleError(res, error, "Gagal mengirim email reset password");
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    const email = cache.get(`reset:${token}`);
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Link reset tidak valid atau sudah kadaluarsa" });
+    }
+
+    await db.query(
+      "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE email = $2",
+      [newPassword, email]
+    );
+
+    // Hapus token setelah sukses
+    cache.delete(`reset:${token}`);
+
+    res.json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
+  } catch (error) {
+    handleError(res, error, "Gagal mereset password");
   }
 };

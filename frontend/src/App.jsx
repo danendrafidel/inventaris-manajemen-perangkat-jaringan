@@ -9,6 +9,7 @@ import MappingSto from "./pages/MappingSto";
 import MappingOffice from "./pages/MappingOffice";
 import FormPMR from './pages/FormPMR'
 import LaporanPMR from './pages/LaporanPMR'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import { getStoredUser } from './services/authService'
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
@@ -27,6 +28,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
           path="/dashboard"
           element={
@@ -38,7 +40,7 @@ function App() {
         <Route
           path="/pmr"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['user']}>
               <FormPMR />
             </ProtectedRoute>
           }

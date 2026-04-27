@@ -3,6 +3,8 @@ const router = express.Router();
 const inventoryController = require('../controllers/inventoryController');
 
 router.post('/login', inventoryController.login);
+router.post('/forgot-password', inventoryController.forgotPassword);
+router.post('/reset-password', inventoryController.resetPassword);
 router.get('/inventory/stats', inventoryController.getInventoryStats);
 router.get('/inventory/options', inventoryController.getInventoryOptions);
 router.get('/inventory/devices', inventoryController.fetchInventoryDevices);
