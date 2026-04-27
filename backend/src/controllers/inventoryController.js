@@ -721,9 +721,13 @@ exports.forgotPassword = async (req, res) => {
 
     const user = rows[0];
     const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3600000); // 1 jam dari sekarang
     
-    // Simpan token di cache selama 1 jam
-    cache.set(`reset:${token}`, email, 3600000);
+    // Simpan token ke database
+    await db.query(
+      "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3",
+      [token, expires, email]
+    );
 
     // Deteksi URL dasar secara dinamis
     const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
@@ -754,7 +758,7 @@ exports.forgotPassword = async (req, res) => {
     };
 
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.error("[MAILER ERROR] Konfigurasi SMTP_USER atau SMTP_PASS belum diset di .env");
+      console.error("[MAILER ERROR] Konfigurasi SMTP belum lengkap");
       return res.status(500).json({ success: false, message: "Konfigurasi server email belum lengkap. Hubungi Admin." });
     }
 
@@ -768,19 +772,24 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
-    const email = cache.get(`reset:${token}`);
 
-    if (!email) {
+    // Cari user berdasarkan token dan pastikan belum expired
+    const { rows } = await db.query(
+      "SELECT id, email FROM users WHERE reset_token = $1 AND reset_token_expires > CURRENT_TIMESTAMP",
+      [token]
+    );
+
+    if (rows.length === 0) {
       return res.status(400).json({ success: false, message: "Link reset tidak valid atau sudah kadaluarsa" });
     }
 
+    const email = rows[0].email;
+
+    // Update password dan hapus token
     await db.query(
-      "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE email = $2",
+      "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = CURRENT_TIMESTAMP WHERE email = $2",
       [newPassword, email]
     );
-
-    // Hapus token setelah sukses
-    cache.delete(`reset:${token}`);
 
     res.json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
   } catch (error) {
