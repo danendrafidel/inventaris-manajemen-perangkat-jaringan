@@ -237,7 +237,7 @@ export default function FormPMR() {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = (silent = false) => {
     setPmrForm({
       maintenance_date: new Date().toISOString().split("T")[0],
       status: "Operated",
@@ -263,7 +263,9 @@ export default function FormPMR() {
       ping_client: "",
       speed_test: "",
     });
-    showNotify("Formulir telah direset", "info");
+    if (!silent) {
+      showNotify("Formulir telah direset", "info");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -283,8 +285,8 @@ export default function FormPMR() {
         fuel_cost: fuelCost,
       });
       showNotify("Laporan PMR Berhasil Dikirim!");
-      // Reset after submission
-      handleReset();
+      // Reset after submission silently
+      handleReset(true);
       setFoundDevice(null);
       setDestination(null);
       setSearchTerm("");
@@ -493,14 +495,16 @@ export default function FormPMR() {
                         {distance} KM
                       </span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        Estimasi BBM
-                      </span>
-                      <span className="text-xs font-black text-emerald-600 uppercase">
-                        Rp {fuelCost.toLocaleString()}
-                      </span>
-                    </div>
+                    {user.role !== "user" && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          Estimasi BBM
+                        </span>
+                        <span className="text-xs font-black text-emerald-600 uppercase">
+                          Rp {fuelCost.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
