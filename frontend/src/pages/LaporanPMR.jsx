@@ -1,7 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import * as XLSX from "xlsx";
 import { getStoredUser } from "../services/authService";
-import { fetchPmrReports, fetchInventoryOptions } from "../services/inventoryService";
+import {
+  fetchPmrReports,
+  fetchInventoryOptions,
+} from "../services/inventoryService";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
 import ErrorAlert from "../components/ErrorAlert";
@@ -15,7 +19,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import SearchIcon from "@mui/icons-material/Search";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import InventoryIcon from "@mui/icons-material/Inventory";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import BoltIcon from "@mui/icons-material/Bolt";
 import PublicIcon from "@mui/icons-material/Public";
@@ -69,7 +73,50 @@ export default function LaporanPMR() {
     setNotification({ open: true, message, severity });
   };
 
-  const role = user?.role;
+  const handleExport = () => {
+    if (reports.length === 0) {
+      showNotify("Tidak ada data untuk diekspor", "error");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      reports.map((r) => ({
+        "ID Laporan": r.id,
+        Tanggal: r.maintenance_date,
+        Teknisi: r.technician_name,
+        NIK: r.user_nik,
+        Area: r.technician_area,
+        Perangkat: r.device_name,
+        Tipe: r.device_type,
+        Kode: r.device_code,
+        Serial: r.serial_number,
+        STO: r.device_sto,
+        Ruangan: r.room,
+        IP: r.ip,
+        Status: r.status,
+        "Total Port": r.port_capacity,
+        Idle: r.port_idle,
+        LAN: r.port_lan,
+        SFP: r.port_sfp,
+        Baik: r.port_good,
+        Rusak: r.port_bad,
+        "Ping DNS": r.ping_dns,
+        Redaman: r.attenuation,
+        "Ping Client": r.ping_client,
+        "Speed Test": r.speed_test,
+        Tindakan: r.action,
+        Catatan: r.notes,
+      })),
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan PMR");
+    XLSX.writeFile(
+      workbook,
+      `Laporan_PMR_${new Date().toLocaleDateString("id-ID").replace(/\//g, "-")}.xlsx`,
+    );
+  };
+
+  const role = user?.role?.toLowerCase();
 
   const handleViewDetail = (report) => {
     setSelectedReport(report);
@@ -78,10 +125,10 @@ export default function LaporanPMR() {
 
   const handlePrint = (report) => {
     const printWindow = window.open("", "_blank");
-    const date = new Date(report.maintenance_date).toLocaleDateString('id-ID', { 
-      day: '2-digit', 
-      month: 'long', 
-      year: 'numeric' 
+    const date = new Date(report.maintenance_date).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
     });
 
     printWindow.document.write(`
@@ -89,24 +136,22 @@ export default function LaporanPMR() {
         <head>
           <title>Laporan PMR - ${report.device_name}</title>
           <style>
-            body { font-family: sans-serif; padding: 40px; color: #333; }
-            .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
-            .header h1 { margin: 0; color: #1e40af; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-weight: bold; font-size: 14px; text-transform: uppercase; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-            .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; }
-            .field { margin-bottom: 8px; }
-            .label { font-size: 11px; color: #888; font-weight: bold; text-transform: uppercase; }
-            .value { font-size: 13px; font-weight: bold; margin-top: 2px; }
-            .status-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+            body { font-family: sans-serif; padding: 20px; color: #333; line-height: 1.2; }
+            .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+            .header h1 { margin: 0; color: #1e40af; font-size: 18px; }
+            .header p { margin: 2px 0; font-size: 12px; color: #666; }
+            .section { margin-bottom: 15px; }
+            .section-title { font-weight: bold; font-size: 11px; text-transform: uppercase; color: #1e40af; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 2px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            .field { margin-bottom: 4px; }
+            .label { font-size: 9px; color: #888; font-weight: bold; text-transform: uppercase; }
+            .value { font-size: 12px; font-weight: bold; }
+            .status-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
             .status-Operated { background: #ecfdf5; color: #065f46; }
             .status-Maintenance { background: #fffbeb; color: #92400e; }
             .status-Rusak { background: #fef2f2; color: #991b1b; }
-            .notes { background: #f8fafc; padding: 15px; border-radius: 10px; font-size: 13px; font-style: italic; line-height: 1.5; }
-            @media print {
-              body { padding: 0; }
-              .no-print { display: none; }
-            }
+            .notes { background: #f8fafc; padding: 8px; border-radius: 5px; font-size: 11px; font-style: italic; }
+            @media print { body { padding: 0; } .no-print { display: none; } }
           </style>
         </head>
         <body>
@@ -139,103 +184,44 @@ export default function LaporanPMR() {
           <div class="section">
             <div class="section-title">Informasi Perangkat</div>
             <div class="grid">
-              <div class="field">
-                <div class="label">Nama Perangkat</div>
-                <div class="value">${report.device_name}</div>
-              </div>
-              <div class="field">
-                <div class="label">ID / Serial Number</div>
-                <div class="value">${report.device_code} / ${report.serial_number}</div>
-              </div>
-              <div class="field">
-                <div class="label">IP Address</div>
-                <div class="value">${report.ip}</div>
-              </div>
-              <div class="field">
-                <div class="label">Lokasi / STO</div>
-                <div class="value">${report.device_sto} - ${report.room}</div>
-              </div>
+              <div class="field"><div class="label">Nama Perangkat</div><div class="value">${report.device_name}</div></div>
+              <div class="field"><div class="label">ID / Serial</div><div class="value">${report.device_code} / ${report.serial_number}</div></div>
+              <div class="field"><div class="label">IP Address</div><div class="value">${report.ip}</div></div>
+              <div class="field"><div class="label">Lokasi / STO</div><div class="value">${report.device_sto} - ${report.room}</div></div>
             </div>
           </div>
 
           <div class="section">
             <div class="section-title">Detail Kapasitas Port</div>
-            <div class="grid" style="grid-template-cols: 1fr 1fr 1fr 1fr;">
-              <div class="field">
-                <div class="label">Total Port</div>
-                <div class="value">${report.port_capacity}</div>
-              </div>
-              <div class="field">
-                <div class="label">Port Idle</div>
-                <div class="value">${report.port_idle}</div>
-              </div>
-              <div class="field">
-                <div class="label">Port LAN</div>
-                <div class="value">${report.port_lan || 0}</div>
-              </div>
-              <div class="field">
-                <div class="label">Port SFP</div>
-                <div class="value">${report.port_sfp || 0}</div>
-              </div>
-              <div class="field">
-                <div class="label">Port Baik</div>
-                <div class="value" style="color: #059669;">${report.port_good || 0}</div>
-              </div>
-              <div class="field">
-                <div class="label">Port Rusak</div>
-                <div class="value" style="color: #dc2626;">${report.port_bad || 0}</div>
-              </div>
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr);">
+              <div class="field"><div class="label">Total</div><div class="value">${report.port_capacity}</div></div>
+              <div class="field"><div class="label">Idle</div><div class="value">${report.port_idle}</div></div>
+              <div class="field"><div class="label">LAN</div><div class="value">${report.port_lan || 0}</div></div>
+              <div class="field"><div class="label">SFP</div><div class="value">${report.port_sfp || 0}</div></div>
+              <div class="field"><div class="label">Baik</div><div class="value" style="color: #059669;">${report.port_good || 0}</div></div>
+              <div class="field"><div class="label">Rusak</div><div class="value" style="color: #dc2626;">${report.port_bad || 0}</div></div>
             </div>
           </div>
 
           <div class="section">
             <div class="section-title">Hasil Tes Koneksi</div>
             <div class="grid">
-              <div class="field">
-                <div class="label">Ping DNS</div>
-                <div class="value">${report.ping_dns || '-'}</div>
-              </div>
-              <div class="field">
-                <div class="label">Redaman (Attenuation)</div>
-                <div class="value">${report.attenuation || '-'}</div>
-              </div>
-              <div class="field">
-                <div class="label">Ping Client</div>
-                <div class="value">${report.ping_client || '-'}</div>
-              </div>
-              <div class="field">
-                <div class="label">Speed Test</div>
-                <div class="value">${report.speed_test || '-'}</div>
-              </div>
+              <div class="field"><div class="label">Ping DNS</div><div class="value">${report.ping_dns || "-"}</div></div>
+              <div class="field"><div class="label">Redaman</div><div class="value">${report.attenuation || "-"}</div></div>
+              <div class="field"><div class="label">Ping Client</div><div class="value">${report.ping_client || "-"}</div></div>
+              <div class="field"><div class="label">Speed Test</div><div class="value">${report.speed_test || "-"}</div></div>
             </div>
           </div>
 
           <div class="section">
             <div class="section-title">Tindakan & Catatan</div>
             <div class="field">
-              <div class="label">Tindakan Diambil</div>
+              <div class="label">Tindakan</div>
               <div class="value">${report.action}</div>
             </div>
-            <div class="field" style="margin-top: 15px;">
+            <div class="field" style="margin-top: 5px;">
               <div class="label">Catatan Tambahan</div>
-              <div class="notes">${report.notes || 'Tidak ada catatan tambahan.'}</div>
-            </div>
-          </div>
-
-          <div class="section" style="margin-top: 50px;">
-            <div class="grid">
-              <div style="text-align: center;">
-                <p style="font-size: 12px;">Mengetahui,</p>
-                <div style="height: 80px;"></div>
-                <p style="font-weight: bold; text-decoration: underline;">( ............................ )</p>
-                <p style="font-size: 10px;">Petugas Area</p>
-              </div>
-              <div style="text-align: center;">
-                <p style="font-size: 12px;">Teknisi Pelaksana,</p>
-                <div style="height: 80px;"></div>
-                <p style="font-weight: bold; text-decoration: underline;">${report.technician_name}</p>
-                <p style="font-size: 10px;">NIK: ${report.user_nik || '-'}</p>
-              </div>
+              <div class="notes">${report.notes || "-"}</div>
             </div>
           </div>
 
@@ -256,18 +242,43 @@ export default function LaporanPMR() {
     setError("");
     try {
       const data = await fetchPmrReports({
-        area_id: role !== 'admin' ? user?.area_id : (filters.area_id || null),
+        area_id: role !== "admin" && role !== "super officer" ? user?.area_id : filters.area_id || null,
         role: role,
-        user_id: user?.id,
+        user_id: (role === "admin" || role === "super officer") ? undefined : user?.id,
         search,
         sto_id: filters.sto_id,
         status: filters.status,
         start_date: filters.start_date,
-        end_date: filters.end_date
+        end_date: filters.end_date,
       });
-      setReports(data);
+
+      // Normalisasi status data secara menyeluruh
+      const normalizedData = data.map((report) => {
+        const rawStatus = String(report.status || "")
+          .trim()
+          .toLowerCase();
+        let finalStatus = report.status;
+
+        if (rawStatus === "baik" || rawStatus === "operated") {
+          finalStatus = "Operated";
+        } else if (
+          rawStatus === "perlu perbaikan" ||
+          rawStatus === "maintenance" ||
+          rawStatus === "perbaikan"
+        ) {
+          finalStatus = "Maintenance";
+        } else if (rawStatus === "rusak" || rawStatus === "problem") {
+          finalStatus = "Rusak";
+        }
+
+        return { ...report, status: finalStatus };
+      });
+
+      setReports(normalizedData);
     } catch (err) {
-      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      const message =
+        err.message ||
+        "The server returned an unexpected response. Please try again later.";
       setError(message);
       showNotify(message, "error");
     } finally {
@@ -298,14 +309,26 @@ export default function LaporanPMR() {
   const stats = useMemo(() => {
     return {
       total: reports.length,
-      normal: reports.filter(r => r.status === 'Baik').length,
-      perhatian: reports.filter(r => r.status === 'Perlu Perbaikan' || r.status === 'Rusak').length,
-      teknisi: new Set(reports.map(r => r.user_id)).size
+      normal: reports.filter((r) => r.status === "Operated").length,
+      perhatian: reports.filter(
+        (r) => r.status === "Maintenance" || r.status === "Rusak",
+      ).length,
+      teknisi: new Set(reports.map((r) => r.user_id)).size,
     };
   }, [reports]);
 
+  const getStatusColor = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s === "operated")
+      return "bg-emerald-50 text-emerald-700 border-emerald-100";
+    if (s === "maintenance")
+      return "bg-amber-50 text-amber-700 border-amber-100";
+    return "bg-rose-50 text-rose-700 border-rose-100";
+  };
+
   const filteredStosForDraft = useMemo(() => {
-    const targetAreaId = role !== 'admin' ? user?.area_id : draftFilters.area_id;
+    const targetAreaId =
+      role !== "admin" && role !== "super officer" ? user?.area_id : draftFilters.area_id;
     if (!targetAreaId) return options.stos;
     return options.stos.filter((s) => s.area_id == targetAreaId);
   }, [options.stos, draftFilters.area_id, user?.area_id, role]);
@@ -325,7 +348,7 @@ export default function LaporanPMR() {
 
   const handleResetFilters = () => {
     const initial = {
-      area_id: role !== 'admin' ? user?.area_id : "",
+      area_id: role !== "admin" && role !== "super officer" ? user?.area_id : "",
       sto_id: "",
       status: "",
       start_date: "",
@@ -367,19 +390,21 @@ export default function LaporanPMR() {
                 </h1>
               </div>
             </div>
-            <Link
-              to="/profile"
-              className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold tracking-tighter shadow-md shadow-blue-200 uppercase hover:scale-110 transition-transform text-sm md:text-base"
-              title="Lihat Profil"
-            >
-              {user.name?.charAt(0)}
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/profile"
+                className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold tracking-tighter shadow-md shadow-blue-200 uppercase hover:scale-110 transition-transform text-sm md:text-base"
+                title="Lihat Profil"
+              >
+                {user.name?.charAt(0)}
+              </Link>
+            </div>
           </div>
         </header>
 
         <main className="p-4 md:p-8">
           <ErrorAlert message={error} onRetry={loadData} />
-          
+
           {/* Stats Section */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             {[
@@ -388,34 +413,34 @@ export default function LaporanPMR() {
                 value: stats.total,
                 icon: <HistoryIcon />,
                 color: "bg-blue-600",
-                onClick: () => handleResetFilters()
+                onClick: () => handleResetFilters(),
               },
               {
-                title: "STATUS OPERATED",
+                title: "KONDISI BAIK",
                 value: stats.normal,
                 icon: <VerifiedIcon />,
                 color: "bg-emerald-500",
-                onClick: () => setStatusFilter("Operated")
+                onClick: () => setStatusFilter("Operated"),
               },
               {
                 title: "PERLU ATENSI",
                 value: stats.perhatian,
                 icon: <BoltIcon />,
                 color: "bg-amber-500",
-                onClick: () => setStatusFilter("Maintenance")
+                onClick: () => setStatusFilter("Maintenance"),
               },
               {
                 title: "TOTAL TEKNISI",
                 value: stats.teknisi,
                 icon: <PersonIcon />,
                 color: "bg-indigo-500",
-                onClick: null
+                onClick: null,
               },
             ].map((c, i) => (
               <div
                 key={i}
                 onClick={c.onClick}
-                className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all ${c.onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : ''}`}
+                className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all ${c.onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.02]" : ""}`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -454,21 +479,29 @@ export default function LaporanPMR() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 sm:w-44">
-                  <label className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black text-slate-400 uppercase tracking-widest z-10">Tgl Awal</label>
+                  <label className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black text-slate-400 uppercase tracking-widest z-10">
+                    Tgl Awal
+                  </label>
                   <input
                     type="date"
                     className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-600 outline-none hover:bg-white transition-all"
                     value={draftFilters.start_date}
-                    onChange={(e) => handleDraftFilterChange("start_date", e.target.value)}
+                    onChange={(e) =>
+                      handleDraftFilterChange("start_date", e.target.value)
+                    }
                   />
                 </div>
                 <div className="relative flex-1 sm:w-44">
-                  <label className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black text-slate-400 uppercase tracking-widest z-10">Tgl Akhir</label>
+                  <label className="absolute -top-2 left-3 bg-white px-1 text-[8px] font-black text-slate-400 uppercase tracking-widest z-10">
+                    Tgl Akhir
+                  </label>
                   <input
                     type="date"
                     className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-600 outline-none hover:bg-white transition-all"
                     value={draftFilters.end_date}
-                    onChange={(e) => handleDraftFilterChange("end_date", e.target.value)}
+                    onChange={(e) =>
+                      handleDraftFilterChange("end_date", e.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -478,7 +511,7 @@ export default function LaporanPMR() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-center gap-3 flex-1">
                 <select
                   className={`w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all appearance-none pr-10 ${
-                    role !== "admin"
+                    role !== "admin" && role !== "super officer"
                       ? "opacity-50 cursor-not-allowed bg-slate-100"
                       : "cursor-pointer"
                   }`}
@@ -489,8 +522,8 @@ export default function LaporanPMR() {
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "0.85rem",
                   }}
-                  value={role !== "admin" ? user.area_id : draftFilters.area_id}
-                  disabled={role !== "admin"}
+                  value={role !== "admin" && role !== "super officer" ? user.area_id : draftFilters.area_id}
+                  disabled={role !== "admin" && role !== "super officer"}
                   onChange={(e) =>
                     handleDraftFilterChange("area_id", e.target.value)
                   }
@@ -548,6 +581,13 @@ export default function LaporanPMR() {
 
               <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
                 <button
+                  onClick={handleExport}
+                  className="flex-1 xl:flex-none px-6 md:px-8 py-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-[0.15em] shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <FileUploadIcon sx={{ fontSize: 16 }} /> EXPORT
+                </button>
+
+                <button
                   onClick={handleApplyFilters}
                   className="flex-1 xl:flex-none px-6 md:px-8 py-3 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.15em] shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95"
                 >
@@ -556,7 +596,8 @@ export default function LaporanPMR() {
 
                 <button
                   onClick={handleResetFilters}
-                  className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm shrink-0"
+                  className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500
+          hover:bg-rose-50 transition-all shadow-sm shrink-0"
                   title="Reset Semua"
                 >
                   <RefreshIcon />
@@ -571,17 +612,30 @@ export default function LaporanPMR() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">WAKTU</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">PERANGKAT</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">TEKNISI</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">STATUS</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">AKSI</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      WAKTU
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      PERANGKAT
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      TEKNISI
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      STATUS
+                    </th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
+                      AKSI
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-slate-400 font-bold animate-pulse">
+                      <td
+                        colSpan={5}
+                        className="px-6 py-10 text-center text-slate-400 font-bold animate-pulse"
+                      >
                         Memuat riwayat maintenance...
                       </td>
                     </tr>
@@ -589,20 +643,38 @@ export default function LaporanPMR() {
                     <tr>
                       <td colSpan={5} className="px-6 py-20 text-center">
                         <div className="flex flex-col items-center gap-2">
-                          <HistoryIcon sx={{ fontSize: 48 }} className="text-slate-200" />
-                          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada riwayat PMR</p>
+                          <HistoryIcon
+                            sx={{ fontSize: 48 }}
+                            className="text-slate-200"
+                          />
+                          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+                            Belum ada riwayat PMR
+                          </p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     reports.map((report) => (
-                      <tr key={report.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <tr
+                        key={report.id}
+                        className="hover:bg-slate-50/50 transition-colors group"
+                      >
                         <td className="px-6 py-4">
                           <p className="text-xs font-black text-slate-900">
-                            {new Date(report.maintenance_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {new Date(
+                              report.maintenance_date,
+                            ).toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
                           </p>
                           <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">
-                            Sub: {new Date(report.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            Sub:{" "}
+                            {new Date(report.created_at).toLocaleTimeString(
+                              "id-ID",
+                              { hour: "2-digit", minute: "2-digit" },
+                            )}
                           </p>
                         </td>
                         <td className="px-6 py-4">
@@ -611,8 +683,12 @@ export default function LaporanPMR() {
                               <StorageIcon sx={{ fontSize: 16 }} />
                             </div>
                             <div>
-                              <p className="text-xs font-black text-slate-900 uppercase">{report.device_name}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase">{report.device_code} · {report.device_sto}</p>
+                              <p className="text-xs font-black text-slate-900 uppercase">
+                                {report.device_name}
+                              </p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                {report.device_code} · {report.device_sto}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -621,30 +697,30 @@ export default function LaporanPMR() {
                             <div className="h-6 w-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[9px] font-black">
                               {report.technician_name.charAt(0)}
                             </div>
-                            <p className="text-xs font-bold text-slate-700">{report.technician_name}</p>
+                            <p className="text-xs font-bold text-slate-700">
+                              {report.technician_name}
+                            </p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase ${
-                            report.status === 'Operated' ? 'bg-emerald-50 text-emerald-700' : 
-                            report.status === 'Maintenance' ? 'bg-amber-50 text-amber-700' :
-                            'bg-rose-50 text-rose-700'
-                          }`}>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase border ${getStatusColor(report.status)}`}
+                          >
                             {report.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button 
+                            <button
                               onClick={() => handleViewDetail(report)}
-                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm" 
+                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all shadow-sm"
                               title="Lihat Detail"
                             >
                               <VisibilityIcon sx={{ fontSize: 16 }} />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handlePrint(report)}
-                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm" 
+                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
                               title="Download PDF"
                             >
                               <FileDownloadIcon sx={{ fontSize: 16 }} />
@@ -661,12 +737,12 @@ export default function LaporanPMR() {
             {/* Mobile Card View */}
             <div className="md:hidden divide-y divide-slate-100">
               {loading ? (
-                 <div className="p-10 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs">
-                    Memuat Data...
-                 </div>
+                <div className="p-10 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs">
+                  Memuat Data...
+                </div>
               ) : reports.length === 0 ? (
                 <div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
-                    Tidak ada laporan
+                  Tidak ada laporan
                 </div>
               ) : (
                 reports.map((report) => (
@@ -677,44 +753,70 @@ export default function LaporanPMR() {
                           <StorageIcon sx={{ fontSize: 20 }} />
                         </div>
                         <div>
-                          <p className="text-xs font-black text-slate-900 uppercase">{report.device_name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{report.device_code}</p>
+                          <p className="text-xs font-black text-slate-900 uppercase">
+                            {report.device_name}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">
+                            {report.device_code}
+                          </p>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[8px] font-black uppercase ${
-                        report.status === 'Operated' ? 'bg-emerald-50 text-emerald-700' : 
-                        report.status === 'Maintenance' ? 'bg-amber-50 text-amber-700' :
-                        'bg-rose-50 text-rose-700'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[8px] font-black uppercase ${
+                          report.status === "Operated"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : report.status === "Maintenance"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-rose-50 text-rose-700"
+                        }`}
+                      >
                         {report.status}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 bg-slate-50 rounded-2xl p-3">
-                       <div>
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Waktu</p>
-                          <p className="text-[10px] font-bold text-slate-700">
-                            {new Date(report.maintenance_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} · {new Date(report.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                       </div>
-                       <div>
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Teknisi</p>
-                          <p className="text-[10px] font-bold text-slate-700 truncate">{report.technician_name}</p>
-                       </div>
-                       <div className="col-span-2">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Lokasi STO</p>
-                          <p className="text-[10px] font-bold text-slate-700">{report.device_sto}</p>
-                       </div>
+                      <div>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                          Waktu
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-700">
+                          {new Date(report.maintenance_date).toLocaleDateString(
+                            "id-ID",
+                            { day: "2-digit", month: "short" },
+                          )}{" "}
+                          ·{" "}
+                          {new Date(report.created_at).toLocaleTimeString(
+                            "id-ID",
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                          Teknisi
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-700 truncate">
+                          {report.technician_name}
+                        </p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                          Lokasi STO
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-700">
+                          {report.device_sto}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleViewDetail(report)}
                         className="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2"
                       >
                         <VisibilityIcon sx={{ fontSize: 14 }} /> DETAIL
                       </button>
-                      <button 
+                      <button
                         onClick={() => handlePrint(report)}
                         className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
                       >
@@ -739,20 +841,28 @@ export default function LaporanPMR() {
           <div className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 max-h-[95vh] md:max-h-[90vh] flex flex-col">
             <header className="p-5 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
               <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
-                  selectedReport.status === 'Operated' ? 'bg-emerald-500 shadow-emerald-100' :
-                  selectedReport.status === 'Maintenance' ? 'bg-amber-500 shadow-amber-100' :
-                  'bg-rose-500 shadow-rose-100'
-                }`}>
+                <div
+                  className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
+                    selectedReport.status === "Operated"
+                      ? "bg-emerald-500 shadow-emerald-100"
+                      : selectedReport.status === "Maintenance"
+                        ? "bg-amber-500 shadow-amber-100"
+                        : "bg-rose-500 shadow-rose-100"
+                  }`}
+                >
                   <HistoryIcon />
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">Detail Laporan PMR</h2>
-                  <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Laporan ID: PMR-{selectedReport.id}</p>
+                  <h2 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
+                    Detail Laporan PMR
+                  </h2>
+                  <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Laporan ID: PMR-{selectedReport.id}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                <button 
+                <button
                   onClick={() => handlePrint(selectedReport)}
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] md:text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
                 >
@@ -778,28 +888,50 @@ export default function LaporanPMR() {
                     <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Tanggal</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Tanggal
+                          </p>
                           <p className="text-sm font-black text-slate-700">
-                            {new Date(selectedReport.maintenance_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            {new Date(
+                              selectedReport.maintenance_date,
+                            ).toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            })}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Status Akhir</p>
-                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
-                            selectedReport.status === 'Operated' ? 'bg-emerald-100 text-emerald-700' :
-                            selectedReport.status === 'Maintenance' ? 'bg-amber-100 text-amber-700' :
-                            'bg-rose-100 text-rose-700'
-                          }`}>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Status Akhir
+                          </p>
+                          <span
+                            className={`inline-block mt-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+                              selectedReport.status === "Operated"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : selectedReport.status === "Maintenance"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-rose-100 text-rose-700"
+                            }`}
+                          >
                             {selectedReport.status}
                           </span>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Teknisi</p>
-                          <p className="text-sm font-black text-slate-700">{selectedReport.technician_name}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Teknisi
+                          </p>
+                          <p className="text-sm font-black text-slate-700">
+                            {selectedReport.technician_name}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Area</p>
-                          <p className="text-sm font-black text-slate-700">{selectedReport.technician_area}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Area
+                          </p>
+                          <p className="text-sm font-black text-slate-700">
+                            {selectedReport.technician_area}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -807,7 +939,8 @@ export default function LaporanPMR() {
 
                   <div className="space-y-3">
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <LocalGasStationIcon sx={{ fontSize: 14 }} /> Logistik & Perjalanan
+                      <LocalGasStationIcon sx={{ fontSize: 14 }} /> Logistik &
+                      Perjalanan
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
@@ -815,13 +948,21 @@ export default function LaporanPMR() {
                           <RouteIcon sx={{ fontSize: 20 }} />
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Jarak Tempuh</p>
-                          <p className="text-sm font-black text-slate-700">{selectedReport.distance} KM</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Jarak Tempuh
+                          </p>
+                          <p className="text-sm font-black text-slate-700">
+                            {selectedReport.distance} KM
+                          </p>
                         </div>
                       </div>
                       <div className="sm:text-right">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Estimasi BBM</p>
-                        <p className="text-sm font-black text-emerald-600">Rp {selectedReport.fuel_cost?.toLocaleString()}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">
+                          Estimasi BBM
+                        </p>
+                        <p className="text-sm font-black text-emerald-600">
+                          Rp {selectedReport.fuel_cost?.toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -836,20 +977,37 @@ export default function LaporanPMR() {
                     <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Nama / Tipe</p>
-                          <p className="text-sm font-black text-slate-700 uppercase">{selectedReport.device_name} ({selectedReport.device_type})</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Nama / Tipe
+                          </p>
+                          <p className="text-sm font-black text-slate-700 uppercase">
+                            {selectedReport.device_name} (
+                            {selectedReport.device_type})
+                          </p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">ID / SN</p>
-                          <p className="text-sm font-black text-slate-700 uppercase">{selectedReport.device_code}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            ID / SN
+                          </p>
+                          <p className="text-sm font-black text-slate-700 uppercase">
+                            {selectedReport.device_code}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">IP Address</p>
-                          <p className="text-sm font-black text-slate-700">{selectedReport.ip}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            IP Address
+                          </p>
+                          <p className="text-sm font-black text-slate-700">
+                            {selectedReport.ip}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Lokasi / STO</p>
-                          <p className="text-sm font-black text-slate-700">{selectedReport.device_sto} · {selectedReport.room}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Lokasi / STO
+                          </p>
+                          <p className="text-sm font-black text-slate-700">
+                            {selectedReport.device_sto} · {selectedReport.room}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -861,16 +1019,47 @@ export default function LaporanPMR() {
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {[
-                        { label: 'Total', val: selectedReport.port_capacity, color: 'text-slate-700' },
-                        { label: 'Idle', val: selectedReport.port_idle, color: 'text-slate-400' },
-                        { label: 'LAN', val: selectedReport.port_lan || 0, color: 'text-blue-600' },
-                        { label: 'SFP', val: selectedReport.port_sfp || 0, color: 'text-indigo-600' },
-                        { label: 'Baik', val: selectedReport.port_good || 0, color: 'text-emerald-600' },
-                        { label: 'Rusak', val: selectedReport.port_bad || 0, color: 'text-rose-600' },
+                        {
+                          label: "Total",
+                          val: selectedReport.port_capacity,
+                          color: "text-slate-700",
+                        },
+                        {
+                          label: "Idle",
+                          val: selectedReport.port_idle,
+                          color: "text-slate-400",
+                        },
+                        {
+                          label: "LAN",
+                          val: selectedReport.port_lan || 0,
+                          color: "text-blue-600",
+                        },
+                        {
+                          label: "SFP",
+                          val: selectedReport.port_sfp || 0,
+                          color: "text-indigo-600",
+                        },
+                        {
+                          label: "Baik",
+                          val: selectedReport.port_good || 0,
+                          color: "text-emerald-600",
+                        },
+                        {
+                          label: "Rusak",
+                          val: selectedReport.port_bad || 0,
+                          color: "text-rose-600",
+                        },
                       ].map((p, idx) => (
-                        <div key={idx} className="bg-slate-50 rounded-xl p-3 text-center">
-                          <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5">{p.label}</p>
-                          <p className={`text-sm font-black ${p.color}`}>{p.val}</p>
+                        <div
+                          key={idx}
+                          className="bg-slate-50 rounded-xl p-3 text-center"
+                        >
+                          <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5">
+                            {p.label}
+                          </p>
+                          <p className={`text-sm font-black ${p.color}`}>
+                            {p.val}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -884,20 +1073,36 @@ export default function LaporanPMR() {
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
-                      <p className="text-[9px] font-bold text-blue-400 uppercase mb-1">Ping DNS</p>
-                      <p className="text-sm font-black text-blue-700">{selectedReport.ping_dns || '-'}</p>
+                      <p className="text-[9px] font-bold text-blue-400 uppercase mb-1">
+                        Ping DNS
+                      </p>
+                      <p className="text-sm font-black text-blue-700">
+                        {selectedReport.ping_dns || "-"}
+                      </p>
                     </div>
                     <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4">
-                      <p className="text-[9px] font-bold text-indigo-400 uppercase mb-1">Redaman</p>
-                      <p className="text-sm font-black text-indigo-700">{selectedReport.attenuation || '-'}</p>
+                      <p className="text-[9px] font-bold text-indigo-400 uppercase mb-1">
+                        Redaman
+                      </p>
+                      <p className="text-sm font-black text-indigo-700">
+                        {selectedReport.attenuation || "-"}
+                      </p>
                     </div>
                     <div className="bg-violet-50/50 border border-violet-100 rounded-2xl p-4">
-                      <p className="text-[9px] font-bold text-violet-400 uppercase mb-1">Ping Client</p>
-                      <p className="text-sm font-black text-violet-700">{selectedReport.ping_client || '-'}</p>
+                      <p className="text-[9px] font-bold text-violet-400 uppercase mb-1">
+                        Ping Client
+                      </p>
+                      <p className="text-sm font-black text-violet-700">
+                        {selectedReport.ping_client || "-"}
+                      </p>
                     </div>
                     <div className="bg-cyan-50/50 border border-cyan-100 rounded-2xl p-4">
-                      <p className="text-[9px] font-bold text-cyan-400 uppercase mb-1">Speed Test</p>
-                      <p className="text-sm font-black text-cyan-700">{selectedReport.speed_test || '-'}</p>
+                      <p className="text-[9px] font-bold text-cyan-400 uppercase mb-1">
+                        Speed Test
+                      </p>
+                      <p className="text-sm font-black text-cyan-700">
+                        {selectedReport.speed_test || "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -909,27 +1114,36 @@ export default function LaporanPMR() {
                   </h3>
                   <div className="bg-slate-900 rounded-3xl p-6 text-white space-y-4 shadow-xl">
                     <div>
-                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-1">Tindakan Maintenance</p>
-                      <p className="text-sm font-black text-blue-400 uppercase tracking-tight">{selectedReport.action}</p>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-1">
+                        Tindakan Maintenance
+                      </p>
+                      <p className="text-sm font-black text-blue-400 uppercase tracking-tight">
+                        {selectedReport.action}
+                      </p>
                     </div>
                     <div className="pt-4 border-t border-slate-800">
-                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-2">Catatan Teknisi</p>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-2">
+                        Catatan Teknisi
+                      </p>
                       <p className="text-sm text-slate-300 leading-relaxed italic">
-                        "{selectedReport.notes || 'Tidak ada catatan tambahan untuk laporan ini.'}"
+                        "
+                        {selectedReport.notes ||
+                          "Tidak ada catatan tambahan untuk laporan ini."}
+                        "
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <footer className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
-               <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-8 py-3 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200"
-                >
-                  Tutup Detail
-                </button>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="px-8 py-3 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200"
+              >
+                Tutup Detail
+              </button>
             </footer>
           </div>
         </div>

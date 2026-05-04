@@ -66,8 +66,8 @@ export default function MappingSto() {
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const isAdmin = user?.role === "admin";
-  const isOfficer = user?.role === "officer";
+  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "super officer";
+  const isOfficer = user?.role?.toLowerCase() === "officer";
 
   const displayStos = useMemo(() => {
     if (isAdmin) return stos;

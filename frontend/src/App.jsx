@@ -10,6 +10,7 @@ import MappingOffice from "./pages/MappingOffice";
 import FormPMR from './pages/FormPMR'
 import LaporanPMR from './pages/LaporanPMR'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import DeviceScanPage from './pages/DeviceScanPage'
 import { getStoredUser } from './services/authService'
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
@@ -17,7 +18,8 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   if (!user) {
     return <Navigate to="/" replace />
   }
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  const userRole = user.role?.toLowerCase();
+  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     return <Navigate to="/dashboard" replace />
   }
   return children
@@ -29,6 +31,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/scan/:serialNumber" element={<DeviceScanPage />} />
         <Route
           path="/dashboard"
           element={
@@ -64,7 +67,7 @@ function App() {
         <Route
           path="/users"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'officer']}>
+            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
               <UserManagement />
             </ProtectedRoute>
           }
@@ -72,7 +75,7 @@ function App() {
         <Route
           path="/mapping/area"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'officer']}>
+            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
               <MappingArea />
             </ProtectedRoute>
           }
@@ -80,7 +83,7 @@ function App() {
         <Route
           path="/mapping/sto"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'officer']}>
+            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
               <MappingSto />
             </ProtectedRoute>
           }
@@ -88,7 +91,7 @@ function App() {
         <Route
           path="/mapping/office"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'officer']}>
+            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
               <MappingOffice />
             </ProtectedRoute>
           }

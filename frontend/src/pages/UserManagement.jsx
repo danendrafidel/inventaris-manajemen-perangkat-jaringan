@@ -27,6 +27,7 @@ import BadgeIcon from "@mui/icons-material/Badge";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import VerifiedIcon from "@mui/icons-material/Verified";
 
 export default function UserManagement() {
   const navigate = useNavigate();
@@ -66,8 +67,9 @@ export default function UserManagement() {
     severity: "success",
   });
 
-  const isAdmin = currentUser?.role === "admin";
-  const isOfficer = currentUser?.role === "officer";
+  const role = currentUser?.role?.toLowerCase();
+  const isAdmin = role === "admin" || role === "super officer";
+  const isOfficer = role === "officer";
 
   const displayUsers = useMemo(() => {
     if (isAdmin) return users;
@@ -109,9 +111,10 @@ export default function UserManagement() {
   const userStats = useMemo(
     () => ({
       total: displayUsers.length,
-      admin: displayUsers.filter((u) => u.role === "admin").length,
-      officer: displayUsers.filter((u) => u.role === "officer").length,
-      user: displayUsers.filter((u) => u.role === "user").length,
+      admin: displayUsers.filter((u) => u.role?.toLowerCase() === "admin").length,
+      super_officer: displayUsers.filter((u) => u.role?.toLowerCase() === "super officer").length,
+      officer: displayUsers.filter((u) => u.role?.toLowerCase() === "officer").length,
+      user: displayUsers.filter((u) => u.role?.toLowerCase() === "user").length,
     }),
     [displayUsers],
   );
@@ -140,9 +143,10 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
+    const role = currentUser?.role?.toLowerCase();
     if (
       !currentUser ||
-      (currentUser.role !== "admin" && currentUser.role !== "officer")
+      (role !== "admin" && role !== "super officer" && role !== "officer")
     ) {
       navigate("/dashboard");
       return;
@@ -296,7 +300,7 @@ export default function UserManagement() {
 
         <main className="p-4 md:p-8 max-w-full overflow-hidden">
           <ErrorAlert message={error} onRetry={loadData} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             {[
               {
                 title: "TOTAL USER",
@@ -309,6 +313,12 @@ export default function UserManagement() {
                 value: userStats.admin,
                 icon: <AdminPanelSettingsIcon />,
                 color: "bg-rose-500",
+              },
+              {
+                title: "SUPER OFFICER",
+                value: userStats.super_officer,
+                icon: <VerifiedIcon />,
+                color: "bg-indigo-600",
               },
               {
                 title: "OFFICER",
@@ -750,7 +760,7 @@ export default function UserManagement() {
                     }
                   >
                     <option value="">Pilih Role</option>
-                    {["admin", "officer", "user"].map((r) => (
+                    {["admin", "super officer", "officer", "user"].map((r) => (
                       <option key={r} value={r}>
                         {r.toUpperCase()}
                       </option>

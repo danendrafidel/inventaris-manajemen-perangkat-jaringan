@@ -72,7 +72,7 @@ export default function FormPMR() {
   // PMR Form Fields
   const [pmrForm, setPmrForm] = useState({
     maintenance_date: new Date().toISOString().split("T")[0],
-    status: "Baik",
+    status: "Operated",
     action: "",
     notes: "",
     // Data Perangkat (Editable)
@@ -237,6 +237,35 @@ export default function FormPMR() {
     }
   };
 
+  const handleReset = () => {
+    setPmrForm({
+      maintenance_date: new Date().toISOString().split("T")[0],
+      status: "Operated",
+      action: "",
+      notes: "",
+      // Data Perangkat
+      device_type: "",
+      serial_number: "",
+      sto: "",
+      room: "",
+      ip: "",
+      // Detail Port
+      port_capacity: "",
+      port_idle: "",
+      port_lan: "",
+      port_sfp: "",
+      port_good: "",
+      port_bad: "",
+      port_notes: "",
+      // Tes Koneksi
+      ping_dns: "",
+      attenuation: "",
+      ping_client: "",
+      speed_test: "",
+    });
+    showNotify("Formulir telah direset", "info");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!foundDevice) {
@@ -254,32 +283,8 @@ export default function FormPMR() {
         fuel_cost: fuelCost,
       });
       showNotify("Laporan PMR Berhasil Dikirim!");
-      // Reset form
-      setPmrForm({
-        maintenance_date: new Date().toISOString().split("T")[0],
-        status: "Baik",
-        action: "",
-        notes: "",
-        // Data Perangkat
-        device_type: "",
-        serial_number: "",
-        sto: "",
-        room: "",
-        ip: "",
-        // Detail Port
-        port_capacity: "",
-        port_idle: "",
-        port_lan: "",
-        port_sfp: "",
-        port_good: "",
-        port_bad: "",
-        port_notes: "",
-        // Tes Koneksi
-        ping_dns: "",
-        attenuation: "",
-        ping_client: "",
-        speed_test: "",
-      });
+      // Reset after submission
+      handleReset();
       setFoundDevice(null);
       setDestination(null);
       setSearchTerm("");
@@ -936,24 +941,27 @@ export default function FormPMR() {
                       </div>
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-2 flex gap-4">
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        className="flex-1 py-4 rounded-3xl bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-[0.2em] shadow-sm border border-slate-200 hover:bg-slate-200 transition-all active:scale-[0.98]"
+                      >
+                        RESET
+                      </button>
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-5 rounded-4xl bg-slate-900 text-white text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                        className="flex-[2] py-4 rounded-3xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                       >
                         {submitting ? (
                           "MENGIRIM..."
                         ) : (
                           <>
-                            <SendIcon sx={{ fontSize: 18 }} /> KIRIM LAPORAN PMR
+                            <SendIcon sx={{ fontSize: 16 }} /> KIRIM LAPORAN PMR
                           </>
                         )}
                       </button>
-                      <p className="text-[9px] text-center text-slate-400 mt-4 font-bold uppercase tracking-widest">
-                        Data logistik (jarak & bbm) akan tersimpan otomatis ke
-                        dalam sistem
-                      </p>
                     </div>
                   </form>
                 </div>

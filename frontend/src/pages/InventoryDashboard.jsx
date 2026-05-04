@@ -13,7 +13,7 @@ import {
 // Modular Components
 import Sidebar from "../components/Sidebar";
 import StatusPill from "../components/StatusPill";
-import Barcode from "../components/Barcode";
+import QRCode from "../components/QRCode";
 import ErrorAlert from "../components/ErrorAlert";
 import Toast from "../components/Toast";
 
@@ -54,7 +54,7 @@ export default function InventoryDashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -122,10 +122,10 @@ export default function InventoryDashboard() {
 
   const DEVICE_STATUSES = ["OPERATED", "MAINTENANCE", "RUSAK"];
 
-  const role = user?.role;
-  const canEdit = role === "admin" || role === "officer" || role === "user";
-  const canDelete = role === "admin" || role === "officer" || role === "user";
-  const canAdd = role === "admin" || role === "officer" || role === "user";
+  const role = user?.role?.toLowerCase();
+  const canEdit = role === "admin" || role === "super officer" || role === "officer";
+  const canDelete = role === "admin" || role === "super officer" || role === "officer";
+  const canAdd = role === "admin" || role === "super officer" || role === "officer";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -169,7 +169,7 @@ export default function InventoryDashboard() {
     }
 
     // Only set default filters if they are not yet set
-    if (role !== "admin" && !filters.area_id && user.area_id) {
+    if (role !== "admin" && role !== "super officer" && !filters.area_id && user.area_id) {
       const defaultFilters = { ...filters, area_id: user.area_id };
       setFilters(defaultFilters);
       setDraftFilters(defaultFilters);
@@ -185,7 +185,7 @@ export default function InventoryDashboard() {
     setError("");
 
     const roleParams = {};
-    if (role !== "admin") {
+    if (role !== "admin" && role !== "super officer") {
       roleParams.area_id = user.area_id;
     }
 
@@ -231,7 +231,7 @@ export default function InventoryDashboard() {
       serialNumber: "",
       status: "OPERATED",
       room: "",
-      area_id: role !== "admin" ? user.area_id : "",
+      area_id: role !== "admin" && role !== "super officer" ? user.area_id : "",
       sto_id: "",
       totalPort: "",
       idlePort: "",
@@ -288,27 +288,20 @@ export default function InventoryDashboard() {
     }
   };
 
-  const handleOpenBarcodePreview = (item) => {
+  const handleOpenQRCodePreview = (item) => {
     setSelectedItem(item);
-    setShowBarcodeModal(true);
+    setShowQRCodeModal(true);
   };
 
   const executePrint = (item) => {
     const printWindow = window.open("", "_blank", "width=600,height=400");
-
-    // Simulating the barcode SVG content
-    const lines = Array.from({ length: 50 })
-      .map((_, i) => {
-        const x = 10 + i * 3.8;
-        const width = i % 3 === 0 ? "2.5" : i % 5 === 0 ? "1" : "1.5";
-        return `<rect x="${x}" y="5" width="${width}" height="40" fill="black" />`;
-      })
-      .join("");
+    const scanUrl = `${window.location.origin}/scan/${encodeURIComponent(item.serialNumber)}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(scanUrl)}`;
 
     printWindow.document.write(`
       <html>
         <head>
-          <title>Print Barcode - ${item.deviceId}</title>
+          <title>Print QR Code - ${item.deviceId}</title>
           <style>
             @page { size: auto; margin: 0mm; }
             body { 
@@ -330,16 +323,14 @@ export default function InventoryDashboard() {
             .device-name { font-weight: bold; font-size: 20px; margin-bottom: 5px; text-transform: uppercase; }
             .device-info { font-size: 14px; margin-bottom: 20px; color: #333; }
             .sn { margin-top: 15px; font-weight: 900; letter-spacing: 3px; font-size: 14px; }
-            svg { margin: 10px 0; }
+            img { margin: 10px 0; }
           </style>
         </head>
         <body>
           <div class="label">
             <div class="device-name">${item.name}</div>
             <div class="device-info">${item.deviceId} | ${item.area} - ${item.sto}</div>
-            <svg width="250" height="80" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-              ${lines}
-            </svg>
+            <img src="${qrCodeUrl}" width="200" height="200" />
             <div class="sn">${item.serialNumber}</div>
           </div>
           <script>
@@ -371,7 +362,7 @@ export default function InventoryDashboard() {
   const handleResetFilters = () => {
     const initial = {
       sto_id: "",
-      area_id: role !== "admin" ? user.area_id : "",
+      area_id: role !== "admin" && role !== "super officer" ? user.area_id : "",
       status: "",
     };
     setDraftFilters(initial);
@@ -495,19 +486,19 @@ export default function InventoryDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-center gap-3 flex-1">
                 <select
                   className={`w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all appearance-none pr-10 ${
-                    role !== "admin"
+                    role !== "admin" && role !== "super officer"
                       ? "opacity-50 cursor-not-allowed bg-slate-100"
                       : "cursor-pointer"
                   }`}
                   style={{
                     backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/xml' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "0.85rem",
                   }}
-                  value={role !== "admin" ? user.area_id : draftFilters.area_id}
-                  disabled={role !== "admin"}
+                  value={role !== "admin" && role !== "super officer" ? user.area_id : draftFilters.area_id}
+                  disabled={role !== "admin" && role !== "super officer"}
                   onChange={(e) =>
                     handleDraftFilterChange("area_id", e.target.value)
                   }
@@ -749,9 +740,9 @@ export default function InventoryDashboard() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => handleOpenBarcodePreview(item)}
+                              onClick={() => handleOpenQRCodePreview(item)}
                               className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-                              title="Cetak Barcode"
+                              title="Cetak QR Code"
                             >
                               <PrintIcon sx={{ fontSize: 18 }} />
                             </button>
@@ -855,7 +846,7 @@ export default function InventoryDashboard() {
                       </span>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleOpenBarcodePreview(item)}
+                          onClick={() => handleOpenQRCodePreview(item)}
                           className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500"
                         >
                           <PrintIcon sx={{ fontSize: 18 }} />
@@ -1013,11 +1004,8 @@ export default function InventoryDashboard() {
                       }
                     >
                       <option value="">Pilih Tipe Device</option>
-                      {options.deviceTypes.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
+                      <option value="Router">Router</option>
+                      <option value="Switch">Switch</option>
                     </select>
                   </div>
                   <div className="space-y-1.5">
@@ -1066,9 +1054,9 @@ export default function InventoryDashboard() {
                       AREA
                     </label>
                     <select
-                      className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" && role !== "super officer" ? "opacity-70 cursor-not-allowed" : ""}`}
                       value={formData.area_id}
-                      disabled={role !== "admin"}
+                      disabled={role !== "admin" && role !== "super officer"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1231,7 +1219,7 @@ export default function InventoryDashboard() {
                   </div>
                 </div>
                 <div className="shrink-0 scale-90 md:scale-100">
-                  <Barcode value={selectedItem.serialNumber} />
+                  <QRCode value={selectedItem.serialNumber} />
                 </div>
               </div>
 
@@ -1331,10 +1319,10 @@ export default function InventoryDashboard() {
 
               <div className="mt-8 md:mt-10 pt-6 md:pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-stretch gap-4">
                 <button
-                  onClick={() => handleOpenBarcodePreview(selectedItem)}
+                  onClick={() => handleOpenQRCodePreview(selectedItem)}
                   className="flex-1 inline-flex items-center justify-center gap-3 rounded-2xl bg-emerald-600 py-4 md:py-5 text-xs font-black uppercase tracking-[0.2em] text-white shadow-xl hover:bg-emerald-700 transition-all"
                 >
-                  <PrintIcon sx={{ fontSize: 18 }} /> Print Barcode Asset
+                  <PrintIcon sx={{ fontSize: 18 }} /> Print QR Code Asset
                 </button>
                 {canEdit && (
                   <button
@@ -1362,26 +1350,26 @@ export default function InventoryDashboard() {
           </div>
         </div>
       )}
-      {/* Barcode Preview Modal */}
-      {showBarcodeModal && selectedItem && (
+      {/* QR Code Preview Modal */}
+      {showQRCodeModal && selectedItem && (
         <div className="fixed inset-0 z-2010 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300"
-            onClick={() => setShowBarcodeModal(false)}
+            onClick={() => setShowQRCodeModal(false)}
           />
           <div className="relative w-full max-w-lg bg-white rounded-4xl shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-8">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                    Pratinjau Label
+                    Pratinjau Label QR
                   </h2>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     Pemeriksaan Sebelum Pencetakan
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowBarcodeModal(false)}
+                  onClick={() => setShowQRCodeModal(false)}
                   className="h-9 w-9 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors"
                 >
                   <CloseIcon />
@@ -1400,7 +1388,7 @@ export default function InventoryDashboard() {
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <Barcode value={selectedItem.serialNumber} />
+                  <QRCode value={selectedItem.serialNumber} />
                 </div>
 
                 <div className="text-center">
@@ -1412,7 +1400,7 @@ export default function InventoryDashboard() {
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => setShowBarcodeModal(false)}
+                  onClick={() => setShowQRCodeModal(false)}
                   className="flex-1 px-6 py-4 rounded-2xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
                 >
                   Batal
@@ -1420,7 +1408,7 @@ export default function InventoryDashboard() {
                 <button
                   onClick={() => {
                     executePrint(selectedItem);
-                    setShowBarcodeModal(false);
+                    setShowQRCodeModal(false);
                   }}
                   className="flex-1 px-6 py-4 rounded-2xl bg-blue-600 text-white text-xs font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                 >

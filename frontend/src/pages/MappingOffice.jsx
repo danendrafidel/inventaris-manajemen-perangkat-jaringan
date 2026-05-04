@@ -51,8 +51,8 @@ export default function MappingOffice() {
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const isAdmin = user?.role === "admin";
-  const isOfficer = user?.role === "officer";
+  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "super officer";
+  const isOfficer = user?.role?.toLowerCase() === "officer";
 
   const displayOffices = useMemo(() => {
     if (isAdmin) return offices;

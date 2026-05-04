@@ -77,6 +77,7 @@ export default function Dashboard() {
   const roleLabel = useMemo(() => {
     const r = String(user?.role || "").toLowerCase();
     if (r === "admin") return "Administrator";
+    if (r === "super officer") return "Super Officer";
     if (r === "officer") return "Officer";
     return "User";
   }, [user?.role]);
@@ -89,7 +90,8 @@ export default function Dashboard() {
 
     // Apply role-based filtering for stats
     const params = new URLSearchParams();
-    if (user.role !== "admin") {
+    const role = user.role?.toLowerCase();
+    if (role !== "admin" && role !== "super officer") {
       params.set("area_id", user.area_id);
     }
 
@@ -210,7 +212,7 @@ export default function Dashboard() {
           <section className="relative overflow-hidden rounded-4xl md:rounded-[2.5rem] bg-linear-to-br from-indigo-600 to-blue-700 p-6 md:p-12 text-white shadow-xl shadow-blue-200 mb-8">
             <div className="relative z-10">
               <h2 className="text-2xl md:text-4xl font-black tracking-tight">
-                Selamat Datang, {user.name.split(" ")[0]}!
+                Selamat Datang, {user.name}!
               </h2>
               <p className="mt-2 md:mt-3 text-blue-100 font-medium max-w-2xl text-sm md:text-lg">
                 Akses{" "}

@@ -147,7 +147,7 @@ export default function MappingArea() {
     loadData();
   }, []);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "super officer";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

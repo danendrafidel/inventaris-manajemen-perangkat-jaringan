@@ -24,8 +24,8 @@ export default function Sidebar() {
   const [isPmrOpen, setIsPmrOpen] = useState(false);
   const location = useLocation();
   const user = getStoredUser();
-  const role = user?.role;
-  const isAdminOrOfficer = role === "admin" || role === "officer";
+  const role = user?.role?.toLowerCase();
+  const isAdminOrOfficer = role === "admin" || role === "super officer" || role === "officer";
 
   const handleLogout = () => {
     clearAuth();

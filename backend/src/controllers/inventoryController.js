@@ -210,17 +210,34 @@ exports.createDevice = async (req, res) => {
       deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort, idlePort
     } = req.body;
 
+    const final_area_id = area_id && area_id !== "" ? parseInt(area_id) : null;
+    const final_sto_id = sto_id && sto_id !== "" ? parseInt(sto_id) : null;
+
+    // Ambil nama Area & STO secara eksplisit
+    let area_name = null;
+    let sto_name = null;
+
+    if (final_area_id) {
+      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [final_area_id]);
+      if (areaRes.rows.length > 0) area_name = areaRes.rows[0].name;
+    }
+    if (final_sto_id) {
+      const stoRes = await db.query("SELECT name FROM stos WHERE id = $1", [final_sto_id]);
+      if (stoRes.rows.length > 0) sto_name = stoRes.rows[0].name;
+    }
+
     const query = `
       INSERT INTO inventory_devices (
         device_id, ip, name, device_type, storage_location, 
         serial_number, status, room, area_id, sto_id, 
-        total_port, idle_port
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        area, sto, total_port, idle_port
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
 
     const { rows } = await db.query(query, [
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort || 0, idlePort || 0,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, 
+      final_area_id, final_sto_id, area_name, sto_name, totalPort || 0, idlePort || 0,
     ]);
 
     invalidateAllStats();
@@ -241,18 +258,35 @@ exports.updateDevice = async (req, res) => {
       deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort, idlePort
     } = req.body;
 
+    const final_area_id = area_id && area_id !== "" ? parseInt(area_id) : null;
+    const final_sto_id = sto_id && sto_id !== "" ? parseInt(sto_id) : null;
+
+    // Ambil nama Area & STO secara eksplisit
+    let area_name = null;
+    let sto_name = null;
+
+    if (final_area_id) {
+      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [final_area_id]);
+      if (areaRes.rows.length > 0) area_name = areaRes.rows[0].name;
+    }
+    if (final_sto_id) {
+      const stoRes = await db.query("SELECT name FROM stos WHERE id = $1", [final_sto_id]);
+      if (stoRes.rows.length > 0) sto_name = stoRes.rows[0].name;
+    }
+
     const query = `
       UPDATE inventory_devices SET
         device_id = $1, ip = $2, name = $3, device_type = $4, 
         storage_location = $5, serial_number = $6, status = $7, room = $8, 
-        area_id = $9, sto_id = $10, 
-        total_port = $11, idle_port = $12, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $13
+        area_id = $9, sto_id = $10, area = $11, sto = $12,
+        total_port = $13, idle_port = $14, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $15
       RETURNING *
     `;
 
     const { rows } = await db.query(query, [
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort || 0, idlePort || 0, id,
+      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, 
+      final_area_id, final_sto_id, area_name, sto_name, totalPort || 0, idlePort || 0, id,
     ]);
 
     if (rows.length === 0) {
@@ -641,8 +675,13 @@ exports.getAllPmrReports = async (req, res) => {
       where.push(`u.area_id = $${params.length}`);
     }
 
-    // Filter by user_id if provided (for regular users to see only their logs)
-    if (user_id && role !== 'admin' && role !== 'officer') {
+    const userRole = String(role || '').toLowerCase();
+    const isAdminEquivalent = userRole === 'admin' || userRole === 'super officer';
+
+    // Filter by user_id if provided. 
+    // Admins, Super Officers, and Officers can see all reports (or reports in their area if area_id is set).
+    // Regular users (role 'user') only see their own logs.
+    if (user_id && !isAdminEquivalent && userRole !== 'officer') {
       params.push(user_id);
       where.push(`p.user_id = $${params.length}`);
     }
@@ -681,7 +720,7 @@ exports.getAllPmrReports = async (req, res) => {
       FROM pmr_reports p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN areas a ON u.area_id = a.id
-      JOIN inventory_devices d ON p.device_id = d.id
+      LEFT JOIN inventory_devices d ON p.device_id = d.id
       LEFT JOIN stos s ON d.sto_id = s.id
       ${whereClause}
       ORDER BY p.maintenance_date DESC, p.created_at DESC
