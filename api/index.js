@@ -1,4 +1,5 @@
-const app = require('../backend/src/app')
+// Vercel Serverless Function entry point
+const app = require('../backend/src/app');
 
-module.exports = app
-
+// Vercel expects a function export
+module.exports = app;
