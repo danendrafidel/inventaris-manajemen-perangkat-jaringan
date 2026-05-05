@@ -1,7 +1,7 @@
-const db = require('../config/db');
-const cache = require('../config/cache');
-const mailer = require('../config/mailer');
-const crypto = require('crypto');
+const db = require("../config/db");
+const cache = require("../config/cache");
+const mailer = require("../config/mailer");
+const crypto = require("crypto");
 
 function mapDeviceFromDB(row) {
   return {
@@ -31,11 +31,11 @@ function handleError(res, error, defaultMessage) {
 }
 
 function invalidateAllStats() {
-    cache.invalidate('inventory:');
-    cache.invalidate('areas:');
-    cache.invalidate('stos:');
-    cache.invalidate('offices:');
-    cache.invalidate('dashboard:');
+  cache.invalidate("inventory:");
+  cache.invalidate("areas:");
+  cache.invalidate("stos:");
+  cache.invalidate("offices:");
+  cache.invalidate("dashboard:");
 }
 
 exports.login = async (req, res) => {
@@ -55,11 +55,14 @@ exports.login = async (req, res) => {
     if (rows.length === 0) {
       return res
         .status(401)
-        .json({ success: false, message: "Username/Email atau password salah" });
+        .json({
+          success: false,
+          message: "Username/Email atau password salah",
+        });
     }
 
     const user = rows[0];
-    
+
     res.json({
       success: true,
       user: {
@@ -83,32 +86,44 @@ exports.login = async (req, res) => {
 exports.getInventoryOptions = async (req, res) => {
   try {
     const { role, email } = req.query;
-    const cacheKey = `inventory:options:${role || 'all'}`;
+    const cacheKey = `inventory:options:${role || "all"}`;
     const cached = cache.get(cacheKey);
-    if (cached) return res.json({ success: true, data: cached, source: 'cache' });
+    if (cached)
+      return res.json({ success: true, data: cached, source: "cache" });
 
-    const [areas, stos, statuses, deviceTypes, roles, offices] = await Promise.all([
-      db.query("SELECT id, name FROM areas WHERE status = 'active' ORDER BY name ASC"),
-      db.query("SELECT id, name, area_id FROM stos WHERE status = 'active' ORDER BY name ASC"),
-      db.query("SELECT DISTINCT status FROM inventory_devices"),
-      db.query("SELECT DISTINCT device_type FROM inventory_devices"),
-      db.query("SELECT DISTINCT role FROM users"),
-      db.query("SELECT id, name, area_id FROM offices WHERE status = 'active' ORDER BY name ASC"),
-    ]);
+    const [areas, stos, statuses, deviceTypes, roles, offices] =
+      await Promise.all([
+        db.query(
+          "SELECT id, name FROM areas WHERE status = 'active' ORDER BY name ASC",
+        ),
+        db.query(
+          "SELECT id, name, area_id FROM stos WHERE status = 'active' ORDER BY name ASC",
+        ),
+        db.query("SELECT DISTINCT status FROM inventory_devices"),
+        db.query("SELECT DISTINCT device_type FROM inventory_devices"),
+        db.query("SELECT DISTINCT role FROM users"),
+        db.query(
+          "SELECT id, name, area_id FROM offices WHERE status = 'active' ORDER BY name ASC",
+        ),
+      ]);
 
     const data = {
       areas: areas.rows.map((r) => ({ id: r.id, name: r.name })),
-      stos: stos.rows.map((r) => ({ id: r.id, name: r.name, area_id: r.area_id })),
+      stos: stos.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        area_id: r.area_id,
+      })),
       statuses: statuses.rows.map((r) => r.status),
       deviceTypes: deviceTypes.rows.map((r) => r.device_type),
       roles: roles.rows.map((r) => r.role),
       offices: offices.rows.map((r) => ({
         val: r.id,
         label: r.name,
-        area_id: r.area_id
-      }))
+        area_id: r.area_id,
+      })),
     };
-    
+
     cache.set(cacheKey, data);
     res.json({ success: true, data });
   } catch (error) {
@@ -119,33 +134,47 @@ exports.getInventoryOptions = async (req, res) => {
 exports.getInventoryStats = async (req, res) => {
   try {
     const { area_id } = req.query;
-    const cacheKey = `inventory:stats:${area_id || 'all'}`;
+    const cacheKey = `inventory:stats:${area_id || "all"}`;
     const cached = cache.get(cacheKey);
-    if (cached) return res.json({ success: true, data: cached, source: 'cache' });
+    if (cached)
+      return res.json({ success: true, data: cached, source: "cache" });
 
     let params = [];
     let whereClause = "";
     if (area_id) {
-        params.push(area_id);
-        whereClause = "WHERE area_id = $1";
+      params.push(area_id);
+      whereClause = "WHERE area_id = $1";
     }
 
-    const [totalDevices, statusBaik, perluPerhatian, areaTercover] = await Promise.all([
-      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause}`, params),
-      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? 'AND' : 'WHERE'} status = 'OPERATED'`, params),
-      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? 'AND' : 'WHERE'} status IN ('MAINTENANCE', 'PROBLEM')`, params),
-      db.query(`SELECT COUNT(DISTINCT area_id) FROM inventory_devices ${whereClause}`, params),
-    ]);
+    const [totalDevices, statusBaik, perluPerhatian, areaTercover] =
+      await Promise.all([
+        db.query(
+          `SELECT COUNT(*) FROM inventory_devices ${whereClause}`,
+          params,
+        ),
+        db.query(
+          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status = 'OPERATED'`,
+          params,
+        ),
+        db.query(
+          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status IN ('MAINTENANCE', 'PROBLEM')`,
+          params,
+        ),
+        db.query(
+          `SELECT COUNT(DISTINCT area_id) FROM inventory_devices ${whereClause}`,
+          params,
+        ),
+      ]);
 
     const data = {
-        stats: {
-            totalDevices: parseInt(totalDevices.rows[0].count),
-            statusBaik: parseInt(statusBaik.rows[0].count),
-            perluPerhatian: parseInt(perluPerhatian.rows[0].count),
-            areaTercoverCount: parseInt(areaTercover.rows[0].count),
-        }
+      stats: {
+        totalDevices: parseInt(totalDevices.rows[0].count),
+        statusBaik: parseInt(statusBaik.rows[0].count),
+        perluPerhatian: parseInt(perluPerhatian.rows[0].count),
+        areaTercoverCount: parseInt(areaTercover.rows[0].count),
+      },
     };
-    
+
     cache.set(cacheKey, data, 60000); // 1 minute TTL for stats
     res.json({ success: true, data });
   } catch (error) {
@@ -159,10 +188,12 @@ exports.fetchInventoryDevices = async (req, res) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     let where = [];
     let params = [];
-    
+
     if (search) {
       params.push(`%${search}%`);
-      where.push(`(i.device_id ILIKE $${params.length} OR i.name ILIKE $${params.length} OR i.serial_number ILIKE $${params.length})`);
+      where.push(
+        `(i.device_id ILIKE $${params.length} OR i.name ILIKE $${params.length} OR i.serial_number ILIKE $${params.length})`,
+      );
     }
     if (sto_id) {
       params.push(sto_id);
@@ -176,12 +207,16 @@ exports.fetchInventoryDevices = async (req, res) => {
       params.push(status);
       where.push(`i.status = $${params.length}`);
     }
-    
+
     const whereClause = where.length > 0 ? "WHERE " + where.join(" AND ") : "";
-    
+
     const [total, items] = await Promise.all([
-      db.query(`SELECT COUNT(*) FROM inventory_devices i ${whereClause}`, params),
-      db.query(`
+      db.query(
+        `SELECT COUNT(*) FROM inventory_devices i ${whereClause}`,
+        params,
+      ),
+      db.query(
+        `
         SELECT i.*, a.name as area_name, s.name as sto_name 
         FROM inventory_devices i
         LEFT JOIN areas a ON i.area_id = a.id
@@ -189,15 +224,17 @@ exports.fetchInventoryDevices = async (req, res) => {
         ${whereClause} 
         ORDER BY i.created_at DESC 
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-      `, [...params, parseInt(limit), offset])
+      `,
+        [...params, parseInt(limit), offset],
+      ),
     ]);
-    
+
     res.json({
-        success: true,
-        data: {
-            items: items.rows.map(mapDeviceFromDB),
-            total: parseInt(total.rows[0].count)
-        }
+      success: true,
+      data: {
+        items: items.rows.map(mapDeviceFromDB),
+        total: parseInt(total.rows[0].count),
+      },
     });
   } catch (error) {
     handleError(res, error, "Gagal memuat daftar perangkat");
@@ -207,7 +244,18 @@ exports.fetchInventoryDevices = async (req, res) => {
 exports.createDevice = async (req, res) => {
   try {
     const {
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort, idlePort
+      deviceId,
+      ip,
+      name,
+      deviceType,
+      storageLocation,
+      serialNumber,
+      status,
+      room,
+      area_id,
+      sto_id,
+      totalPort,
+      idlePort,
     } = req.body;
 
     const final_area_id = area_id && area_id !== "" ? parseInt(area_id) : null;
@@ -218,11 +266,15 @@ exports.createDevice = async (req, res) => {
     let sto_name = null;
 
     if (final_area_id) {
-      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [final_area_id]);
+      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [
+        final_area_id,
+      ]);
       if (areaRes.rows.length > 0) area_name = areaRes.rows[0].name;
     }
     if (final_sto_id) {
-      const stoRes = await db.query("SELECT name FROM stos WHERE id = $1", [final_sto_id]);
+      const stoRes = await db.query("SELECT name FROM stos WHERE id = $1", [
+        final_sto_id,
+      ]);
       if (stoRes.rows.length > 0) sto_name = stoRes.rows[0].name;
     }
 
@@ -236,8 +288,20 @@ exports.createDevice = async (req, res) => {
     `;
 
     const { rows } = await db.query(query, [
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, 
-      final_area_id, final_sto_id, area_name, sto_name, totalPort || 0, idlePort || 0,
+      deviceId,
+      ip,
+      name,
+      deviceType,
+      storageLocation,
+      serialNumber,
+      status,
+      room,
+      final_area_id,
+      final_sto_id,
+      area_name,
+      sto_name,
+      totalPort || 0,
+      idlePort || 0,
     ]);
 
     invalidateAllStats();
@@ -255,7 +319,18 @@ exports.updateDevice = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, area_id, sto_id, totalPort, idlePort
+      deviceId,
+      ip,
+      name,
+      deviceType,
+      storageLocation,
+      serialNumber,
+      status,
+      room,
+      area_id,
+      sto_id,
+      totalPort,
+      idlePort,
     } = req.body;
 
     const final_area_id = area_id && area_id !== "" ? parseInt(area_id) : null;
@@ -266,11 +341,15 @@ exports.updateDevice = async (req, res) => {
     let sto_name = null;
 
     if (final_area_id) {
-      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [final_area_id]);
+      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [
+        final_area_id,
+      ]);
       if (areaRes.rows.length > 0) area_name = areaRes.rows[0].name;
     }
     if (final_sto_id) {
-      const stoRes = await db.query("SELECT name FROM stos WHERE id = $1", [final_sto_id]);
+      const stoRes = await db.query("SELECT name FROM stos WHERE id = $1", [
+        final_sto_id,
+      ]);
       if (stoRes.rows.length > 0) sto_name = stoRes.rows[0].name;
     }
 
@@ -285,8 +364,21 @@ exports.updateDevice = async (req, res) => {
     `;
 
     const { rows } = await db.query(query, [
-      deviceId, ip, name, deviceType, storageLocation, serialNumber, status, room, 
-      final_area_id, final_sto_id, area_name, sto_name, totalPort || 0, idlePort || 0, id,
+      deviceId,
+      ip,
+      name,
+      deviceType,
+      storageLocation,
+      serialNumber,
+      status,
+      room,
+      final_area_id,
+      final_sto_id,
+      area_name,
+      sto_name,
+      totalPort || 0,
+      idlePort || 0,
+      id,
     ]);
 
     if (rows.length === 0) {
@@ -296,10 +388,10 @@ exports.updateDevice = async (req, res) => {
     }
 
     invalidateAllStats();
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Perangkat berhasil diperbarui",
-      data: mapDeviceFromDB(rows[0])
+      data: mapDeviceFromDB(rows[0]),
     });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui perangkat");
@@ -309,7 +401,7 @@ exports.updateDevice = async (req, res) => {
 exports.deleteDevice = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const { rowCount } = await db.query(
       "DELETE FROM inventory_devices WHERE id = $1",
       [id],
@@ -320,7 +412,7 @@ exports.deleteDevice = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Perangkat tidak ditemukan" });
     }
-    
+
     invalidateAllStats();
     res.json({ success: true, message: "Perangkat berhasil dihapus" });
   } catch (error) {
@@ -351,20 +443,26 @@ exports.createUser = async (req, res) => {
   try {
     const { username, password, name, email, nik, role, area_id, office_id } =
       req.body;
-    
+
     const final_area_id = area_id && area_id !== "" ? parseInt(area_id) : null;
-    const final_office_id = office_id && office_id !== "" ? parseInt(office_id) : null;
+    const final_office_id =
+      office_id && office_id !== "" ? parseInt(office_id) : null;
 
     // Ambil nama Area & Kantor secara eksplisit
     let area_name = null;
     let office_name = null;
 
     if (final_area_id) {
-      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [final_area_id]);
+      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [
+        final_area_id,
+      ]);
       if (areaRes.rows.length > 0) area_name = areaRes.rows[0].name;
     }
     if (final_office_id) {
-      const officeRes = await db.query("SELECT name FROM offices WHERE id = $1", [final_office_id]);
+      const officeRes = await db.query(
+        "SELECT name FROM offices WHERE id = $1",
+        [final_office_id],
+      );
       if (officeRes.rows.length > 0) office_name = officeRes.rows[0].name;
     }
 
@@ -383,9 +481,9 @@ exports.createUser = async (req, res) => {
       final_area_id,
       final_office_id,
       area_name,
-      office_name
+      office_name,
     ]);
-    
+
     invalidateAllStats();
     res.json({ success: true, message: "User berhasil dibuat" });
   } catch (error) {
@@ -399,18 +497,24 @@ exports.updateUser = async (req, res) => {
     const { name, email, nik, role, area_id, office_id } = req.body;
 
     const final_area_id = area_id && area_id !== "" ? parseInt(area_id) : null;
-    const final_office_id = office_id && office_id !== "" ? parseInt(office_id) : null;
+    const final_office_id =
+      office_id && office_id !== "" ? parseInt(office_id) : null;
 
     // Ambil nama Area & Kantor secara eksplisit
     let area_name = null;
     let office_name = null;
 
     if (final_area_id) {
-      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [final_area_id]);
+      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [
+        final_area_id,
+      ]);
       if (areaRes.rows.length > 0) area_name = areaRes.rows[0].name;
     }
     if (final_office_id) {
-      const officeRes = await db.query("SELECT name FROM offices WHERE id = $1", [final_office_id]);
+      const officeRes = await db.query(
+        "SELECT name FROM offices WHERE id = $1",
+        [final_office_id],
+      );
       if (officeRes.rows.length > 0) office_name = officeRes.rows[0].name;
     }
 
@@ -468,9 +572,10 @@ exports.changePassword = async (req, res) => {
 exports.toggleUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { rows } = await db.query("SELECT status, username FROM users WHERE id = $1", [
-      id,
-    ]);
+    const { rows } = await db.query(
+      "SELECT status, username FROM users WHERE id = $1",
+      [id],
+    );
 
     if (rows.length === 0) {
       return res
@@ -523,18 +628,24 @@ exports.updateProfile = async (req, res) => {
     const { name, email, nik, area_id, office_id } = req.body;
 
     const final_area_id = area_id && area_id !== "" ? parseInt(area_id) : null;
-    const final_office_id = office_id && office_id !== "" ? parseInt(office_id) : null;
+    const final_office_id =
+      office_id && office_id !== "" ? parseInt(office_id) : null;
 
     // Ambil nama Area & Kantor secara eksplisit
     let area_name = null;
     let office_name = null;
 
     if (final_area_id) {
-      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [final_area_id]);
+      const areaRes = await db.query("SELECT name FROM areas WHERE id = $1", [
+        final_area_id,
+      ]);
       if (areaRes.rows.length > 0) area_name = areaRes.rows[0].name;
     }
     if (final_office_id) {
-      const officeRes = await db.query("SELECT name FROM offices WHERE id = $1", [final_office_id]);
+      const officeRes = await db.query(
+        "SELECT name FROM offices WHERE id = $1",
+        [final_office_id],
+      );
       if (officeRes.rows.length > 0) office_name = officeRes.rows[0].name;
     }
 
@@ -665,7 +776,16 @@ exports.createPmrReport = async (req, res) => {
 
 exports.getAllPmrReports = async (req, res) => {
   try {
-    const { area_id, role, user_id, search, sto_id, status, start_date, end_date } = req.query;
+    const {
+      area_id,
+      role,
+      user_id,
+      search,
+      sto_id,
+      status,
+      start_date,
+      end_date,
+    } = req.query;
     let where = [];
     let params = [];
 
@@ -675,20 +795,23 @@ exports.getAllPmrReports = async (req, res) => {
       where.push(`u.area_id = $${params.length}`);
     }
 
-    const userRole = String(role || '').toLowerCase();
-    const isAdminEquivalent = userRole === 'admin' || userRole === 'super officer';
+    const userRole = String(role || "").toLowerCase();
+    const isAdminEquivalent =
+      userRole === "admin" || userRole === "super officer";
 
-    // Filter by user_id if provided. 
+    // Filter by user_id if provided.
     // Admins, Super Officers, and Officers can see all reports (or reports in their area if area_id is set).
     // Regular users (role 'user') only see their own logs.
-    if (user_id && !isAdminEquivalent && userRole !== 'officer') {
+    if (user_id && !isAdminEquivalent && userRole !== "officer") {
       params.push(user_id);
       where.push(`p.user_id = $${params.length}`);
     }
 
     if (search) {
       params.push(`%${search}%`);
-      where.push(`(u.name ILIKE $${params.length} OR d.name ILIKE $${params.length} OR d.device_id ILIKE $${params.length})`);
+      where.push(
+        `(u.name ILIKE $${params.length} OR d.name ILIKE $${params.length} OR d.device_id ILIKE $${params.length})`,
+      );
     }
 
     if (sto_id) {
@@ -736,9 +859,10 @@ exports.getAllPmrReports = async (req, res) => {
 exports.getDashboard = async (req, res) => {
   try {
     const { area_id } = req.query;
-    const cacheKey = `dashboard:stats:${area_id || 'all'}`;
+    const cacheKey = `dashboard:stats:${area_id || "all"}`;
     const cached = cache.get(cacheKey);
-    if (cached) return res.json({ success: true, data: cached, source: 'cache' });
+    if (cached)
+      return res.json({ success: true, data: cached, source: "cache" });
 
     let whereClause = "WHERE 1=1";
     const params = [];
@@ -755,34 +879,40 @@ exports.getDashboard = async (req, res) => {
       userParams.push(area_id);
     }
     const userCount = await db.query(userQuery, userParams);
-    
-    const deviceWhere = whereClause === "WHERE 1=1" ? "" : whereClause.replace("WHERE 1=1 AND ", "WHERE ");
-    const deviceCount = await db.query(`SELECT COUNT(*) FROM inventory_devices ${deviceWhere}`, params);
-    
+
+    const deviceWhere =
+      whereClause === "WHERE 1=1"
+        ? ""
+        : whereClause.replace("WHERE 1=1 AND ", "WHERE ");
+    const deviceCount = await db.query(
+      `SELECT COUNT(*) FROM inventory_devices ${deviceWhere}`,
+      params,
+    );
+
     let stoQuery = "SELECT COUNT(*) FROM stos";
     let stoParams = [];
     if (area_id) {
-        stoQuery += " WHERE area_id = $1";
-        stoParams.push(area_id);
+      stoQuery += " WHERE area_id = $1";
+      stoParams.push(area_id);
     }
     const stoCount = await db.query(stoQuery, stoParams);
 
     const data = {
-        lastLogin: new Date().toISOString(),
-        stats: {
-          totalUsers: parseInt(userCount.rows[0].count),
-          totalDevices: parseInt(deviceCount.rows[0].count),
-          activeLoans: 0,
-          units: parseInt(stoCount.rows[0].count),
-        },
-        meta: {
-          usersSuffix: "active",
-          devicesSuffix: "online",
-          loansSuffix: "loans",
-          unitsSuffix: "units",
-        },
+      lastLogin: new Date().toISOString(),
+      stats: {
+        totalUsers: parseInt(userCount.rows[0].count),
+        totalDevices: parseInt(deviceCount.rows[0].count),
+        activeLoans: 0,
+        units: parseInt(stoCount.rows[0].count),
+      },
+      meta: {
+        usersSuffix: "active",
+        devicesSuffix: "online",
+        loansSuffix: "loans",
+        unitsSuffix: "units",
+      },
     };
-    
+
     cache.set(cacheKey, data, 300000); // 5 minutes TTL
     res.json({ success: true, data });
   } catch (error) {
@@ -794,32 +924,40 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     console.log(`[ForgotPassword] Request for: ${email}`);
-    
+
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email harus diisi" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email harus diisi" });
     }
 
-    const { rows } = await db.query("SELECT id, email, name FROM users WHERE email = $1", [email]);
+    const { rows } = await db.query(
+      "SELECT id, email, name FROM users WHERE email = $1",
+      [email],
+    );
 
     if (rows.length === 0) {
-      return res.status(400).json({ success: false, message: "Email tidak terdaftar" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email tidak terdaftar" });
     }
 
     const user = rows[0];
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 3600000); // 1 jam dari sekarang
-    
+
     // Simpan token ke database
     await db.query(
       "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3",
-      [token, expires, email]
+      [token, expires, email],
     );
 
     // Deteksi URL dasar secara dinamis
-    const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
-    const host = req.headers['host'];
+    const protocol =
+      req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+    const host = req.headers["host"];
     const baseUrl = process.env.FRONTEND_URL || `${protocol}://${host}`;
-    
+
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
     const mailOptions = {
@@ -845,11 +983,19 @@ exports.forgotPassword = async (req, res) => {
 
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.error("[MAILER ERROR] Konfigurasi SMTP belum lengkap");
-      return res.status(500).json({ success: false, message: "Konfigurasi server email belum lengkap. Hubungi Admin." });
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Konfigurasi server email belum lengkap. Hubungi Admin.",
+        });
     }
 
     await mailer.sendMail(mailOptions);
-    res.json({ success: true, message: "Link reset password telah dikirim ke email Anda" });
+    res.json({
+      success: true,
+      message: "Link reset password telah dikirim ke email Anda",
+    });
   } catch (error) {
     handleError(res, error, "Gagal mengirim email reset password");
   }
@@ -862,11 +1008,16 @@ exports.resetPassword = async (req, res) => {
     // Cari user berdasarkan token dan pastikan belum expired
     const { rows } = await db.query(
       "SELECT id, email FROM users WHERE reset_token = $1 AND reset_token_expires > CURRENT_TIMESTAMP",
-      [token]
+      [token],
     );
 
     if (rows.length === 0) {
-      return res.status(400).json({ success: false, message: "Link reset tidak valid atau sudah kadaluarsa" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Link reset tidak valid atau sudah kadaluarsa",
+        });
     }
 
     const email = rows[0].email;
@@ -874,10 +1025,13 @@ exports.resetPassword = async (req, res) => {
     // Update password dan hapus token
     await db.query(
       "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = CURRENT_TIMESTAMP WHERE email = $2",
-      [newPassword, email]
+      [newPassword, email],
     );
 
-    res.json({ success: true, message: "Password berhasil diperbarui. Silakan login kembali." });
+    res.json({
+      success: true,
+      message: "Password berhasil diperbarui. Silakan login kembali.",
+    });
   } catch (error) {
     handleError(res, error, "Gagal mereset password");
   }

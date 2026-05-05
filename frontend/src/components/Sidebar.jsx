@@ -17,6 +17,7 @@ import RouterIcon from "@mui/icons-material/Router";
 import BusinessIcon from "@mui/icons-material/Business";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import HistoryIcon from "@mui/icons-material/History";
+import QrCodeIcon from "@mui/icons-material/QrCode";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +27,7 @@ export default function Sidebar() {
   const user = getStoredUser();
   const role = user?.role?.toLowerCase();
   const isAdminOrOfficer = role === "admin" || role === "super officer" || role === "officer";
+  const canPrintBarcode = isAdminOrOfficer || role === "user";
 
   const handleLogout = () => {
     clearAuth();
@@ -176,6 +178,20 @@ export default function Sidebar() {
             >
               <InventoryIcon fontSize="small" /> Inventaris
             </Link>
+
+            {canPrintBarcode && (
+              <Link
+                to="/inventory/print"
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  isActive("/inventory/print")
+                    ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <QrCodeIcon fontSize="small" /> Print Barcode
+              </Link>
+            )}
 
             {isAdminOrOfficer ? (
               <Link

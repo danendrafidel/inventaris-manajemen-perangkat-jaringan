@@ -1,28 +1,29 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import LoginPage from './pages/LoginPage'
-import Dashboard from './pages/Dashboard'
-import InventoryDashboard from './pages/InventoryDashboard'
-import UserManagement from './pages/UserManagement'
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import Dashboard from "./pages/Dashboard";
+import InventoryDashboard from "./pages/InventoryDashboard";
+import UserManagement from "./pages/UserManagement";
 import Profile from "./pages/Profile";
 import MappingArea from "./pages/MappingArea";
 import MappingSto from "./pages/MappingSto";
 import MappingOffice from "./pages/MappingOffice";
-import FormPMR from './pages/FormPMR'
-import LaporanPMR from './pages/LaporanPMR'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import DeviceScanPage from './pages/DeviceScanPage'
-import { getStoredUser } from './services/authService'
+import FormPMR from "./pages/FormPMR";
+import LaporanPMR from "./pages/LaporanPMR";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import DeviceScanPage from "./pages/DeviceScanPage";
+import PrintBarcode from "./pages/PrintBarcode";
+import { getStoredUser } from "./services/authService";
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
   const user = getStoredUser();
   if (!user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/" replace />;
   }
   const userRole = user.role?.toLowerCase();
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/dashboard" replace />;
   }
-  return children
+  return children;
 }
 
 function App() {
@@ -43,7 +44,7 @@ function App() {
         <Route
           path="/pmr"
           element={
-            <ProtectedRoute allowedRoles={['user']}>
+            <ProtectedRoute allowedRoles={["user"]}>
               <FormPMR />
             </ProtectedRoute>
           }
@@ -65,9 +66,21 @@ function App() {
           }
         />
         <Route
+          path="/inventory/print"
+          element={
+            <ProtectedRoute
+              allowedRoles={["admin", "super officer", "officer", "user"]}
+            >
+              <PrintBarcode />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/users"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
+            <ProtectedRoute
+              allowedRoles={["admin", "super officer", "officer"]}
+            >
               <UserManagement />
             </ProtectedRoute>
           }
@@ -75,7 +88,9 @@ function App() {
         <Route
           path="/mapping/area"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
+            <ProtectedRoute
+              allowedRoles={["admin", "super officer", "officer"]}
+            >
               <MappingArea />
             </ProtectedRoute>
           }
@@ -83,7 +98,9 @@ function App() {
         <Route
           path="/mapping/sto"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
+            <ProtectedRoute
+              allowedRoles={["admin", "super officer", "officer"]}
+            >
               <MappingSto />
             </ProtectedRoute>
           }
@@ -91,7 +108,9 @@ function App() {
         <Route
           path="/mapping/office"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'super officer', 'officer']}>
+            <ProtectedRoute
+              allowedRoles={["admin", "super officer", "officer"]}
+            >
               <MappingOffice />
             </ProtectedRoute>
           }
@@ -107,7 +126,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

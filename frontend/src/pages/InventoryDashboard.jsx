@@ -36,6 +36,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import FolderIcon from "@mui/icons-material/Folder";
 import AddIcon from "@mui/icons-material/Add";
+import QrCodeIcon from "@mui/icons-material/QrCode";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
@@ -590,14 +591,22 @@ export default function InventoryDashboard() {
                 </div>
               </div>
 
-              <div className="shrink-0">
+              <div className="shrink-0 flex items-center gap-2">
                 {canAdd && (
-                  <button
-                    onClick={handleOpenAdd}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
-                  >
-                    <AddIcon fontSize="small" /> NEW DEVICE
-                  </button>
+                  <>
+                    <Link
+                      to="/inventory/print"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                    >
+                      <QrCodeIcon fontSize="small" /> CETAK LABEL QR
+                    </Link>
+                    <button
+                      onClick={handleOpenAdd}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+                    >
+                      <AddIcon fontSize="small" /> NEW DEVICE
+                    </button>
+                  </>
                 )}
               </div>
             </div>
