@@ -937,26 +937,26 @@ export default function LaporanPMR() {
                     </div>
                   </div>
 
-                  {(role === 'officer' || role === 'super officer') && (
-                    <div className="space-y-3">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <LocalGasStationIcon sx={{ fontSize: 14 }} /> Logistik &
-                        Perjalanan
-                      </h3>
-                      <div className="bg-slate-50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
-                            <RouteIcon sx={{ fontSize: 20 }} />
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase">
-                              Jarak Tempuh
-                            </p>
-                            <p className="text-sm font-black text-slate-700">
-                              {selectedReport.distance} KM
-                            </p>
-                          </div>
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <LocalGasStationIcon sx={{ fontSize: 14 }} /> Logistik &
+                      Perjalanan
+                    </h3>
+                    <div className="bg-slate-50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                          <RouteIcon sx={{ fontSize: 20 }} />
                         </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Jarak Tempuh
+                          </p>
+                          <p className="text-sm font-black text-slate-700">
+                            {selectedReport.distance} KM
+                          </p>
+                        </div>
+                      </div>
+                      {(role === "officer" || role === "super officer") && (
                         <div className="sm:text-right">
                           <p className="text-[9px] font-bold text-slate-400 uppercase">
                             Estimasi BBM
@@ -965,9 +965,9 @@ export default function LaporanPMR() {
                             Rp {selectedReport.fuel_cost?.toLocaleString()}
                           </p>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Section 2: Device Info */}
