@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 import { getStoredUser } from "../services/authService";
 import {
   fetchInventoryDevices,
@@ -37,6 +38,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import FolderIcon from "@mui/icons-material/Folder";
 import AddIcon from "@mui/icons-material/Add";
 import QrCodeIcon from "@mui/icons-material/QrCode";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
@@ -119,6 +121,36 @@ export default function InventoryDashboard() {
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
+  };
+
+  const handleExport = () => {
+    if (items.length === 0) {
+      showNotify("Tidak ada data untuk diekspor", "error");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      items.map((item) => ({
+        "Device ID": item.deviceId,
+        IP: item.ip,
+        Nama: item.name,
+        Tipe: item.deviceType,
+        "Lokasi Penyimpanan": item.storageLocation,
+        "Serial Number": item.serialNumber,
+        Status: item.status,
+        Ruangan: item.room,
+        Area: item.area,
+        STO: item.sto,
+        "Total Port": item.totalPort,
+        "Port Idle": item.idlePort,
+      })),
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventaris");
+    XLSX.writeFile(
+      workbook,
+      `Inventaris_${new Date().toLocaleDateString("id-ID").replace(/\//g, "-")}.xlsx`,
+    );
   };
 
   const DEVICE_STATUSES = ["OPERATED", "MAINTENANCE", "RUSAK"];
@@ -594,6 +626,12 @@ export default function InventoryDashboard() {
               <div className="shrink-0 flex items-center gap-2">
                 {canAdd && (
                   <>
+                    <button
+                      onClick={handleExport}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                    >
+                      <FileUploadIcon fontSize="small" /> EXPORT
+                    </button>
                     <Link
                       to="/inventory/print"
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"

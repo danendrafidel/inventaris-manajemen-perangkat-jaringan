@@ -943,31 +943,28 @@ export default function LaporanPMR() {
                       Perjalanan
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
-                          <RouteIcon sx={{ fontSize: 20 }} />
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">
-                            Jarak Tempuh
-                          </p>
-                          <p className="text-sm font-black text-slate-700">
-                            {selectedReport.distance} KM
-                          </p>
-                        </div>
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                        <RouteIcon sx={{ fontSize: 20 }} />
                       </div>
-                      {(role === "officer" || role === "super officer") && (
-                        <div className="sm:text-right">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">
-                            Estimasi BBM
-                          </p>
-                          <p className="text-sm font-black text-emerald-600">
-                            Rp {selectedReport.fuel_cost?.toLocaleString()}
-                          </p>
-                        </div>
-                      )}
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">
+                          Jarak Tempuh
+                        </p>
+                        <p className="text-sm font-black text-slate-700">
+                          {selectedReport.distance} KM
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                    <div className="sm:text-right">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">
+                        Estimasi BBM
+                      </p>
+                      <p className="text-sm font-black text-emerald-600">
+                        Rp {selectedReport.fuel_cost?.toLocaleString()}
+                      </p>
+                    </div>
+                    </div>                  </div>
                 </div>
 
                 {/* Section 2: Device Info */}

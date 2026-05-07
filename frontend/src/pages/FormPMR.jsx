@@ -486,28 +486,25 @@ export default function FormPMR() {
                 )}
 
                 {destination && (
-                  <div className="pt-4 border-t border-slate-100 space-y-3 px-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        Jarak Estimasi
-                      </span>
-                      <span className="text-xs font-black text-blue-600">
-                        {distance} KM
-                      </span>
-                    </div>
-                    {user.role !== "user" && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                          Estimasi BBM
-                        </span>
-                        <span className="text-xs font-black text-emerald-600 uppercase">
-                          Rp {fuelCost.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
+                <div className="pt-4 border-t border-slate-100 space-y-3 px-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      Jarak Estimasi
+                    </span>
+                    <span className="text-xs font-black text-blue-600">
+                      {distance} KM
+                    </span>
                   </div>
-                )}
-              </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      Estimasi BBM
+                    </span>
+                    <span className="text-xs font-black text-emerald-600 uppercase">
+                      Rp {fuelCost.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                )}              </div>
             </div>
 
             {/* Content Column (2/3) */}

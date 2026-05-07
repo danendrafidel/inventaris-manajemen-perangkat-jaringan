@@ -10,6 +10,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import RouterIcon from "@mui/icons-material/Router";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import ApartmentIcon from "@mui/icons-material/Apartment";
+import PublicIcon from "@mui/icons-material/Public";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import CloseIcon from "@mui/icons-material/Close";
 import EmailIcon from "@mui/icons-material/Email";
@@ -68,7 +69,11 @@ export default function Dashboard() {
   const [loadError, setLoadError] = useState("");
   const [dashboard, setDashboard] = useState(null);
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [notification, setNotification] = useState({ open: false, message: "", severity: "error" });
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "error",
+  });
 
   const showNotify = (message, severity = "error") => {
     setNotification({ open: true, message, severity });
@@ -98,7 +103,9 @@ export default function Dashboard() {
     fetchDashboardSummary(params.toString())
       .then(setDashboard)
       .catch((err) => {
-        const message = err.message || "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+        const message =
+          err.message ||
+          "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
         setLoadError(message);
         showNotify(message, "error");
       });
@@ -265,14 +272,14 @@ export default function Dashboard() {
               tone="blue"
             />
             <StatCard
-              title="PEMINJAMAN AKTIF"
-              value={dashboard?.stats?.activeLoans ?? 0}
-              suffix={dashboard?.meta?.loansSuffix}
-              icon={<AssignmentIcon />}
+              title="JUMLAH AREA"
+              value={dashboard?.stats?.totalAreas ?? 0}
+              suffix={dashboard?.meta?.areasSuffix}
+              icon={<PublicIcon />}
               tone="emerald"
             />
             <StatCard
-              title="UNIT"
+              title="TOTAL STO"
               value={dashboard?.stats?.units ?? 0}
               suffix={dashboard?.meta?.unitsSuffix}
               icon={<ApartmentIcon />}

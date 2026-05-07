@@ -53,12 +53,10 @@ exports.login = async (req, res) => {
     const { rows } = await db.query(query, [identity, password]);
 
     if (rows.length === 0) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: "Username/Email atau password salah",
-        });
+      return res.status(401).json({
+        success: false,
+        message: "Username/Email atau password salah",
+      });
     }
 
     const user = rows[0];
@@ -897,18 +895,26 @@ exports.getDashboard = async (req, res) => {
     }
     const stoCount = await db.query(stoQuery, stoParams);
 
+    let areaQuery = "SELECT COUNT(*) FROM areas";
+    let areaParams = [];
+    if (area_id) {
+      areaQuery += " WHERE id = $1";
+      areaParams.push(area_id);
+    }
+    const areaCount = await db.query(areaQuery, areaParams);
+
     const data = {
       lastLogin: new Date().toISOString(),
       stats: {
         totalUsers: parseInt(userCount.rows[0].count),
         totalDevices: parseInt(deviceCount.rows[0].count),
-        activeLoans: 0,
+        totalAreas: parseInt(areaCount.rows[0].count),
         units: parseInt(stoCount.rows[0].count),
       },
       meta: {
         usersSuffix: "active",
         devicesSuffix: "online",
-        loansSuffix: "loans",
+        areasSuffix: "areas",
         unitsSuffix: "units",
       },
     };
@@ -983,12 +989,10 @@ exports.forgotPassword = async (req, res) => {
 
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.error("[MAILER ERROR] Konfigurasi SMTP belum lengkap");
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Konfigurasi server email belum lengkap. Hubungi Admin.",
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Konfigurasi server email belum lengkap. Hubungi Admin.",
+      });
     }
 
     await mailer.sendMail(mailOptions);
@@ -1012,12 +1016,10 @@ exports.resetPassword = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Link reset tidak valid atau sudah kadaluarsa",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Link reset tidak valid atau sudah kadaluarsa",
+      });
     }
 
     const email = rows[0].email;
