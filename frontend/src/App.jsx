@@ -69,7 +69,7 @@ function App() {
           path="/inventory/print"
           element={
             <ProtectedRoute
-              allowedRoles={["admin", "super officer", "officer", "user"]}
+              allowedRoles={["admin", "super officer", "officer"]}
             >
               <PrintBarcode />
             </ProtectedRoute>

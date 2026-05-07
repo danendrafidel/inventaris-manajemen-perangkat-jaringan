@@ -159,6 +159,7 @@ export default function InventoryDashboard() {
   const canEdit = role === "admin" || role === "super officer" || role === "officer";
   const canDelete = role === "admin" || role === "super officer" || role === "officer";
   const canAdd = role === "admin" || role === "super officer" || role === "officer";
+  const canPrint = role === "admin" || role === "super officer" || role === "officer";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -632,12 +633,14 @@ export default function InventoryDashboard() {
                     >
                       <FileUploadIcon fontSize="small" /> EXPORT
                     </button>
-                    <Link
-                      to="/inventory/print"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
-                    >
-                      <QrCodeIcon fontSize="small" /> CETAK LABEL QR
-                    </Link>
+                    {canPrint && (
+                      <Link
+                        to="/inventory/print"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                      >
+                        <QrCodeIcon fontSize="small" /> CETAK LABEL QR
+                      </Link>
+                    )}
                     <button
                       onClick={handleOpenAdd}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
@@ -786,6 +789,7 @@ export default function InventoryDashboard() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                          {canPrint && (
                             <button
                               onClick={() => handleOpenQRCodePreview(item)}
                               className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
@@ -793,14 +797,14 @@ export default function InventoryDashboard() {
                             >
                               <PrintIcon sx={{ fontSize: 18 }} />
                             </button>
-                            <button
-                              onClick={() => handleOpenDetail(item)}
-                              className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                              title="Lihat Detail"
-                            >
-                              <VisibilityIcon sx={{ fontSize: 18 }} />
-                            </button>
-                            {canEdit && (
+                          )}
+                          <button
+                            onClick={() => handleOpenDetail(item)}
+                            className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                            title="Lihat Detail"
+                          >
+                            <VisibilityIcon sx={{ fontSize: 18 }} />
+                          </button>                            {canEdit && (
                               <button
                                 onClick={() => handleOpenEdit(item)}
                                 className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all"
@@ -892,12 +896,14 @@ export default function InventoryDashboard() {
                         {item.deviceId}
                       </span>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleOpenQRCodePreview(item)}
-                          className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500"
-                        >
-                          <PrintIcon sx={{ fontSize: 18 }} />
-                        </button>
+                        {canPrint && (
+                          <button
+                            onClick={() => handleOpenQRCodePreview(item)}
+                            className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500"
+                          >
+                            <PrintIcon sx={{ fontSize: 18 }} />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleOpenDetail(item)}
                           className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500"
@@ -1265,9 +1271,11 @@ export default function InventoryDashboard() {
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 scale-90 md:scale-100">
-                  <QRCode value={selectedItem.serialNumber} />
-                </div>
+                {canPrint && (
+                  <div className="shrink-0 scale-90 md:scale-100">
+                    <QRCode value={selectedItem.serialNumber} />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
@@ -1365,12 +1373,14 @@ export default function InventoryDashboard() {
               </div>
 
               <div className="mt-8 md:mt-10 pt-6 md:pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-stretch gap-4">
-                <button
-                  onClick={() => handleOpenQRCodePreview(selectedItem)}
-                  className="flex-1 inline-flex items-center justify-center gap-3 rounded-2xl bg-emerald-600 py-4 md:py-5 text-xs font-black uppercase tracking-[0.2em] text-white shadow-xl hover:bg-emerald-700 transition-all"
-                >
-                  <PrintIcon sx={{ fontSize: 18 }} /> Print QR Code Asset
-                </button>
+                {canPrint && (
+                  <button
+                    onClick={() => handleOpenQRCodePreview(selectedItem)}
+                    className="flex-1 inline-flex items-center justify-center gap-3 rounded-2xl bg-emerald-600 py-4 md:py-5 text-xs font-black uppercase tracking-[0.2em] text-white shadow-xl hover:bg-emerald-700 transition-all"
+                  >
+                    <PrintIcon sx={{ fontSize: 18 }} /> Print QR Code Asset
+                  </button>
+                )}
                 {canEdit && (
                   <button
                     onClick={() => handleOpenEdit(selectedItem)}

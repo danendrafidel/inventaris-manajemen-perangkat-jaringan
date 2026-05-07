@@ -27,7 +27,7 @@ export default function Sidebar() {
   const user = getStoredUser();
   const role = user?.role?.toLowerCase();
   const isAdminOrOfficer = role === "admin" || role === "super officer" || role === "officer";
-  const canPrintBarcode = isAdminOrOfficer || role === "user";
+  const canPrintBarcode = isAdminOrOfficer;
 
   const handleLogout = () => {
     clearAuth();
