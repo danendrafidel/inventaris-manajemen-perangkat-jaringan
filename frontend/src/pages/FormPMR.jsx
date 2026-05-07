@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import { fetchAllStos, fetchAllAreas } from "../services/areaService";
@@ -19,6 +19,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { Scanner } from "@yudiel/react-qr-scanner";
 
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -28,6 +29,10 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SendIcon from "@mui/icons-material/Send";
 import RouterIcon from "@mui/icons-material/Router";
+import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import CloseIcon from "@mui/icons-material/Close";
 
 // Fix for default leaflet markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -52,6 +57,21 @@ function MapRecenter({ points }) {
   return null;
 }
 
+// Haversine formula to calculate distance between two coordinates in KM
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth's radius in KM
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function FormPMR() {
   const navigate = useNavigate();
   const [user] = useState(() => getStoredUser());
@@ -59,6 +79,12 @@ export default function FormPMR() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [scannerVisible, setScannerVisible] = useState(false);
+
+  const photoInputRef = useRef(null);
+  const receiptInputRef = useRef(null);
 
   const [origin, setOrigin] = useState({ name: "", lat: 0, lng: 0 });
   const [destination, setDestination] = useState(null);
@@ -68,6 +94,11 @@ export default function FormPMR() {
   const [searchTerm, setSearchTerm] = useState("");
   const [foundDevice, setFoundDevice] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
+
+  // File state
+  const [maintenancePhotos, setMaintenancePhotos] = useState([]);
+  const [fuelReceipt, setFuelReceipt] = useState(null);
+  const [fuelReceiptPreview, setFuelReceiptPreview] = useState(null);
 
   // PMR Form Fields
   const [pmrForm, setPmrForm] = useState({
@@ -187,7 +218,109 @@ export default function FormPMR() {
     fetchRoute();
   }, [origin, destination]);
 
-  const handleSearchDevice = async () => {
+  const handleFileChange = (e, type) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    if (type === "photo") {
+      const currentTotalSize = maintenancePhotos.reduce((acc, f) => acc + f.size, 0);
+      const newFilesSize = files.reduce((acc, f) => acc + f.size, 0);
+
+      if (currentTotalSize + newFilesSize > 3 * 1024 * 1024) {
+        showNotify("Total ukuran semua foto maksimal 3MB", "error");
+        e.target.value = null;
+        return;
+      }
+      setMaintenancePhotos((prev) => [...prev, ...files]);
+    } else {
+      const file = files[0];
+      if (file.size > 3 * 1024 * 1024) {
+        showNotify("Maksimal ukuran nota adalah 3MB", "error");
+        e.target.value = null;
+        return;
+      }
+      setFuelReceipt(file);
+      setFuelReceiptPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removePhoto = (index) => {
+    setMaintenancePhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeFuelReceipt = () => {
+    setFuelReceipt(null);
+    setFuelReceiptPreview(null);
+    if (receiptInputRef.current) receiptInputRef.current.value = "";
+  };
+
+  const handleScan = (result) => {
+    if (result) {
+      console.log("Scan result:", result);
+      // Try multiple property names common in QR scanner libraries
+      const rawValue = result[0]?.rawValue || result[0]?.text || result;
+
+      if (rawValue) {
+        // Extract identifier if it's a URL (take the part after the last /)
+        let extractedValue = String(rawValue);
+        if (extractedValue.includes("/")) {
+          const parts = extractedValue.split("/");
+          extractedValue = parts[parts.length - 1];
+        }
+
+        // Normalize: trim whitespace and convert to uppercase for robust comparison
+        const scannedValue = extractedValue.trim().toUpperCase();
+        setIsScannerOpen(false);
+
+        if (foundDevice) {
+          const deviceId = String(foundDevice.deviceId || "").trim().toUpperCase();
+          const serialNumber = String(foundDevice.serialNumber || "").trim().toUpperCase();
+
+          // Verify if scanned QR matches the selected device
+          if (scannedValue === deviceId || scannedValue === serialNumber) {
+            // Geofencing Check
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const { latitude, longitude } = position.coords;
+                const distanceToDevice = calculateDistance(
+                  latitude,
+                  longitude,
+                  destination.lat,
+                  destination.lng
+                );
+
+                if (distanceToDevice <= 1) {
+                  setIsVerified(true);
+                  showNotify("Perangkat terverifikasi di lokasi!", "success");
+                } else {
+                  showNotify(
+                    `Gagal! Anda berada ${distanceToDevice.toFixed(
+                      2
+                    )} KM dari perangkat. Maksimal 1 KM.`,
+                    "error"
+                  );
+                  setIsVerified(false);
+                }
+              },
+              (err) => {
+                showNotify("Gagal mendapatkan lokasi Anda.", "error");
+                console.error(err);
+              }
+            );
+          } else {
+            showNotify(`QR tidak cocok! (Scan: ${scannedValue})`, "error");
+            setIsVerified(false);
+          }
+        } else {
+          // If no device selected yet, use the scan to search
+          setSearchTerm(scannedValue);
+          handleSearchDevice(scannedValue);
+        }
+      }
+    }
+  };
+
+  const handleSearchDevice = async (term = searchTerm) => {
     if (!searchTerm) return;
     try {
       const params = { search: searchTerm };
@@ -263,6 +396,11 @@ export default function FormPMR() {
       ping_client: "",
       speed_test: "",
     });
+    setMaintenancePhotos([]);
+    setFuelReceipt(null);
+    setIsVerified(false);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+    if (receiptInputRef.current) receiptInputRef.current.value = "";
     if (!silent) {
       showNotify("Formulir telah direset", "info");
     }
@@ -377,14 +515,13 @@ export default function FormPMR() {
                     />
                     <button
                       type="button"
-                      onClick={handleSearchDevice}
+                      onClick={() => handleSearchDevice()}
                       className="px-4 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all"
                     >
                       CARI
                     </button>
                   </div>
                 </div>
-
                 {searchResults.length > 0 && (
                   <div className="max-h-40 overflow-y-auto border border-slate-100 rounded-xl divide-y">
                     {searchResults.map((d) => (
@@ -404,7 +541,6 @@ export default function FormPMR() {
                     ))}
                   </div>
                 )}
-
                 {foundDevice && (
                   <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 space-y-2 animate-in fade-in zoom-in-95">
                     <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">
@@ -484,27 +620,27 @@ export default function FormPMR() {
                     </div>
                   </div>
                 )}
-
                 {destination && (
-                <div className="pt-4 border-t border-slate-100 space-y-3 px-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                      Jarak Estimasi
-                    </span>
-                    <span className="text-xs font-black text-blue-600">
-                      {distance} KM
-                    </span>
+                  <div className="pt-4 border-t border-slate-100 space-y-3 px-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        Jarak Estimasi
+                      </span>
+                      <span className="text-xs font-black text-blue-600">
+                        {distance} KM
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        Estimasi BBM
+                      </span>
+                      <span className="text-xs font-black text-emerald-600 uppercase">
+                        Rp {fuelCost.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                      Estimasi BBM
-                    </span>
-                    <span className="text-xs font-black text-emerald-600 uppercase">
-                      Rp {fuelCost.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                )}              </div>
+                )}{" "}
+              </div>
             </div>
 
             {/* Content Column (2/3) */}
@@ -877,11 +1013,10 @@ export default function FormPMR() {
                       </div>
                     </div>
 
-                    {/* technical fields from screenshot 2 */}
+                    {/* Hasil Maintenance */}
                     <div className="space-y-6 pt-8 border-t border-slate-100">
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                        <CheckCircleIcon sx={{ fontSize: 16 }} /> Hasil
-                        Maintenance
+                        <BuildIcon sx={{ fontSize: 16 }} /> Hasil Maintenance
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -942,27 +1077,139 @@ export default function FormPMR() {
                       </div>
                     </div>
 
-                    <div className="pt-2 flex gap-4">
-                      <button
-                        type="button"
-                        onClick={handleReset}
-                        className="flex-1 py-4 rounded-3xl bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-[0.2em] shadow-sm border border-slate-200 hover:bg-slate-200 transition-all active:scale-[0.98]"
-                      >
-                        RESET
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="flex-[2] py-4 rounded-3xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                      >
-                        {submitting ? (
-                          "MENGIRIM..."
-                        ) : (
-                          <>
-                            <SendIcon sx={{ fontSize: 16 }} /> KIRIM LAPORAN PMR
-                          </>
-                        )}
-                      </button>
+                    {/* Photo Uploads */}
+                    <div className="space-y-6 pt-8 border-t border-slate-100">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <PhotoCameraIcon sx={{ fontSize: 16 }} /> Dokumentasi &
+                        Nota (Maksimal 3MB)
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <PhotoCameraIcon sx={{ fontSize: 14 }} /> Foto
+                            Kegiatan (Total 3MB)
+                          </label>
+                          <input
+                            type="file"
+                            multiple
+                            ref={photoInputRef}
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, "photo")}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold"
+                          />
+                          {maintenancePhotos.length > 0 && (
+                            <div className="flex flex-wrap gap-3 mt-3">
+                              {maintenancePhotos.map((file, idx) => {
+                                const previewUrl = URL.createObjectURL(file);
+                                return (
+                                  <div key={idx} className="relative h-20 w-20 group">
+                                    <img
+                                      src={previewUrl}
+                                      alt={`Preview ${idx}`}
+                                      className="h-full w-full object-cover rounded-xl border border-slate-200"
+                                      onLoad={() => URL.revokeObjectURL(previewUrl)}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removePhoto(idx)}
+                                      className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <CloseIcon sx={{ fontSize: 12 }} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <ReceiptIcon sx={{ fontSize: 14 }} /> Foto Nota BBM
+                            (3MB)
+                          </label>
+                          <input
+                            type="file"
+                            ref={receiptInputRef}
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, "receipt")}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold"
+                          />
+                          {fuelReceiptPreview && (
+                            <div className="relative h-20 w-20 mt-3 group">
+                              <img
+                                src={fuelReceiptPreview}
+                                alt="Receipt Preview"
+                                className="h-full w-full object-cover rounded-xl border border-slate-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={removeFuelReceipt}
+                                className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <CloseIcon sx={{ fontSize: 12 }} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Scanner modal */}
+                    {isScannerOpen && (
+                      <div className="fixed inset-0 z-2000 bg-black/80 flex flex-col items-center justify-center">
+                        <button
+                          onClick={() => setIsScannerOpen(false)}
+                          className="absolute top-5 right-5 text-white p-2"
+                        >
+                          <CloseIcon sx={{ fontSize: 32 }} />
+                        </button>
+                        <div className="w-full max-w-sm">
+                          <Scanner onScan={handleScan} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-2 flex flex-col gap-4">
+                      {isVerified ? (
+                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 animate-in fade-in zoom-in-95">
+                          <CheckCircleIcon />
+                          <span className="text-xs font-black uppercase tracking-widest">
+                            Perangkat Terverifikasi
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsScannerOpen(true)}
+                          className="w-full py-4 rounded-3xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                        >
+                          <QrCodeScannerIcon fontSize="small" /> SCAN QR PERANGKAT
+                        </button>
+                      )}
+
+                      <div className="flex gap-4">
+                        <button
+                          type="button"
+                          onClick={handleReset}
+                          className="flex-1 py-4 rounded-3xl bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-[0.2em] shadow-sm border border-slate-200 hover:bg-slate-200 transition-all active:scale-[0.98]"
+                        >
+                          RESET
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={submitting || !isVerified}
+                          className="flex-[2] py-4 rounded-3xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                        >
+                          {submitting ? (
+                            "MENGIRIM..."
+                          ) : (
+                            <>
+                              <SendIcon sx={{ fontSize: 16 }} /> KIRIM LAPORAN
+                              PMR
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>

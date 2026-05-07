@@ -629,7 +629,7 @@ export default function InventoryDashboard() {
                   <>
                     <button
                       onClick={handleExport}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-all"
                     >
                       <FileUploadIcon fontSize="small" /> EXPORT
                     </button>

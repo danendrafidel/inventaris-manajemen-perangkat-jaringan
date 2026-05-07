@@ -130,13 +130,10 @@ export async function deleteInventoryDevice(id) {
   return data.data;
 }
 
-export async function createPmrReport(pmrData) {
+export async function createPmrReport(formData) {
   const response = await fetch(`${API_BASE}/api/pmr`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(pmrData),
+    body: formData,
   });
   const data = await handleResponse(response);
 

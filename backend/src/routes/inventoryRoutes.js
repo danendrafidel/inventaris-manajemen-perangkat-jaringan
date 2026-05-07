@@ -13,8 +13,10 @@ router.put('/inventory/devices/:id', inventoryController.updateDevice);
 router.delete('/inventory/devices/:id', inventoryController.deleteDevice);
 router.get('/dashboard', inventoryController.getDashboard);
 
+const upload = require('../config/upload');
+
 // PMR Routes
-router.post('/pmr', inventoryController.createPmrReport);
+router.post('/pmr', upload.fields([{ name: 'maintenance_photo', maxCount: 1 }, { name: 'fuel_receipt', maxCount: 1 }]), inventoryController.createPmrReport);
 router.get('/pmr', inventoryController.getAllPmrReports);
 
 // User Management Routes

@@ -31,6 +31,7 @@ import RouteIcon from "@mui/icons-material/Route";
 import LanIcon from "@mui/icons-material/Lan";
 import SpeedIcon from "@mui/icons-material/Speed";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 
 export default function LaporanPMR() {
   const navigate = useNavigate();
@@ -1103,6 +1104,27 @@ export default function LaporanPMR() {
                         {selectedReport.speed_test || "-"}
                       </p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Section 5: Photos */}
+                <div className="md:col-span-2 space-y-3">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <PhotoCameraIcon sx={{ fontSize: 14 }} /> Dokumentasi
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedReport.maintenance_photo && (
+                      <div className="space-y-2">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Foto Kegiatan</p>
+                        <img src={`http://localhost:3000${selectedReport.maintenance_photo}`} alt="Foto Kegiatan" className="rounded-2xl w-full h-48 object-cover border border-slate-100" />
+                      </div>
+                    )}
+                    {selectedReport.fuel_receipt && (
+                      <div className="space-y-2">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Nota BBM</p>
+                        <img src={`http://localhost:3000${selectedReport.fuel_receipt}`} alt="Nota BBM" className="rounded-2xl w-full h-48 object-cover border border-slate-100" />
+                      </div>
+                    )}
                   </div>
                 </div>
 

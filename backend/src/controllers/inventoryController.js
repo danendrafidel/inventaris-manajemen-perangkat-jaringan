@@ -717,19 +717,22 @@ exports.createPmrReport = async (req, res) => {
       fuel_cost,
     } = req.body;
 
+    const maintenance_photo = req.files['maintenance_photo'] ? `/uploads/${req.files['maintenance_photo'][0].filename}` : null;
+    const fuel_receipt = req.files['fuel_receipt'] ? `/uploads/${req.files['fuel_receipt'][0].filename}` : null;
+
     const query = `
       INSERT INTO pmr_reports (
         user_id, device_id, maintenance_date, status, action, notes,
         device_type, serial_number, sto, room, ip,
         port_capacity, port_idle, port_lan, port_sfp, port_good, port_bad, port_notes,
         ping_dns, attenuation, ping_client, speed_test,
-        distance, fuel_cost
+        distance, fuel_cost, maintenance_photo, fuel_receipt
       ) VALUES (
         $1, $2, $3, $4, $5, $6, 
         $7, $8, $9, $10, $11, 
         $12, $13, $14, $15, $16, $17, $18, 
         $19, $20, $21, $22, 
-        $23, $24
+        $23, $24, $25, $26
       )
       RETURNING *
     `;
@@ -759,6 +762,8 @@ exports.createPmrReport = async (req, res) => {
       speed_test,
       distance || 0,
       fuel_cost || 0,
+      maintenance_photo,
+      fuel_receipt
     ]);
 
     invalidateAllStats();
