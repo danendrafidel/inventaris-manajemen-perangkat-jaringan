@@ -1,5 +1,6 @@
 require('dotenv').config()
 const express = require('express')
+const path = require('path')
 const cors = require('cors')
 const helmet = require('helmet')
 const compression = require('compression')
@@ -8,19 +9,24 @@ const areaRoutes = require('./routes/areaRoutes')
 
 const app = express()
 
+// Middleware untuk CORS pada file statis
+const corsMiddleware = cors({
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+});
+
 // Security & Performance Middleware
-app.use(helmet())
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 app.use(compression())
 
-// Buka akses untuk local dev & domain Vercel
-app.use(
-  cors({
-    origin: true,
-    credentials: false,
-  }),
-)
+// Buka akses untuk semua origin
+app.use(corsMiddleware);
+
 app.use(express.json())
-app.use('/uploads', express.static('uploads'))
+app.use('/api/uploads', corsMiddleware, express.static(path.join(__dirname, '../uploads')))
 
 // Routes API
 app.use('/api', inventoryRoutes)

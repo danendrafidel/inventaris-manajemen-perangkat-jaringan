@@ -717,8 +717,12 @@ exports.createPmrReport = async (req, res) => {
       fuel_cost,
     } = req.body;
 
-    const maintenance_photo = req.files['maintenance_photo'] ? `/uploads/${req.files['maintenance_photo'][0].filename}` : null;
-    const fuel_receipt = req.files['fuel_receipt'] ? `/uploads/${req.files['fuel_receipt'][0].filename}` : null;
+    const maintenance_photo = req.files["maintenance_photo"]
+      ? `/uploads/${req.files["maintenance_photo"][0].filename}`
+      : null;
+    const fuel_receipt = req.files["fuel_receipt"]
+      ? `/uploads/${req.files["fuel_receipt"][0].filename}`
+      : null;
 
     const query = `
       INSERT INTO pmr_reports (
@@ -763,7 +767,7 @@ exports.createPmrReport = async (req, res) => {
       distance || 0,
       fuel_cost || 0,
       maintenance_photo,
-      fuel_receipt
+      fuel_receipt,
     ]);
 
     invalidateAllStats();

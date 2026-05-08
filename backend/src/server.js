@@ -1,9 +1,9 @@
-require('dotenv').config()
-const app = require('./app')
+require("dotenv").config();
+const app = require("./app");
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
-  console.log(`Backend berjalan di http://localhost:${PORT}`)
-})
+  console.log(`Backend berjalan di http://localhost:${PORT}`);
+});

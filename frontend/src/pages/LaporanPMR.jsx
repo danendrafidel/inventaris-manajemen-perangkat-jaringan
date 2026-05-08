@@ -243,9 +243,13 @@ export default function LaporanPMR() {
     setError("");
     try {
       const data = await fetchPmrReports({
-        area_id: role !== "admin" && role !== "super officer" ? user?.area_id : filters.area_id || null,
+        area_id:
+          role !== "admin" && role !== "super officer"
+            ? user?.area_id
+            : filters.area_id || null,
         role: role,
-        user_id: (role === "admin" || role === "super officer") ? undefined : user?.id,
+        user_id:
+          role === "admin" || role === "super officer" ? undefined : user?.id,
         search,
         sto_id: filters.sto_id,
         status: filters.status,
@@ -329,7 +333,9 @@ export default function LaporanPMR() {
 
   const filteredStosForDraft = useMemo(() => {
     const targetAreaId =
-      role !== "admin" && role !== "super officer" ? user?.area_id : draftFilters.area_id;
+      role !== "admin" && role !== "super officer"
+        ? user?.area_id
+        : draftFilters.area_id;
     if (!targetAreaId) return options.stos;
     return options.stos.filter((s) => s.area_id == targetAreaId);
   }, [options.stos, draftFilters.area_id, user?.area_id, role]);
@@ -349,7 +355,8 @@ export default function LaporanPMR() {
 
   const handleResetFilters = () => {
     const initial = {
-      area_id: role !== "admin" && role !== "super officer" ? user?.area_id : "",
+      area_id:
+        role !== "admin" && role !== "super officer" ? user?.area_id : "",
       sto_id: "",
       status: "",
       start_date: "",
@@ -523,7 +530,11 @@ export default function LaporanPMR() {
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "0.85rem",
                   }}
-                  value={role !== "admin" && role !== "super officer" ? user.area_id : draftFilters.area_id}
+                  value={
+                    role !== "admin" && role !== "super officer"
+                      ? user.area_id
+                      : draftFilters.area_id
+                  }
                   disabled={role !== "admin" && role !== "super officer"}
                   onChange={(e) =>
                     handleDraftFilterChange("area_id", e.target.value)
@@ -944,28 +955,29 @@ export default function LaporanPMR() {
                       Perjalanan
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
-                        <RouteIcon sx={{ fontSize: 20 }} />
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                          <RouteIcon sx={{ fontSize: 20 }} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Jarak Tempuh
+                          </p>
+                          <p className="text-sm font-black text-slate-700">
+                            {selectedReport.distance} KM
+                          </p>
+                        </div>
                       </div>
-                      <div>
+                      <div className="sm:text-right">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">
-                          Jarak Tempuh
+                          Estimasi BBM
                         </p>
-                        <p className="text-sm font-black text-slate-700">
-                          {selectedReport.distance} KM
+                        <p className="text-sm font-black text-emerald-600">
+                          Rp {selectedReport.fuel_cost?.toLocaleString()}
                         </p>
                       </div>
-                    </div>
-                    <div className="sm:text-right">
-                      <p className="text-[9px] font-bold text-slate-400 uppercase">
-                        Estimasi BBM
-                      </p>
-                      <p className="text-sm font-black text-emerald-600">
-                        Rp {selectedReport.fuel_cost?.toLocaleString()}
-                      </p>
-                    </div>
-                    </div>                  </div>
+                    </div>{" "}
+                  </div>
                 </div>
 
                 {/* Section 2: Device Info */}
@@ -1115,14 +1127,26 @@ export default function LaporanPMR() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {selectedReport.maintenance_photo && (
                       <div className="space-y-2">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Foto Kegiatan</p>
-                        <img src={`http://localhost:3000${selectedReport.maintenance_photo}`} alt="Foto Kegiatan" className="rounded-2xl w-full h-48 object-cover border border-slate-100" />
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">
+                          Foto Kegiatan
+                        </p>
+                        <img
+                          src={`http://localhost:3000${selectedReport.maintenance_photo}`}
+                          alt="Foto Kegiatan"
+                          className="rounded-2xl w-full h-48 object-cover border border-slate-100"
+                        />
                       </div>
                     )}
                     {selectedReport.fuel_receipt && (
                       <div className="space-y-2">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Nota BBM</p>
-                        <img src={`http://localhost:3000${selectedReport.fuel_receipt}`} alt="Nota BBM" className="rounded-2xl w-full h-48 object-cover border border-slate-100" />
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">
+                          Nota BBM
+                        </p>
+                        <img
+                          src={`http://localhost:3000${selectedReport.fuel_receipt}`}
+                          alt="Nota BBM"
+                          className="rounded-2xl w-full h-48 object-cover border border-slate-100"
+                        />
                       </div>
                     )}
                   </div>

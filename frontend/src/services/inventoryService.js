@@ -7,7 +7,9 @@ async function handleResponse(response) {
     if (!response.ok) throw new Error(data.message || "Request failed");
     return data;
   } catch (e) {
-    throw new Error("The server returned an unexpected response. Please try again later.");
+    throw new Error(
+      "The server returned an unexpected response. Please try again later.",
+    );
   }
 }
 
@@ -133,18 +135,18 @@ export async function deleteInventoryDevice(id) {
 export async function createPmrReport(formData) {
   const data = new FormData();
   for (const key in formData) {
-    if (key === 'maintenance_photos' || key === 'fuel_receipt') continue;
+    if (key === "maintenance_photos" || key === "fuel_receipt") continue;
     data.append(key, formData[key]);
   }
 
   // Handle files
   if (formData.maintenance_photos) {
     formData.maintenance_photos.forEach((file) => {
-      data.append('maintenance_photo', file);
+      data.append("maintenance_photo", file);
     });
   }
   if (formData.fuel_receipt) {
-    data.append('fuel_receipt', formData.fuel_receipt);
+    data.append("fuel_receipt", formData.fuel_receipt);
   }
 
   const response = await fetch(`${API_BASE}/api/pmr`, {
@@ -160,7 +162,16 @@ export async function createPmrReport(formData) {
   return result.data;
 }
 
-export async function fetchPmrReports({ area_id, role, user_id, search = "", sto_id = "", status = "", start_date = "", end_date = "" } = {}) {
+export async function fetchPmrReports({
+  area_id,
+  role,
+  user_id,
+  search = "",
+  sto_id = "",
+  status = "",
+  start_date = "",
+  end_date = "",
+} = {}) {
   const params = new URLSearchParams();
   if (area_id) params.set("area_id", area_id);
   if (role) params.set("role", role);
