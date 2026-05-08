@@ -70,9 +70,67 @@ export default function LaporanPMR() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [activeImage, setActiveImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [draggingImage, setDraggingImage] = useState(null); // Track which image is being dragged
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
+  };
+
+const addPmrImages = async (reportId, files, type) => {
+  setImageLoading(true);
+  const formData = new FormData();
+  if (type === 'photo') {
+    files.forEach((file) => formData.append('maintenance_photo', file));
+  } else {
+    formData.append('fuel_receipt', files[0]);
+  }
+
+  try {
+    const response = await fetch(`/api/pmr/${reportId}`, { 
+      method: 'PUT',
+      body: formData
+    });
+    const result = await response.json();
+    if (result.success) {
+      showNotify("Foto berhasil ditambahkan");
+      setSelectedReport(result.data); // Keep modal open and update data
+      await loadData(); 
+    } else {
+      showNotify(result.message || "Gagal menambahkan foto", "error");
+    }
+  } catch (err) {
+    showNotify("Terjadi kesalahan saat mengunggah", "error");
+  } finally {
+    setImageLoading(false);
+  }
+};
+
+const deletePmrImage = async (reportId, index) => {
+    setImageLoading(true);
+    try {
+      const response = await fetch(`/api/pmr/${reportId}/image/${index}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (result.success) {
+        showNotify("Foto berhasil dihapus");
+        // Update local state directly to avoid closing modal
+        // Fetch fresh data for the report to ensure state consistency
+        const updatedReports = await fetchPmrReports({
+            area_id: role !== "admin" && role !== "super officer" ? user?.area_id : filters.area_id || null,
+            role: role,
+            user_id: role === "admin" || role === "super officer" ? undefined : user?.id,
+        });
+        const updatedReport = updatedReports.find(r => r.id === reportId);
+        setSelectedReport(updatedReport);
+        await loadData();
+      } else {
+        showNotify(result.message || "Gagal menghapus foto", "error");
+      }
+    } catch (err) {
+      showNotify("Terjadi kesalahan", "error");
+    } finally {
+      setImageLoading(false);
+    }
   };
 
   const handleExport = () => {
@@ -1121,10 +1179,31 @@ export default function LaporanPMR() {
                 </div>
 
                 {/* Section 5: Photos */}
-                <div className="md:col-span-2 space-y-3">
+                <div className="md:col-span-2 space-y-3 relative">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <PhotoCameraIcon sx={{ fontSize: 14 }} /> Dokumentasi
                   </h3>
+                  
+                  {imageLoading && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-3xl">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                    </div>
+                  )}
+
+                  {/* Tambah Foto */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
+                      <FileUploadIcon className="text-slate-400" />
+                      <span className="text-[10px] font-black text-slate-500 uppercase">Upload Foto Kegiatan</span>
+                      <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => addPmrImages(selectedReport.id, Array.from(e.target.files), 'photo')} />
+                    </label>
+                    <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
+                      <FileUploadIcon className="text-slate-400" />
+                      <span className="text-[10px] font-black text-slate-500 uppercase">Upload Nota BBM</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => addPmrImages(selectedReport.id, [e.target.files[0]], 'receipt')} />
+                    </label>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {selectedReport.maintenance_photo && (() => {
                       try {
@@ -1143,7 +1222,15 @@ export default function LaporanPMR() {
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {photos.map((p, idx) => (
-                                  <img key={idx} src={p} alt={`Kegiatan ${idx}`} onClick={() => setActiveImage(p)} className="rounded-2xl w-24 h-24 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                                  <div key={idx} className="relative group">
+                                    <img src={p} alt={`Kegiatan ${idx}`} onClick={() => setActiveImage(p)} className="rounded-2xl w-24 h-24 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                                    <button 
+                                      className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
+                                      onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, idx); }}
+                                    >
+                                      <CloseIcon sx={{ fontSize: 12 }} />
+                                    </button>
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -1154,7 +1241,15 @@ export default function LaporanPMR() {
                               <p className="text-[9px] font-bold text-slate-400 uppercase">
                                 Foto Kegiatan
                               </p>
-                              <img src={photos} alt="Foto Kegiatan" onClick={() => setActiveImage(photos)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                              <div className="relative inline-block">
+                                <img src={photos} alt="Foto Kegiatan" onClick={() => setActiveImage(photos)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                                <button 
+                                  className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
+                                  onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, 0); }}
+                                >
+                                  <CloseIcon sx={{ fontSize: 12 }} />
+                                </button>
+                              </div>
                             </div>
                           );
                         }
@@ -1164,22 +1259,38 @@ export default function LaporanPMR() {
                             <p className="text-[9px] font-bold text-slate-400 uppercase">
                               Foto Kegiatan
                             </p>
-                            <img src={selectedReport.maintenance_photo} alt="Foto Kegiatan" onClick={() => setActiveImage(selectedReport.maintenance_photo)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                            <div className="relative inline-block">
+                              <img src={selectedReport.maintenance_photo} alt="Foto Kegiatan" onClick={() => setActiveImage(selectedReport.maintenance_photo)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                              <button 
+                                className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
+                                onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, 0); }}
+                              >
+                                <CloseIcon sx={{ fontSize: 12 }} />
+                              </button>
+                            </div>
                           </div>
                         );
                       }
                     })()}
                     {selectedReport.fuel_receipt && (
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">
                           Nota BBM
                         </p>
-                        <img
-                          src={selectedReport.fuel_receipt}
-                          alt="Nota BBM"
-                          onClick={() => setActiveImage(selectedReport.fuel_receipt)}
-                          className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80"
-                        />
+                        <div className="relative inline-block">
+                          <img
+                            src={selectedReport.fuel_receipt}
+                            alt="Nota BBM"
+                            onClick={() => setActiveImage(selectedReport.fuel_receipt)}
+                            className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80"
+                          />
+                          <button 
+                            className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-1 shadow-md"
+                            onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, 'receipt'); }}
+                          >
+                            <CloseIcon sx={{ fontSize: 14 }} />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

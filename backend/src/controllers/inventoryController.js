@@ -683,7 +683,47 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// PMR REPORTS
+exports.removePmrImage = async (req, res) => {
+  try {
+    const { id, index } = req.params;
+    
+    if (index === 'receipt') {
+      await db.query("UPDATE pmr_reports SET fuel_receipt = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1", [id]);
+      return res.json({ success: true, message: "Nota BBM berhasil dihapus" });
+    }
+
+    const { rows } = await db.query("SELECT maintenance_photo FROM pmr_reports WHERE id = $1", [id]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Laporan tidak ditemukan" });
+    }
+
+    let photos = [];
+    try {
+      const raw = rows[0].maintenance_photo;
+      if (raw) {
+        photos = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      }
+    } catch (e) {
+      photos = [];
+    }
+
+    const idx = parseInt(index);
+    if (idx < 0 || idx >= photos.length) {
+      return res.status(400).json({ success: false, message: "Index foto tidak valid" });
+    }
+
+    photos.splice(idx, 1);
+    
+    await db.query("UPDATE pmr_reports SET maintenance_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2", 
+      [JSON.stringify(photos), id]);
+
+    res.json({ success: true, message: "Foto berhasil dihapus" });
+  } catch (error) {
+    handleError(res, error, "Gagal menghapus foto");
+  }
+};
+
 exports.createPmrReport = async (req, res) => {
   try {
     const {
@@ -786,6 +826,8 @@ exports.createPmrReport = async (req, res) => {
     handleError(res, error, "Gagal mengirim laporan PMR");
   }
 };
+
+
 
 exports.getAllPmrReports = async (req, res) => {
   try {
@@ -1059,19 +1101,31 @@ exports.resetPassword = async (req, res) => {
 };
 
 exports.updatePmrReport = async (req, res) => {
-  console.log("Files:", req.files);
-  console.log("Body:", req.body);
   try {
     const { id } = req.params;
     let queryParts = [];
     let queryValues = [];
     let counter = 1;
 
+    // Fetch existing report to append photos
+    const { rows: existingRows } = await db.query("SELECT maintenance_photo FROM pmr_reports WHERE id = $1", [id]);
+    if (existingRows.length === 0) return res.status(404).json({ success: false, message: "Laporan tidak ditemukan" });
+
     if (req.files && req.files["maintenance_photo"]) {
-      const photo = `data:${req.files["maintenance_photo"][0].mimetype};base64,${req.files["maintenance_photo"][0].buffer.toString("base64")}`;
+      let currentPhotos = [];
+      try {
+        const raw = existingRows[0].maintenance_photo;
+        if (raw) currentPhotos = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      } catch(e) {}
+      
+      const newPhotos = req.files["maintenance_photo"].map(
+        (file) => `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+      );
+      
       queryParts.push(`maintenance_photo = $${counter++}`);
-      queryValues.push(photo);
+      queryValues.push(JSON.stringify([...currentPhotos, ...newPhotos]));
     }
+    
     if (req.files && req.files["fuel_receipt"]) {
       const receipt = `data:${req.files["fuel_receipt"][0].mimetype};base64,${req.files["fuel_receipt"][0].buffer.toString("base64")}`;
       queryParts.push(`fuel_receipt = $${counter++}`);
@@ -1079,7 +1133,7 @@ exports.updatePmrReport = async (req, res) => {
     }
 
     if (queryParts.length === 0) {
-      return res.status(400).json({ success: false, message: "Tidak ada gambar untuk diperbarui" });
+      return res.status(400).json({ success: false, message: "Tidak ada data untuk diperbarui" });
     }
 
     queryValues.push(id);
@@ -1087,12 +1141,8 @@ exports.updatePmrReport = async (req, res) => {
     
     const { rows } = await db.query(query, queryValues);
     
-    if (rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Laporan tidak ditemukan" });
-    }
-
     invalidateAllStats();
-    res.json({ success: true, data: rows[0], message: "Gambar berhasil diperbarui" });
+    res.json({ success: true, data: rows[0], message: "Data berhasil diperbarui" });
   } catch (error) {
     handleError(res, error, "Gagal memperbarui laporan PMR");
   }

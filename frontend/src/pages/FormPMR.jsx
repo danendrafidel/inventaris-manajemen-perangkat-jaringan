@@ -33,6 +33,7 @@ import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import CloseIcon from "@mui/icons-material/Close";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 
 // Fix for default leaflet markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -1085,20 +1086,23 @@ export default function FormPMR() {
                         <PhotoCameraIcon sx={{ fontSize: 16 }} /> Dokumentasi &
                         Nota (Maksimal 3MB)
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            <PhotoCameraIcon sx={{ fontSize: 14 }} /> Foto
-                            Kegiatan (Total 3MB)
+                            <PhotoCameraIcon sx={{ fontSize: 14 }} /> Foto Kegiatan (Total 3MB)
                           </label>
-                          <input
-                            type="file"
-                            multiple
-                            ref={photoInputRef}
-                            accept="image/*"
-                            onChange={(e) => handleFileChange(e, "photo")}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold"
-                          />
+                          <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
+                            <FileUploadIcon className="text-slate-400" />
+                            <span className="text-[10px] font-black text-slate-500 uppercase">Upload Foto Kegiatan</span>
+                            <input
+                              type="file"
+                              multiple
+                              ref={photoInputRef}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleFileChange(e, "photo")}
+                            />
+                          </label>
                           {maintenancePhotos.length > 0 && (
                             <div className="overflow-x-auto mt-3">
                               <div className="flex gap-3 pb-2">
@@ -1115,7 +1119,7 @@ export default function FormPMR() {
                                       <button
                                         type="button"
                                         onClick={() => removePhoto(idx)}
-                                        className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm"
                                       >
                                         <CloseIcon sx={{ fontSize: 12 }} />
                                       </button>
@@ -1128,18 +1132,21 @@ export default function FormPMR() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            <ReceiptIcon sx={{ fontSize: 14 }} /> Foto Nota BBM
-                            (3MB)
+                            <ReceiptIcon sx={{ fontSize: 14 }} /> Foto Nota BBM (3MB)
                           </label>
-                          <input
-                            type="file"
-                            ref={receiptInputRef}
-                            accept="image/*"
-                            onChange={(e) => handleFileChange(e, "receipt")}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold"
-                          />
+                          <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
+                            <FileUploadIcon className="text-slate-400" />
+                            <span className="text-[10px] font-black text-slate-500 uppercase">Upload Nota BBM</span>
+                            <input
+                              type="file"
+                              ref={receiptInputRef}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleFileChange(e, "receipt")}
+                            />
+                          </label>
                           {fuelReceiptPreview && (
-                            <div className="relative h-20 w-20 mt-3 group">
+                            <div className="relative h-20 w-20 mt-3">
                               <img
                                 src={fuelReceiptPreview}
                                 alt="Receipt Preview"
@@ -1148,7 +1155,7 @@ export default function FormPMR() {
                               <button
                                 type="button"
                                 onClick={removeFuelReceipt}
-                                className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm"
                               >
                                 <CloseIcon sx={{ fontSize: 12 }} />
                               </button>
