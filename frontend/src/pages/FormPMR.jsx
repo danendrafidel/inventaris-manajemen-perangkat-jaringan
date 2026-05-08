@@ -421,6 +421,8 @@ export default function FormPMR() {
         device_id: foundDevice.id,
         distance,
         fuel_cost: fuelCost,
+        maintenance_photos: maintenancePhotos,
+        fuel_receipt: fuelReceipt,
       });
       showNotify("Laporan PMR Berhasil Dikirim!");
       // Reset after submission silently

@@ -131,17 +131,33 @@ export async function deleteInventoryDevice(id) {
 }
 
 export async function createPmrReport(formData) {
-  const response = await fetch(`${API_BASE}/api/pmr`, {
-    method: "POST",
-    body: formData,
-  });
-  const data = await handleResponse(response);
-
-  if (!data.success) {
-    throw new Error(data.message || "Failed to send PMR report");
+  const data = new FormData();
+  for (const key in formData) {
+    if (key === 'maintenance_photos' || key === 'fuel_receipt') continue;
+    data.append(key, formData[key]);
   }
 
-  return data.data;
+  // Handle files
+  if (formData.maintenance_photos) {
+    formData.maintenance_photos.forEach((file) => {
+      data.append('maintenance_photo', file);
+    });
+  }
+  if (formData.fuel_receipt) {
+    data.append('fuel_receipt', formData.fuel_receipt);
+  }
+
+  const response = await fetch(`${API_BASE}/api/pmr`, {
+    method: "POST",
+    body: data,
+  });
+  const result = await handleResponse(response);
+
+  if (!result.success) {
+    throw new Error(result.message || "Failed to send PMR report");
+  }
+
+  return result.data;
 }
 
 export async function fetchPmrReports({ area_id, role, user_id, search = "", sto_id = "", status = "", start_date = "", end_date = "" } = {}) {
