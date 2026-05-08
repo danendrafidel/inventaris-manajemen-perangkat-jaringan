@@ -1059,6 +1059,8 @@ exports.resetPassword = async (req, res) => {
 };
 
 exports.updatePmrReport = async (req, res) => {
+  console.log("Files:", req.files);
+  console.log("Body:", req.body);
   try {
     const { id } = req.params;
     let queryParts = [];
