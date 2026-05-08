@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "npm install --prefix frontend --include=dev",
+  "installCommand": "npm install --prefix frontend && npm install --prefix backend",
   "buildCommand": "cd frontend && npx vite build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
