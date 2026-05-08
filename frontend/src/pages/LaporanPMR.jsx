@@ -5,6 +5,7 @@ import { getStoredUser } from "../services/authService";
 import {
   fetchPmrReports,
   fetchInventoryOptions,
+  updatePmrReportImages,
 } from "../services/inventoryService";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
@@ -69,6 +70,60 @@ export default function LaporanPMR() {
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newMaintenancePhotos, setNewMaintenancePhotos] = useState([]);
+  const [newFuelReceipt, setNewFuelReceipt] = useState(null);
+  const [activeImage, setActiveImage] = useState(null);
+
+  const handleUpdateImages = async () => {
+    try {
+      const data = new FormData();
+      if (newMaintenancePhotos.length > 0) {
+        newMaintenancePhotos.forEach(file => data.append("maintenance_photo", file));
+      }
+      if (newFuelReceipt) {
+        data.append("fuel_receipt", newFuelReceipt);
+      }
+      
+      await updatePmrReportImages(selectedReport.id, {
+        maintenance_photo: newMaintenancePhotos.length > 0 ? newMaintenancePhotos : null,
+        fuel_receipt: newFuelReceipt,
+      });
+      showNotify("Gambar berhasil diperbarui");
+      setIsEditing(false);
+      setNewMaintenancePhotos([]);
+      setNewFuelReceipt(null);
+      loadData();
+      setShowDetailModal(false);
+    } catch (err) {
+      showNotify(err.message, "error");
+    }
+  };
+
+  const handleFileChange = (e, type) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    if (type === "photo") {
+      const newFilesSize = files.reduce((acc, f) => acc + f.size, 0);
+      if (newFilesSize > 3 * 1024 * 1024) {
+        showNotify("Total ukuran foto maksimal 3MB", "error");
+        return;
+      }
+      setNewMaintenancePhotos(files);
+    } else {
+      const file = files[0];
+      if (file.size > 3 * 1024 * 1024) {
+        showNotify("Maksimal ukuran nota adalah 3MB", "error");
+        return;
+      }
+      setNewFuelReceipt(file);
+    }
+  };
+
+  const removeNewPhoto = (index) => {
+    setNewMaintenancePhotos(prev => prev.filter((_, i) => i !== index));
+  };
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
@@ -1121,35 +1176,118 @@ export default function LaporanPMR() {
 
                 {/* Section 5: Photos */}
                 <div className="md:col-span-2 space-y-3">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <PhotoCameraIcon sx={{ fontSize: 14 }} /> Dokumentasi
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {selectedReport.maintenance_photo && (
-                      <div className="space-y-2">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">
-                          Foto Kegiatan
-                        </p>
-                        <img
-                          src={`http://localhost:3000${selectedReport.maintenance_photo}`}
-                          alt="Foto Kegiatan"
-                          className="rounded-2xl w-full h-48 object-cover border border-slate-100"
-                        />
-                      </div>
-                    )}
-                    {selectedReport.fuel_receipt && (
-                      <div className="space-y-2">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">
-                          Nota BBM
-                        </p>
-                        <img
-                          src={`http://localhost:3000${selectedReport.fuel_receipt}`}
-                          alt="Nota BBM"
-                          className="rounded-2xl w-full h-48 object-cover border border-slate-100"
-                        />
-                      </div>
-                    )}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <PhotoCameraIcon sx={{ fontSize: 14 }} /> Dokumentasi
+                    </h3>
+                    <button
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                    >
+                      {isEditing ? "Batal Edit" : "Edit Foto"}
+                    </button>
                   </div>
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">
+                          Ganti Foto Kegiatan (Maks 3MB)
+                        </label>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(e, "photo")}
+                          className="w-full text-xs"
+                        />
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {newMaintenancePhotos.map((file, idx) => (
+                            <div key={idx} className="relative h-12 w-12">
+                              <img src={URL.createObjectURL(file)} className="h-full w-full object-cover rounded" />
+                              <button onClick={() => removeNewPhoto(idx)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-[8px] px-1">X</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">
+                          Ganti Nota BBM
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(e, "receipt")}
+                          className="w-full text-xs"
+                        />
+                        {newFuelReceipt && <p className="text-[9px] truncate">{newFuelReceipt.name}</p>}
+                      </div>
+                      <button
+                        onClick={handleUpdateImages}
+                        className="col-span-1 sm:col-span-2 px-8 py-3 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                      >
+                        Simpan Perubahan
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {selectedReport.maintenance_photo && (() => {
+                        try {
+                          let photos = selectedReport.maintenance_photo;
+                          if (typeof photos === 'string') {
+                            while (typeof photos === 'string' && (photos.startsWith('[') || photos.startsWith('"{'))) {
+                              photos = JSON.parse(photos);
+                            }
+                          }
+                          
+                          if (Array.isArray(photos)) {
+                            return (
+                              <div className="space-y-2">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                  Foto Kegiatan
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {photos.map((p, idx) => (
+                                    <img key={idx} src={p} alt={`Kegiatan ${idx}`} onClick={() => setActiveImage(p)} className="rounded-2xl w-24 h-24 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="space-y-2">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                  Foto Kegiatan
+                                </p>
+                                <img src={photos} alt="Foto Kegiatan" onClick={() => setActiveImage(photos)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                              </div>
+                            );
+                          }
+                        } catch (e) {
+                          return (
+                            <div className="space-y-2">
+                              <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                Foto Kegiatan
+                              </p>
+                              <img src={selectedReport.maintenance_photo} alt="Foto Kegiatan" onClick={() => setActiveImage(selectedReport.maintenance_photo)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
+                            </div>
+                          );
+                        }
+                      })()}
+                      {selectedReport.fuel_receipt && (
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">
+                            Nota BBM
+                          </p>
+                          <img
+                            src={selectedReport.fuel_receipt}
+                            alt="Nota BBM"
+                            onClick={() => setActiveImage(selectedReport.fuel_receipt)}
+                            className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Section 4: Action & Notes */}
@@ -1191,6 +1329,14 @@ export default function LaporanPMR() {
               </button>
             </footer>
           </div>
+        </div>
+      )}
+      
+      {/* Fullscreen Image Viewer */}
+      {activeImage && (
+        <div className="fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center p-4" onClick={() => setActiveImage(null)}>
+          <img src={activeImage} className="max-w-full max-h-full object-contain" />
+          <button className="absolute top-4 right-4 text-white p-2" onClick={() => setActiveImage(null)}><CloseIcon sx={{ fontSize: 32 }} /></button>
         </div>
       )}
     </div>

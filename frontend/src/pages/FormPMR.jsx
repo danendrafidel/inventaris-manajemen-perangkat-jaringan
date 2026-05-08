@@ -1100,27 +1100,29 @@ export default function FormPMR() {
                             className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold"
                           />
                           {maintenancePhotos.length > 0 && (
-                            <div className="flex flex-wrap gap-3 mt-3">
-                              {maintenancePhotos.map((file, idx) => {
-                                const previewUrl = URL.createObjectURL(file);
-                                return (
-                                  <div key={idx} className="relative h-20 w-20 group">
-                                    <img
-                                      src={previewUrl}
-                                      alt={`Preview ${idx}`}
-                                      className="h-full w-full object-cover rounded-xl border border-slate-200"
-                                      onLoad={() => URL.revokeObjectURL(previewUrl)}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => removePhoto(idx)}
-                                      className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <CloseIcon sx={{ fontSize: 12 }} />
-                                    </button>
-                                  </div>
-                                );
-                              })}
+                            <div className="overflow-x-auto mt-3">
+                              <div className="flex gap-3 pb-2">
+                                {maintenancePhotos.map((file, idx) => {
+                                  const previewUrl = URL.createObjectURL(file);
+                                  return (
+                                    <div key={idx} className="relative h-20 w-20 flex-shrink-0 group">
+                                      <img
+                                        src={previewUrl}
+                                        alt={`Preview ${idx}`}
+                                        className="h-full w-full object-cover rounded-xl border border-slate-200"
+                                        onLoad={() => URL.revokeObjectURL(previewUrl)}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => removePhoto(idx)}
+                                        className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <CloseIcon sx={{ fontSize: 12 }} />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>

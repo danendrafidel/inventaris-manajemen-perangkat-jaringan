@@ -134,13 +134,24 @@ export async function deleteInventoryDevice(id) {
 
 export async function createPmrReport(formData) {
   const data = new FormData();
-  for (const key in formData) {
-    if (key === "maintenance_photos" || key === "fuel_receipt") continue;
-    data.append(key, formData[key]);
-  }
 
-  // Handle files
-  if (formData.maintenance_photos) {
+  // Explicitly append all non-file fields
+  const fields = [
+    "user_id", "device_id", "maintenance_date", "status", "action", "notes",
+    "device_type", "serial_number", "sto", "room", "ip",
+    "port_capacity", "port_idle", "port_lan", "port_sfp", "port_good", "port_bad", "port_notes",
+    "ping_dns", "attenuation", "ping_client", "speed_test",
+    "distance", "fuel_cost"
+  ];
+
+  fields.forEach(field => {
+    if (formData[field] !== undefined && formData[field] !== null) {
+      data.append(field, formData[field]);
+    }
+  });
+
+  // Handle files explicitly
+  if (Array.isArray(formData.maintenance_photos)) {
     formData.maintenance_photos.forEach((file) => {
       data.append("maintenance_photo", file);
     });
@@ -157,6 +168,35 @@ export async function createPmrReport(formData) {
 
   if (!result.success) {
     throw new Error(result.message || "Failed to send PMR report");
+  }
+
+  return result.data;
+}
+
+export async function updatePmrReportImages(id, { maintenance_photo, fuel_receipt }) {
+  const data = new FormData();
+
+  // Handle files
+  if (maintenance_photo && Array.isArray(maintenance_photo)) {
+    maintenance_photo.forEach((file) => {
+      data.append("maintenance_photo", file);
+    });
+  } else if (maintenance_photo instanceof File) {
+    data.append("maintenance_photo", maintenance_photo);
+  }
+
+  if (fuel_receipt && fuel_receipt instanceof File) {
+    data.append("fuel_receipt", fuel_receipt);
+  }
+
+  const response = await fetch(`${API_BASE}/api/pmr/${id}`, {
+    method: "PUT",
+    body: data,
+  });
+  const result = await handleResponse(response);
+
+  if (!result.success) {
+    throw new Error(result.message || "Failed to update images");
   }
 
   return result.data;

@@ -717,12 +717,18 @@ exports.createPmrReport = async (req, res) => {
       fuel_cost,
     } = req.body;
 
-    const maintenance_photo = req.files["maintenance_photo"]
-      ? `/uploads/${req.files["maintenance_photo"][0].filename}`
-      : null;
-    const fuel_receipt = req.files["fuel_receipt"]
-      ? `/uploads/${req.files["fuel_receipt"][0].filename}`
-      : null;
+    const maintenance_photos =
+      req.files && req.files["maintenance_photo"]
+        ? JSON.stringify(
+            req.files["maintenance_photo"].map(
+              (file) => `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+            )
+          )
+        : null;
+    const fuel_receipt =
+      req.files && req.files["fuel_receipt"]
+        ? `data:${req.files["fuel_receipt"][0].mimetype};base64,${req.files["fuel_receipt"][0].buffer.toString("base64")}`
+        : null;
 
     const query = `
       INSERT INTO pmr_reports (
@@ -766,7 +772,7 @@ exports.createPmrReport = async (req, res) => {
       speed_test,
       distance || 0,
       fuel_cost || 0,
-      maintenance_photo,
+      maintenance_photos,
       fuel_receipt,
     ]);
 
@@ -1031,19 +1037,61 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
-    const email = rows[0].email;
+    if (!newPassword || String(newPassword).trim().length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password baru minimal 6 karakter",
+      });
+    }
 
-    // Update password dan hapus token
     await db.query(
-      "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = CURRENT_TIMESTAMP WHERE email = $2",
-      [newPassword, email],
+      "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2",
+      [newPassword, rows[0].id],
     );
 
     res.json({
       success: true,
-      message: "Password berhasil diperbarui. Silakan login kembali.",
+      message: "Password berhasil direset. Silakan login dengan password baru.",
     });
   } catch (error) {
     handleError(res, error, "Gagal mereset password");
+  }
+};
+
+exports.updatePmrReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let queryParts = [];
+    let queryValues = [];
+    let counter = 1;
+
+    if (req.files && req.files["maintenance_photo"]) {
+      const photo = `data:${req.files["maintenance_photo"][0].mimetype};base64,${req.files["maintenance_photo"][0].buffer.toString("base64")}`;
+      queryParts.push(`maintenance_photo = $${counter++}`);
+      queryValues.push(photo);
+    }
+    if (req.files && req.files["fuel_receipt"]) {
+      const receipt = `data:${req.files["fuel_receipt"][0].mimetype};base64,${req.files["fuel_receipt"][0].buffer.toString("base64")}`;
+      queryParts.push(`fuel_receipt = $${counter++}`);
+      queryValues.push(receipt);
+    }
+
+    if (queryParts.length === 0) {
+      return res.status(400).json({ success: false, message: "Tidak ada gambar untuk diperbarui" });
+    }
+
+    queryValues.push(id);
+    const query = `UPDATE pmr_reports SET ${queryParts.join(", ")} WHERE id = $${counter} RETURNING *`;
+    
+    const { rows } = await db.query(query, queryValues);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Laporan tidak ditemukan" });
+    }
+
+    invalidateAllStats();
+    res.json({ success: true, data: rows[0], message: "Gambar berhasil diperbarui" });
+  } catch (error) {
+    handleError(res, error, "Gagal memperbarui laporan PMR");
   }
 };
