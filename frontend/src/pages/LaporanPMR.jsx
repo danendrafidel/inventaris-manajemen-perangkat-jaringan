@@ -191,6 +191,17 @@ const deletePmrImage = async (reportId, index) => {
       year: "numeric",
     });
 
+    let photos = [];
+    try {
+        if (report.maintenance_photo) {
+            let p = report.maintenance_photo;
+            while (typeof p === 'string' && (p.startsWith('[') || p.startsWith('"{'))) {
+                p = JSON.parse(p);
+            }
+            photos = Array.isArray(p) ? p : [p];
+        }
+    } catch(e) { console.error("Error parsing photos", e); }
+
     printWindow.document.write(`
       <html>
         <head>
@@ -211,6 +222,8 @@ const deletePmrImage = async (reportId, index) => {
             .status-Maintenance { background: #fffbeb; color: #92400e; }
             .status-Rusak { background: #fef2f2; color: #991b1b; }
             .notes { background: #f8fafc; padding: 8px; border-radius: 5px; font-size: 11px; font-style: italic; }
+            .doc-container { display: flex; flex-wrap: wrap; gap: 10px; }
+            .doc-img { width: 150px; height: 150px; object-fit: cover; border-radius: 5px; border: 1px solid #eee; }
             @media print { body { padding: 0; } .no-print { display: none; } }
           </style>
         </head>
@@ -271,6 +284,26 @@ const deletePmrImage = async (reportId, index) => {
               <div class="field"><div class="label">Ping Client</div><div class="value">${report.ping_client || "-"}</div></div>
               <div class="field"><div class="label">Speed Test</div><div class="value">${report.speed_test || "-"}</div></div>
             </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Dokumentasi</div>
+            ${photos.length > 0 ? `
+                <div style="margin-bottom: 10px;">
+                    <div style="font-size: 10px; font-weight: bold; color: #666; margin-bottom: 5px;">Kegiatan</div>
+                    <div class="doc-container">
+                        ${photos.map(p => `<img src="${p}" class="doc-img" />`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            ${report.fuel_receipt ? `
+                <div>
+                    <div style="font-size: 10px; font-weight: bold; color: #666; margin-bottom: 5px;">Nota BBM</div>
+                    <div class="doc-container">
+                        <img src="${report.fuel_receipt}" class="doc-img" />
+                    </div>
+                </div>
+            ` : ''}
           </div>
 
           <div class="section">
