@@ -1,191 +1,122 @@
 # Inventaris Manajemen Perangkat Jaringan
 
-Aplikasi manajemen inventaris perangkat jaringan berbasis:
+Sistem terpadu untuk mengelola inventaris perangkat jaringan, mencakup manajemen perangkat, pelaporan Preventive Maintenance (PMR), serta administrasi pengguna.
 
-- **Frontend**: React + Vite + Tailwind + Material UI
-- **Backend**: Express + PostgreSQL
+## 🛠️ Stack Teknologi
 
-## 1) Prasyarat
+- **Frontend**: React, Vite, Tailwind CSS, Material UI (MUI)
+- **Backend**: Express.js, PostgreSQL
 
-Pastikan sudah terpasang:
+---
 
-- **Node.js** 18+ (disarankan 20+)
-- **npm** 9+
-- **PostgreSQL** (lokal atau cloud, misalnya Neon)
-- (Opsional) **psql** CLI untuk menjalankan file SQL
+## 🏗️ Arsitektur Sistem
 
-## 2) Struktur Project
+Sistem ini dirancang dengan arsitektur **Client-Server** untuk pemisahan logika yang rapi:
 
-```text
-inventaris-manajemen-perangkat-jaringan/
-├─ frontend/   # React app
-└─ backend/    # Express API + PostgreSQL
-```
+1.  **Backend (Express API)**: Menggunakan pola *Controller-Route* untuk memisahkan *endpoint* API dari logika bisnis.
+    - **Config Layer**: Menangani koneksi database (`pg`), *caching* (in-memory `Map` dengan TTL), *file upload* (`multer`), dan pengiriman email (`nodemailer`).
+2.  **Frontend (React SPA)**: Menggunakan arsitektur berbasis *service* untuk komunikasi data.
+    - **Service Layer**: Mengabstraksi panggilan API untuk menjaga komponen tetap bersih.
+    - **State Management**: Mengelola alur kerja pengguna (seperti otentikasi) dan sinkronisasi data *real-time*.
+3.  **Alur Data**:
+    - **PMR Reporting**: Mendukung verifikasi geolokasi (*geofencing*), *multi-file upload* untuk foto kegiatan/nota, dan sinkronisasi zona waktu (WIB/Asia-Jakarta).
+    - **Export**: Pemrosesan data laporan yang diformat secara dinamis untuk PDF dan Excel.
 
-## 3) Setup Backend
+---
 
-### a. Masuk folder backend dan install dependency
+## 🚀 Fitur Utama
 
-```bash
-cd backend
-npm install
-npm install helmet compression
-```
+- **Manajemen Inventaris**: Dashboard perangkat, filter data (Area, STO, Status), dan pencarian cepat.
+- **Laporan Preventive Maintenance (PMR)**:
+  - Form input PMR dengan verifikasi lokasi (Geofencing) dan scan QR code.
+  - **Dokumentasi**: Unggah foto kegiatan maintenance dan nota BBM.
+  - **Laporan PDF**: Cetak laporan teknis lengkap beserta dokumentasi visual.
+  - **Ekspor Excel**: Ekspor data laporan dengan format Tanggal & Waktu yang sinkron (WIB).
+- **Manajemen Pengguna**: Autentikasi berbasis peran (`admin`, `super officer`, `officer`, `user`).
+- **Sinkronisasi Waktu**: Sistem terstandarisasi ke zona waktu `Asia/Jakarta` (WIB) untuk seluruh timestamp.
 
-> **Catatan:** `helmet` dan `compression` ditambahkan untuk meningkatkan keamanan dan kecepatan transfer data (JSON compression) pada saat produksi.
+---
 
-### b. Buat file environment
+## ⚙️ Persyaratan Sistem
 
-Salin `.env.example` menjadi `.env`:
+Untuk menjalankan dan mengembangkan aplikasi ini, pastikan perangkat Anda memiliki:
 
-```bash
-cp .env.example .env
-```
+### 1. Lingkungan Pengembangan
+- **Node.js**: Versi 18 LTS atau 20 LTS (disarankan menggunakan [nvm](https://github.com/nvm-sh/nvm) untuk mengelola versi Node).
+- **Package Manager**: `npm` (versi 9+) atau `yarn`.
+- **Git**: Untuk manajemen *version control*.
+- **Code Editor**: VS Code (disarankan) dengan *extension* pendukung (ESLint, Tailwind CSS IntelliSense).
 
-Isi nilai `.env`:
+### 2. Infrastruktur Database
+- **PostgreSQL**: Server database lokal atau layanan *managed database* (contoh: Neon, Supabase, atau AWS RDS).
+- **Tools**: `psql` CLI atau GUI seperti pgAdmin/DBeaver untuk memantau data.
 
-```env
-DATABASE_URL=postgres://user:password@hostname:port/dbname?sslmode=require
-PORT=3000
-NODE_ENV=development
-```
+### 3. Konfigurasi Sistem
+- **Zona Waktu**: Sistem harus disinkronkan ke zona waktu yang benar (WIB/Asia-Jakarta) agar timestamp pencatatan PMR akurat.
+- **Environment**: Akses ke layanan SMTP (seperti Gmail App Password atau Mailgun) jika fitur *reset password* ingin diaktifkan.
 
-> Gunakan connection string PostgreSQL Anda sendiri.
+---
 
-### c. Inisialisasi database
+## 📥 Panduan Instalasi & Setup
 
-Jika Anda punya file SQL inisialisasi/migrasi, jalankan menggunakan `psql`:
+### 1. Konfigurasi Backend
 
-```bash
-psql -U <db_user> -d <db_name> -f "<path_ke_file_sql>"
-```
+1. Masuk ke folder backend:
+   ```bash
+   cd backend
+   npm install
+   ```
+2. Buat file `.env` dari contoh:
+   ```bash
+   cp .env.example .env
+   ```
+3. Sesuaikan `.env` dengan kredensial database Anda.
+4. Jalankan aplikasi:
+   ```bash
+   npm run dev
+   ```
 
-Contoh migrasi yang sudah dibuat:
+### 2. Konfigurasi Frontend
 
-```bash
-psql -U postgres -d inventaris_db -f "src/config/migrations/rename_region_to_area.sql"
-```
+1. Masuk ke folder frontend:
+   ```bash
+   cd ../frontend
+   npm install
+   ```
+2. Jalankan aplikasi:
+   ```bash
+   npm run dev
+   ```
 
-### d. Jalankan backend
+---
 
-```bash
-npm run dev
-```
+## 🗄️ Database & Optimasi
 
-Backend akan berjalan di:
-
-- `http://localhost:3000`
-
-### e. Optimasi Database (PENTING untuk Produksi)
-
-Untuk memastikan pengambilan data tetap cepat saat jumlah perangkat meningkat, jalankan perintah SQL berikut di database Anda:
+Pastikan menjalankan skrip berikut di database Anda untuk performa optimal:
 
 ```sql
--- Index untuk pencarian perangkat (ID, Nama, SN)
-CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE INDEX IF NOT EXISTS idx_devices_search ON inventory_devices USING gin (device_id gin_trgm_ops, name gin_trgm_ops, serial_number gin_trgm_ops);
+-- Index untuk pencarian cepat
+CREATE EXTENSION IF NOT EXISTS pg_trgm; 
+CREATE INDEX IF NOT EXISTS idx_devices_search ON inventory_devices USING gin (device_id gin_trgm_ops, name gin_trgm_ops, serial_number gin_trgm_ops);
 
--- Jalankan CREATE EXTENSION IF NOT EXISTS pg_trgm; jika diperlukan
+-- Index referensi
 CREATE INDEX IF NOT EXISTS idx_devices_area ON inventory_devices(area);
 CREATE INDEX IF NOT EXISTS idx_devices_sto ON inventory_devices(sto);
 CREATE INDEX IF NOT EXISTS idx_devices_status ON inventory_devices(status);
-
--- Index untuk manajemen user dan mapping kantor
-CREATE INDEX IF NOT EXISTS idx_users_area ON users(area);
-CREATE INDEX IF NOT EXISTS idx_users_office ON users(office_id);
-CREATE INDEX IF NOT EXISTS idx_users_username_email ON users(username, email);
 ```
 
-## 4) Setup Frontend
+---
 
-### a. Masuk folder frontend dan install dependency
+## 🔐 Keamanan & Deployment
 
-```bash
-cd ../frontend
-npm install
-```
+- **Ignore**: File `.env`, `node_modules/`, dan `dist/` sudah masuk dalam `.gitignore`.
+- **Produksi**: Pastikan `NODE_ENV=production` dan SMTP disetting dengan benar untuk fitur reset password.
 
-### b. Jalankan frontend
+---
 
-```bash
-npm run dev
-```
+## 🛠️ Troubleshooting
 
-Frontend akan berjalan di:
-
-- `http://localhost:5173`
-
-## 5) Menjalankan Aplikasi (Ringkas)
-
-Jalankan **2 terminal**:
-
-- Terminal 1:
-  ```bash
-  cd backend
-  npm run dev
-  ```
-- Terminal 2:
-  ```bash
-  cd frontend
-  npm run dev
-  ```
-
-Lalu buka `http://localhost:5173`.
-
-## 6) Login Demo
-
-Gunakan akun yang tersedia di database Anda (hasil seed/init).  
-Jika menggunakan data contoh standar proyek, biasanya:
-
-- `admin@example.com` / `admin123`
-- `officer@example.com` / `officer123`
-- `user@example.com` / `user123`
-
-> Jika login gagal, cek isi tabel `users` pada database aktif Anda.
-
-## 7) Fitur Utama
-
-- Login dan role-based access (`admin`, `officer`, `user`)
-- Dashboard overview
-- Dashboard inventaris perangkat
-- Filter inventaris (divisi, area, sto, status, search)
-- Manajemen pengguna
-- Mapping divisi/area/STO
-
-## 8) Troubleshooting
-
-### Backend error koneksi DB
-
-- Pastikan `DATABASE_URL` benar.
-- Pastikan database dapat diakses dari mesin Anda.
-- Cek log backend saat startup.
-
-### Perubahan backend tidak terbaca
-
-- Restart backend (`Ctrl + C`, lalu `npm run dev`) setelah ubah file server/controller.
-
-### Dropdown/opsi tidak muncul
-
-- Pastikan endpoint backend aktif (`/api/inventory/options`).
-- Pastikan data referensi di tabel database tidak kosong.
-
-### Port bentrok
-
-- Ubah `PORT` backend di `.env`.
-- Jalankan ulang frontend/backend.
-
-## 9) Keamanan Repo (Sebelum Push GitHub)
-
-File sensitif dan dependency besar sudah di-ignore via `.gitignore`:
-
-- `.env`, `.env.*`
-- `node_modules/`
-- build artifacts (`dist`, `build`, dll)
-- logs/cache
-
-Tetap cek sebelum push:
-
-```bash
-git status
-```
-
-Pastikan tidak ada secret yang ikut ter-stage.
+- **Database**: Pastikan `DATABASE_URL` valid dan dapat diakses.
+- **Data Tidak Muncul**: Periksa endpoint `/api/inventory/options` untuk referensi dropdown.
+- **Waktu Tidak Sinkron**: Pastikan server menggunakan NTP yang benar, aplikasi sudah dikonfigurasi ke zona waktu `Asia/Jakarta`.
+- **Port Bentrok**: Sesuaikan `PORT` di file `.env`.
