@@ -142,9 +142,8 @@ const deletePmrImage = async (reportId, index) => {
     const worksheet = XLSX.utils.json_to_sheet(
       reports.map((r) => ({
         "ID Laporan": r.id,
-        Tanggal: r.maintenance_date,
+        "Tanggal & Waktu": `${new Date(r.maintenance_date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })} ${new Date(r.created_at).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta" })}`,
         Teknisi: r.technician_name,
-        NIK: r.user_nik,
         Area: r.technician_area,
         Perangkat: r.device_name,
         Tipe: r.device_type,
@@ -775,10 +774,12 @@ const deletePmrImage = async (reportId, index) => {
                           </p>
                           <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">
                             Sub:{" "}
-                            {new Date(report.created_at).toLocaleTimeString(
-                              "id-ID",
-                              { hour: "2-digit", minute: "2-digit" },
-                            )}
+                            {new Date(report.created_at).toLocaleString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              timeZone: "Asia/Jakarta",
+                              hour12: false,
+                            })}
                           </p>
                         </td>
                         <td className="px-6 py-4">
@@ -886,23 +887,24 @@ const deletePmrImage = async (reportId, index) => {
                         <p className="text-[10px] font-bold text-slate-700">
                           {new Date(report.maintenance_date).toLocaleDateString(
                             "id-ID",
-                            { day: "2-digit", month: "short" },
+                            { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" },
                           )}{" "}
                           ·{" "}
-                          {new Date(report.created_at).toLocaleTimeString(
-                            "id-ID",
-                            { hour: "2-digit", minute: "2-digit" },
-                          )}
+                          {new Date(report.created_at).toLocaleString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "Asia/Jakarta",
+                          })}
                         </p>
-                      </div>
-                      <div>
+                        </div>
+                        <div>
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
                           Teknisi
                         </p>
                         <p className="text-[10px] font-bold text-slate-700 truncate">
                           {report.technician_name}
                         </p>
-                      </div>
+                        </div>
                       <div className="col-span-2">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
                           Lokasi STO
