@@ -66,7 +66,9 @@ export default function MappingSto() {
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "super officer";
+  const isAdmin =
+    user?.role?.toLowerCase() === "admin" ||
+    user?.role?.toLowerCase() === "super officer";
   const isOfficer = user?.role?.toLowerCase() === "officer";
 
   const displayStos = useMemo(() => {
@@ -587,7 +589,7 @@ export default function MappingSto() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setShowModal(false)}

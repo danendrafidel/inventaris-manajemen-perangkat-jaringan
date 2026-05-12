@@ -212,7 +212,7 @@ export default function PrintBarcode() {
       />
 
       <div className="flex-1 md:ml-64">
-        <header className="sticky top-0 z-[1050] border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <div>
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -425,14 +425,22 @@ export default function PrintBarcode() {
             <div className="md:hidden divide-y divide-slate-100">
               <div className="p-4 bg-slate-50 flex items-center gap-4">
                 <button onClick={handleSelectAll} className="text-blue-600">
-                  {selectedIds.length === items.length && items.length > 0 ? <CheckBoxIcon /> : <CheckBoxOutlineBlankIcon />}
+                  {selectedIds.length === items.length && items.length > 0 ? (
+                    <CheckBoxIcon />
+                  ) : (
+                    <CheckBoxOutlineBlankIcon />
+                  )}
                 </button>
-                <span className="text-xs font-black text-slate-600 uppercase">Pilih Semua ({items.length})</span>
+                <span className="text-xs font-black text-slate-600 uppercase">
+                  Pilih Semua ({items.length})
+                </span>
               </div>
               {loading ? (
                 <div className="p-10 text-center">Memuat data...</div>
               ) : items.length === 0 ? (
-                <div className="p-10 text-center text-xs font-bold text-slate-400 uppercase">Tidak ada perangkat</div>
+                <div className="p-10 text-center text-xs font-bold text-slate-400 uppercase">
+                  Tidak ada perangkat
+                </div>
               ) : (
                 items.map((item) => (
                   <div
@@ -472,7 +480,7 @@ export default function PrintBarcode() {
         </main>
 
         {/* Sticky Print Button (Footer) */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)] md:hidden z-[1050]">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)] md:hidden z-1050">
           <button
             onClick={handlePrintSelected}
             disabled={selectedIds.length === 0}

@@ -54,7 +54,10 @@ export default function LaporanPMR() {
 
   const [search, setSearch] = useState("");
   const [draftSearch, setDraftSearch] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "created_at", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "created_at",
+    direction: "desc",
+  });
   const [filters, setFilters] = useState({
     area_id: "",
     sto_id: "",
@@ -1046,7 +1049,7 @@ export default function LaporanPMR() {
 
       {/* Detail Modal */}
       {showDetailModal && selectedReport && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={() => setShowDetailModal(false)}
@@ -1551,7 +1554,7 @@ export default function LaporanPMR() {
       {/* Fullscreen Image Viewer */}
       {activeImage && (
         <div
-          className="fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-3000 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setActiveImage(null)}
         >
           <img

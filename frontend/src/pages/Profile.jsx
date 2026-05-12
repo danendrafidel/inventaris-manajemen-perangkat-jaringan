@@ -34,7 +34,11 @@ export default function Profile() {
   const [loadError, setLoadError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
-  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
   const [options, setOptions] = useState({ areas: [], offices: [] });
 
   const [formData, setFormData] = useState({
@@ -49,7 +53,11 @@ export default function Profile() {
     new: "",
     confirm: "",
   });
-  const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
@@ -135,11 +143,11 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <Toast 
-        open={notification.open} 
-        message={notification.message} 
-        severity={notification.severity} 
-        onClose={() => setNotification({ ...notification, open: false })} 
+      <Toast
+        open={notification.open}
+        message={notification.message}
+        severity={notification.severity}
+        onClose={() => setNotification({ ...notification, open: false })}
       />
 
       <div className="flex-1 md:ml-64">
@@ -175,209 +183,298 @@ export default function Profile() {
           ) : null}
 
           {profile && (
-          <div className="bg-white rounded-4xl md:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden w-full">
-            <div className="h-24 md:h-32 bg-linear-to-r from-blue-600 to-indigo-700 relative">
-              <div className="absolute -bottom-10 md:-bottom-12 left-6 md:left-10">
-                <div className="h-20 w-20 md:h-24 md:w-24 rounded-2xl md:rounded-3xl bg-white p-1.5 shadow-xl">
-                  <div className="h-full w-full rounded-xl md:rounded-2xl bg-slate-100 flex items-center justify-center text-2xl md:text-3xl font-black text-slate-400">
-                    {profile.name.charAt(0)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-14 md:pt-16 px-6 md:px-10 pb-8 md:pb-10">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-8 md:mb-10 gap-6">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
-                    {profile.name}
-                  </h2>
-                  <p className="text-xs md:text-sm font-bold text-slate-400">
-                    @{profile.username} ·{" "}
-                    <span className="text-blue-600 uppercase">
-                      {profile.role}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setShowPassModal(true)}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-[10px] md:text-xs font-black text-slate-600 hover:bg-slate-200 transition-all"
-                  >
-                    <LockIcon sx={{ fontSize: 16 }} /> GANTI PASSWORD
-                  </button>
-                  {!isEditing ? (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-[10px] md:text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
-                    >
-                      <EditIcon sx={{ fontSize: 16 }} /> EDIT PROFIL
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-[10px] md:text-xs font-black text-white shadow-lg hover:bg-black transition-all"
-                    >
-                      <CloseIcon sx={{ fontSize: 16 }} /> BATAL
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <form
-                onSubmit={handleUpdate}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12"
-              >
-                <div className="space-y-5 md:space-y-6">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <PersonIcon sx={{ fontSize: 14 }} /> Nama Lengkap
-                    </label>
-                    <input
-                      required
-                      disabled={!isEditing}
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <EmailIcon sx={{ fontSize: 14 }} /> Email
-                    </label>
-                    <input
-                      required
-                      type="email"
-                      disabled={!isEditing}
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <BadgeIcon sx={{ fontSize: 14 }} /> NIK
-                    </label>
-                    <input
-                      required
-                      disabled={!isEditing}
-                      className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                      value={formData.nik}
-                      onChange={(e) =>
-                        setFormData({ ...formData, nik: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-5 md:space-y-6">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                    <MapIcon sx={{ fontSize: 14 }} /> Area
-                  </label>
-                  <select
-                    disabled={!isEditing}
-                    className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
-                    value={formData.area_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, area_id: e.target.value })
-                    }
-                  >
-                    <option value="">Pilih Area</option>
-                    {options.areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                    <BusinessIcon sx={{ fontSize: 14 }} /> Kantor
-                  </label>
-                  <select
-                    disabled={!isEditing}
-                    className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
-                    value={formData.office_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, office_id: e.target.value })
-                    }
-                  >
-                    <option value="">Pilih Kantor</option>
-                    {filteredOffices.map((off) => (
-                      <option key={off.val} value={off.val}>
-                        {off.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                  {isEditing && (
-                    <div className="pt-4">
-                      <button
-                        type="submit"
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl md:rounded-2xl bg-slate-900 py-3.5 md:py-4 text-xs font-black text-white shadow-xl hover:bg-black transition-all uppercase tracking-[0.2em]"
-                      >
-                        <SaveIcon sx={{ fontSize: 18 }} /> Simpan Perubahan
-                      </button>
+            <div className="bg-white rounded-4xl md:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden w-full">
+              <div className="h-24 md:h-32 bg-linear-to-r from-blue-600 to-indigo-700 relative">
+                <div className="absolute -bottom-10 md:-bottom-12 left-6 md:left-10">
+                  <div className="h-20 w-20 md:h-24 md:w-24 rounded-2xl md:rounded-3xl bg-white p-1.5 shadow-xl">
+                    <div className="h-full w-full rounded-xl md:rounded-2xl bg-slate-100 flex items-center justify-center text-2xl md:text-3xl font-black text-slate-400">
+                      {profile.name.charAt(0)}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </form>
+              </div>
+
+              <div className="pt-14 md:pt-16 px-6 md:px-10 pb-8 md:pb-10">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-8 md:mb-10 gap-6">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                      {profile.name}
+                    </h2>
+                    <p className="text-xs md:text-sm font-bold text-slate-400">
+                      @{profile.username} ·{" "}
+                      <span className="text-blue-600 uppercase">
+                        {profile.role}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setShowPassModal(true)}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-[10px] md:text-xs font-black text-slate-600 hover:bg-slate-200 transition-all"
+                    >
+                      <LockIcon sx={{ fontSize: 16 }} /> GANTI PASSWORD
+                    </button>
+                    {!isEditing ? (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-[10px] md:text-xs font-black text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+                      >
+                        <EditIcon sx={{ fontSize: 16 }} /> EDIT PROFIL
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-[10px] md:text-xs font-black text-white shadow-lg hover:bg-black transition-all"
+                      >
+                        <CloseIcon sx={{ fontSize: 16 }} /> BATAL
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <form
+                  onSubmit={handleUpdate}
+                  className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12"
+                >
+                  <div className="space-y-5 md:space-y-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <PersonIcon sx={{ fontSize: 14 }} /> Nama Lengkap
+                      </label>
+                      <input
+                        required
+                        disabled={!isEditing}
+                        className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <EmailIcon sx={{ fontSize: 14 }} /> Email
+                      </label>
+                      <input
+                        required
+                        type="email"
+                        disabled={!isEditing}
+                        className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <BadgeIcon sx={{ fontSize: 14 }} /> NIK
+                      </label>
+                      <input
+                        required
+                        disabled={!isEditing}
+                        className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        value={formData.nik}
+                        onChange={(e) =>
+                          setFormData({ ...formData, nik: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-5 md:space-y-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <MapIcon sx={{ fontSize: 14 }} /> Area
+                      </label>
+                      <select
+                        disabled={!isEditing}
+                        className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
+                        value={formData.area_id}
+                        onChange={(e) =>
+                          setFormData({ ...formData, area_id: e.target.value })
+                        }
+                      >
+                        <option value="">Pilih Area</option>
+                        {options.areas.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <BusinessIcon sx={{ fontSize: 14 }} /> Kantor
+                      </label>
+                      <select
+                        disabled={!isEditing}
+                        className="w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed appearance-none"
+                        value={formData.office_id}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            office_id: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Pilih Kantor</option>
+                        {filteredOffices.map((off) => (
+                          <option key={off.val} value={off.val}>
+                            {off.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {isEditing && (
+                      <div className="pt-4">
+                        <button
+                          type="submit"
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-xl md:rounded-2xl bg-slate-900 py-3.5 md:py-4 text-xs font-black text-white shadow-xl hover:bg-black transition-all uppercase tracking-[0.2em]"
+                        >
+                          <SaveIcon sx={{ fontSize: 18 }} /> Simpan Perubahan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
           )}
         </main>
       </div>
 
       {/* Change Password Modal */}
       {showPassModal && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={() => setShowPassModal(false)}
           />
           <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 p-10">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-lg shadow-indigo-200">
-                  <LockIcon />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                    Update Keamanan
-                  </h2>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    Ganti Password Akun
-                  </p>
-                </div>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-lg shadow-indigo-200">
+                <LockIcon />
               </div>
-              <form onSubmit={handleChangePass} className="space-y-4">
-                <div className="space-y-1.5 relative">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PASSWORD SAAT INI</label>
-                  <input required type={showPasswords.current ? "text" : "password"} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none" value={passwords.current} onChange={e => setPasswords({...passwords, current: e.target.value})} />
-                  <button type="button" onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})} className="absolute right-4 top-9 text-slate-400 hover:text-slate-600">{showPasswords.current ? <VisibilityOffIcon sx={{ fontSize: 18 }}/> : <VisibilityIcon sx={{ fontSize: 18 }}/>}</button>
-                </div>
-                <div className="space-y-1.5 relative">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PASSWORD BARU</label>
-                  <input required type={showPasswords.new ? "text" : "password"} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none" value={passwords.new} onChange={e => setPasswords({...passwords, new: e.target.value})} />
-                  <button type="button" onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})} className="absolute right-4 top-9 text-slate-400 hover:text-slate-600">{showPasswords.new ? <VisibilityOffIcon sx={{ fontSize: 18 }}/> : <VisibilityIcon sx={{ fontSize: 18 }}/>}</button>
-                </div>
-                <div className="space-y-1.5 relative">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">KONFIRMASI PASSWORD BARU</label>
-                  <input required type={showPasswords.confirm ? "text" : "password"} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none" value={passwords.confirm} onChange={e => setPasswords({...passwords, confirm: e.target.value})} />
-                  <button type="button" onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})} className="absolute right-4 top-9 text-slate-400 hover:text-slate-600">{showPasswords.confirm ? <VisibilityOffIcon sx={{ fontSize: 18 }}/> : <VisibilityIcon sx={{ fontSize: 18 }}/>}</button>
-                </div>
-                <div className="flex items-center justify-end gap-3 mt-8">
-                  <button type="button" onClick={() => setShowPassModal(false)} className="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest">Batal</button>
-                  <button type="submit" className="px-8 py-3 rounded-2xl bg-indigo-600 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all">Update Password</button>
-                </div>
-              </form>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                  Update Keamanan
+                </h2>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Ganti Password Akun
+                </p>
+              </div>
+            </div>
+            <form onSubmit={handleChangePass} className="space-y-4">
+              <div className="space-y-1.5 relative">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  PASSWORD SAAT INI
+                </label>
+                <input
+                  required
+                  type={showPasswords.current ? "text" : "password"}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none"
+                  value={passwords.current}
+                  onChange={(e) =>
+                    setPasswords({ ...passwords, current: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPasswords({
+                      ...showPasswords,
+                      current: !showPasswords.current,
+                    })
+                  }
+                  className="absolute right-4 top-9 text-slate-400 hover:text-slate-600"
+                >
+                  {showPasswords.current ? (
+                    <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                  ) : (
+                    <VisibilityIcon sx={{ fontSize: 18 }} />
+                  )}
+                </button>
+              </div>
+              <div className="space-y-1.5 relative">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  PASSWORD BARU
+                </label>
+                <input
+                  required
+                  type={showPasswords.new ? "text" : "password"}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none"
+                  value={passwords.new}
+                  onChange={(e) =>
+                    setPasswords({ ...passwords, new: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPasswords({
+                      ...showPasswords,
+                      new: !showPasswords.new,
+                    })
+                  }
+                  className="absolute right-4 top-9 text-slate-400 hover:text-slate-600"
+                >
+                  {showPasswords.new ? (
+                    <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                  ) : (
+                    <VisibilityIcon sx={{ fontSize: 18 }} />
+                  )}
+                </button>
+              </div>
+              <div className="space-y-1.5 relative">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  KONFIRMASI PASSWORD BARU
+                </label>
+                <input
+                  required
+                  type={showPasswords.confirm ? "text" : "password"}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm font-bold outline-none"
+                  value={passwords.confirm}
+                  onChange={(e) =>
+                    setPasswords({ ...passwords, confirm: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPasswords({
+                      ...showPasswords,
+                      confirm: !showPasswords.confirm,
+                    })
+                  }
+                  className="absolute right-4 top-9 text-slate-400 hover:text-slate-600"
+                >
+                  {showPasswords.confirm ? (
+                    <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                  ) : (
+                    <VisibilityIcon sx={{ fontSize: 18 }} />
+                  )}
+                </button>
+              </div>
+              <div className="flex items-center justify-end gap-3 mt-8">
+                <button
+                  type="button"
+                  onClick={() => setShowPassModal(false)}
+                  className="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-8 py-3 rounded-2xl bg-indigo-600 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all"
+                >
+                  Update Password
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
-import { fetchAllAreas,
+import {
+  fetchAllAreas,
   createArea,
   updateArea,
   deleteArea,
@@ -45,7 +46,10 @@ export default function MappingArea() {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "asc",
+  });
   const [showModal, setShowModal] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
   const [formData, setFormData] = useState({
@@ -90,11 +94,14 @@ export default function MappingArea() {
     setSortConfig({ key, direction });
   };
 
-  const stats = useMemo(() => ({
-    total: areas.length,
-    active: areas.filter(a => a.status === 'active').length,
-    inactive: areas.filter(a => a.status !== 'active').length,
-  }), [areas]);
+  const stats = useMemo(
+    () => ({
+      total: areas.length,
+      active: areas.filter((a) => a.status === "active").length,
+      inactive: areas.filter((a) => a.status !== "active").length,
+    }),
+    [areas],
+  );
 
   const showNotify = (message, severity = "success") =>
     setNotification({ open: true, message, severity });
@@ -135,7 +142,8 @@ export default function MappingArea() {
       const areaData = await fetchAllAreas();
       setAreas(areaData);
     } catch (err) {
-      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+      const message =
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       setError(message);
       showNotify(message, "error");
     } finally {
@@ -147,7 +155,9 @@ export default function MappingArea() {
     loadData();
   }, []);
 
-  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "super officer";
+  const isAdmin =
+    user?.role?.toLowerCase() === "admin" ||
+    user?.role?.toLowerCase() === "super officer";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -162,9 +172,10 @@ export default function MappingArea() {
       }
       setShowModal(false);
       await loadData();
-      window.dispatchEvent(new Event('areas-updated'));
+      window.dispatchEvent(new Event("areas-updated"));
     } catch (err) {
-      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+      const message =
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -180,9 +191,10 @@ export default function MappingArea() {
         await deleteArea(id);
         showNotify("Area berhasil dihapus");
         loadData();
-        window.dispatchEvent(new Event('areas-updated'));
+        window.dispatchEvent(new Event("areas-updated"));
       } catch (err) {
-        const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+        const message =
+          "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
         showNotify(message, "error");
       }
     }
@@ -195,7 +207,8 @@ export default function MappingArea() {
       showNotify("Status area berhasil diubah");
       loadData();
     } catch (err) {
-      const message = "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+      const message =
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -247,47 +260,79 @@ export default function MappingArea() {
 
         <main className="p-4 md:p-8">
           <ErrorAlert message={error} onRetry={loadData} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                {[
-                    { title: "TOTAL AREA", value: stats.total, icon: <PublicIcon />, color: "bg-slate-600" },
-                    { title: "AKTIF", value: stats.active, icon: <CheckCircleIcon />, color: "bg-emerald-500" },
-                    { title: "TIDAK AKTIF", value: stats.inactive, icon: <BlockIcon />, color: "bg-rose-500" },
-                ].map((s, i) => (
-                    <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase">{s.title}</p>
-                            <p className="text-2xl font-black text-slate-900">{s.value}</p>
-                        </div>
-                        <div className={`h-10 w-10 rounded-xl ${s.color} text-white flex items-center justify-center shadow-lg`}>{s.icon}</div>
-                    </div>
-                ))}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {[
+              {
+                title: "TOTAL AREA",
+                value: stats.total,
+                icon: <PublicIcon />,
+                color: "bg-slate-600",
+              },
+              {
+                title: "AKTIF",
+                value: stats.active,
+                icon: <CheckCircleIcon />,
+                color: "bg-emerald-500",
+              },
+              {
+                title: "TIDAK AKTIF",
+                value: stats.inactive,
+                icon: <BlockIcon />,
+                color: "bg-rose-500",
+              },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">
+                    {s.title}
+                  </p>
+                  <p className="text-2xl font-black text-slate-900">
+                    {s.value}
+                  </p>
+                </div>
+                <div
+                  className={`h-10 w-10 rounded-xl ${s.color} text-white flex items-center justify-center shadow-lg`}
+                >
+                  {s.icon}
+                </div>
+              </div>
+            ))}
+          </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th 
-                      onClick={() => handleSort('generated_id')}
+                    <th
+                      onClick={() => handleSort("generated_id")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         ID
-                        {sortConfig.key === 'generated_id' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "generated_id" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
-                    <th 
-                      onClick={() => handleSort('name')}
+                    <th
+                      onClick={() => handleSort("name")}
                       className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         NAMA AREA
-                        {sortConfig.key === 'name' && (
-                          sortConfig.direction === 'asc' ? <ArrowUpwardIcon sx={{ fontSize: 12 }} /> : <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                        )}
+                        {sortConfig.key === "name" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
                       </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
@@ -344,8 +389,14 @@ export default function MappingArea() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex flex-col items-center gap-1 text-[10px] font-black text-slate-500">
-                            <span title="Users"><PersonIcon sx={{ fontSize: 14 }} /> {c.active_user_count}</span>
-                            <span title="STOs"><ApartmentIcon sx={{ fontSize: 14 }} /> {c.sto_count}</span>
+                            <span title="Users">
+                              <PersonIcon sx={{ fontSize: 14 }} />{" "}
+                              {c.active_user_count}
+                            </span>
+                            <span title="STOs">
+                              <ApartmentIcon sx={{ fontSize: 14 }} />{" "}
+                              {c.sto_count}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
@@ -506,7 +557,7 @@ export default function MappingArea() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setShowModal(false)}

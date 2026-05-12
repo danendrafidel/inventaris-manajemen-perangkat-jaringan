@@ -224,7 +224,10 @@ export default function FormPMR() {
     if (!files.length) return;
 
     if (type === "photo") {
-      const currentTotalSize = maintenancePhotos.reduce((acc, f) => acc + f.size, 0);
+      const currentTotalSize = maintenancePhotos.reduce(
+        (acc, f) => acc + f.size,
+        0,
+      );
       const newFilesSize = files.reduce((acc, f) => acc + f.size, 0);
 
       if (currentTotalSize + newFilesSize > 3 * 1024 * 1024) {
@@ -274,8 +277,12 @@ export default function FormPMR() {
         setIsScannerOpen(false);
 
         if (foundDevice) {
-          const deviceId = String(foundDevice.deviceId || "").trim().toUpperCase();
-          const serialNumber = String(foundDevice.serialNumber || "").trim().toUpperCase();
+          const deviceId = String(foundDevice.deviceId || "")
+            .trim()
+            .toUpperCase();
+          const serialNumber = String(foundDevice.serialNumber || "")
+            .trim()
+            .toUpperCase();
 
           // Verify if scanned QR matches the selected device
           if (scannedValue === deviceId || scannedValue === serialNumber) {
@@ -287,7 +294,7 @@ export default function FormPMR() {
                   latitude,
                   longitude,
                   destination.lat,
-                  destination.lng
+                  destination.lng,
                 );
 
                 if (distanceToDevice <= 1) {
@@ -296,9 +303,9 @@ export default function FormPMR() {
                 } else {
                   showNotify(
                     `Gagal! Anda berada ${distanceToDevice.toFixed(
-                      2
+                      2,
                     )} KM dari perangkat. Maksimal 1 KM.`,
-                    "error"
+                    "error",
                   );
                   setIsVerified(false);
                 }
@@ -306,7 +313,7 @@ export default function FormPMR() {
               (err) => {
                 showNotify("Gagal mendapatkan lokasi Anda.", "error");
                 console.error(err);
-              }
+              },
             );
           } else {
             showNotify(`QR tidak cocok! (Scan: ${scannedValue})`, "error");
@@ -1086,14 +1093,17 @@ export default function FormPMR() {
                         <PhotoCameraIcon sx={{ fontSize: 16 }} /> Dokumentasi &
                         Nota (Maksimal 3MB)
                       </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            <PhotoCameraIcon sx={{ fontSize: 14 }} /> Foto Kegiatan (Total 3MB)
+                            <PhotoCameraIcon sx={{ fontSize: 14 }} /> Foto
+                            Kegiatan (Total 3MB)
                           </label>
                           <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
                             <FileUploadIcon className="text-slate-400" />
-                            <span className="text-[10px] font-black text-slate-500 uppercase">Upload Foto Kegiatan</span>
+                            <span className="text-[10px] font-black text-slate-500 uppercase">
+                              Upload Foto Kegiatan
+                            </span>
                             <input
                               type="file"
                               multiple
@@ -1109,12 +1119,17 @@ export default function FormPMR() {
                                 {maintenancePhotos.map((file, idx) => {
                                   const previewUrl = URL.createObjectURL(file);
                                   return (
-                                    <div key={idx} className="relative h-20 w-20 flex-shrink-0 group">
+                                    <div
+                                      key={idx}
+                                      className="relative h-20 w-20 shrink-0 group"
+                                    >
                                       <img
                                         src={previewUrl}
                                         alt={`Preview ${idx}`}
                                         className="h-full w-full object-cover rounded-xl border border-slate-200"
-                                        onLoad={() => URL.revokeObjectURL(previewUrl)}
+                                        onLoad={() =>
+                                          URL.revokeObjectURL(previewUrl)
+                                        }
                                       />
                                       <button
                                         type="button"
@@ -1132,11 +1147,14 @@ export default function FormPMR() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                            <ReceiptIcon sx={{ fontSize: 14 }} /> Foto Nota BBM (3MB)
+                            <ReceiptIcon sx={{ fontSize: 14 }} /> Foto Nota BBM
+                            (3MB)
                           </label>
                           <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
                             <FileUploadIcon className="text-slate-400" />
-                            <span className="text-[10px] font-black text-slate-500 uppercase">Upload Nota BBM</span>
+                            <span className="text-[10px] font-black text-slate-500 uppercase">
+                              Upload Nota BBM
+                            </span>
                             <input
                               type="file"
                               ref={receiptInputRef}
@@ -1194,7 +1212,8 @@ export default function FormPMR() {
                           onClick={() => setIsScannerOpen(true)}
                           className="w-full py-4 rounded-3xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                         >
-                          <QrCodeScannerIcon fontSize="small" /> SCAN QR PERANGKAT
+                          <QrCodeScannerIcon fontSize="small" /> SCAN QR
+                          PERANGKAT
                         </button>
                       )}
 
@@ -1209,7 +1228,7 @@ export default function FormPMR() {
                         <button
                           type="submit"
                           disabled={submitting || !isVerified}
-                          className="flex-[2] py-4 rounded-3xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                          className="flex-2 py-4 rounded-3xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                         >
                           {submitting ? (
                             "MENGIRIM..."
