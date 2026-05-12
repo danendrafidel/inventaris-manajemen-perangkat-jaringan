@@ -143,21 +143,28 @@ export default function PrintBarcode() {
             }
             .grid {
               display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 10px;
+              grid-template-columns: repeat(5, 3.5cm);
+              gap: 0.5cm;
             }
             .label {
+              width: 3.5cm;
+              height: 3.5cm;
               border: 1px solid #ddd;
-              padding: 15px;
+              padding: 2px;
               text-align: center;
-              border-radius: 8px;
+              border-radius: 4px;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
               break-inside: avoid;
-              height: fit-content;
+              overflow: hidden;
             }
-            .device-name { font-weight: bold; font-size: 12px; margin-bottom: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .device-info { font-size: 9px; margin-bottom: 10px; color: #555; }
-            .sn { margin-top: 8px; font-weight: 900; letter-spacing: 1px; font-size: 10px; }
-            img { width: 100px; height: 100px; }
+            .device-name { font-weight: bold; font-size: 8px; margin-bottom: 1px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+            .device-info { font-size: 7px; margin-bottom: 1px; color: #555; }
+            .sn { font-weight: 900; font-size: 7px; margin-top: 1px; }
+            img { width: 1.8cm; height: 1.8cm; margin: 1px 0; }
             @media print {
               .label { border: 1px solid #000; }
             }
@@ -174,10 +181,8 @@ export default function PrintBarcode() {
       htmlContent += `
         <div class="label">
           <div class="device-name">${item.name}</div>
-          <div class="device-info">${item.deviceId}</div>
           <img src="${qrCodeUrl}" />
           <div class="sn">${item.serialNumber}</div>
-          <div style="font-size: 8px; color: #888; margin-top: 2px;">${item.area} - ${item.sto}</div>
         </div>
       `;
     });

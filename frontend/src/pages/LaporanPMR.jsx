@@ -32,6 +32,8 @@ import LanIcon from "@mui/icons-material/Lan";
 import SpeedIcon from "@mui/icons-material/Speed";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 export default function LaporanPMR() {
   const navigate = useNavigate();
@@ -52,6 +54,7 @@ export default function LaporanPMR() {
 
   const [search, setSearch] = useState("");
   const [draftSearch, setDraftSearch] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: "created_at", direction: "desc" });
   const [filters, setFilters] = useState({
     area_id: "",
     sto_id: "",
@@ -77,50 +80,56 @@ export default function LaporanPMR() {
     setNotification({ open: true, message, severity });
   };
 
-const addPmrImages = async (reportId, files, type) => {
-  setImageLoading(true);
-  const formData = new FormData();
-  if (type === 'photo') {
-    files.forEach((file) => formData.append('maintenance_photo', file));
-  } else {
-    formData.append('fuel_receipt', files[0]);
-  }
-
-  try {
-    const response = await fetch(`/api/pmr/${reportId}`, { 
-      method: 'PUT',
-      body: formData
-    });
-    const result = await response.json();
-    if (result.success) {
-      showNotify("Foto berhasil ditambahkan");
-      setSelectedReport(result.data); // Keep modal open and update data
-      await loadData(); 
+  const addPmrImages = async (reportId, files, type) => {
+    setImageLoading(true);
+    const formData = new FormData();
+    if (type === "photo") {
+      files.forEach((file) => formData.append("maintenance_photo", file));
     } else {
-      showNotify(result.message || "Gagal menambahkan foto", "error");
+      formData.append("fuel_receipt", files[0]);
     }
-  } catch (err) {
-    showNotify("Terjadi kesalahan saat mengunggah", "error");
-  } finally {
-    setImageLoading(false);
-  }
-};
 
-const deletePmrImage = async (reportId, index) => {
+    try {
+      const response = await fetch(`/api/pmr/${reportId}`, {
+        method: "PUT",
+        body: formData,
+      });
+      const result = await response.json();
+      if (result.success) {
+        showNotify("Foto berhasil ditambahkan");
+        setSelectedReport(result.data); // Keep modal open and update data
+        await loadData();
+      } else {
+        showNotify(result.message || "Gagal menambahkan foto", "error");
+      }
+    } catch (err) {
+      showNotify("Terjadi kesalahan saat mengunggah", "error");
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  const deletePmrImage = async (reportId, index) => {
     setImageLoading(true);
     try {
-      const response = await fetch(`/api/pmr/${reportId}/image/${index}`, { method: 'DELETE' });
+      const response = await fetch(`/api/pmr/${reportId}/image/${index}`, {
+        method: "DELETE",
+      });
       const result = await response.json();
       if (result.success) {
         showNotify("Foto berhasil dihapus");
         // Update local state directly to avoid closing modal
         // Fetch fresh data for the report to ensure state consistency
         const updatedReports = await fetchPmrReports({
-            area_id: role !== "admin" && role !== "super officer" ? user?.area_id : filters.area_id || null,
-            role: role,
-            user_id: role === "admin" || role === "super officer" ? undefined : user?.id,
+          area_id:
+            role !== "admin" && role !== "super officer"
+              ? user?.area_id
+              : filters.area_id || null,
+          role: role,
+          user_id:
+            role === "admin" || role === "super officer" ? undefined : user?.id,
         });
-        const updatedReport = updatedReports.find(r => r.id === reportId);
+        const updatedReport = updatedReports.find((r) => r.id === reportId);
         setSelectedReport(updatedReport);
         await loadData();
       } else {
@@ -192,14 +201,19 @@ const deletePmrImage = async (reportId, index) => {
 
     let photos = [];
     try {
-        if (report.maintenance_photo) {
-            let p = report.maintenance_photo;
-            while (typeof p === 'string' && (p.startsWith('[') || p.startsWith('"{'))) {
-                p = JSON.parse(p);
-            }
-            photos = Array.isArray(p) ? p : [p];
+      if (report.maintenance_photo) {
+        let p = report.maintenance_photo;
+        while (
+          typeof p === "string" &&
+          (p.startsWith("[") || p.startsWith('"{'))
+        ) {
+          p = JSON.parse(p);
         }
-    } catch(e) { console.error("Error parsing photos", e); }
+        photos = Array.isArray(p) ? p : [p];
+      }
+    } catch (e) {
+      console.error("Error parsing photos", e);
+    }
 
     printWindow.document.write(`
       <html>
@@ -287,22 +301,30 @@ const deletePmrImage = async (reportId, index) => {
 
           <div class="section">
             <div class="section-title">Dokumentasi</div>
-            ${photos.length > 0 ? `
+            ${
+              photos.length > 0
+                ? `
                 <div style="margin-bottom: 10px;">
                     <div style="font-size: 10px; font-weight: bold; color: #666; margin-bottom: 5px;">Kegiatan</div>
                     <div class="doc-container">
-                        ${photos.map(p => `<img src="${p}" class="doc-img" />`).join('')}
+                        ${photos.map((p) => `<img src="${p}" class="doc-img" />`).join("")}
                     </div>
                 </div>
-            ` : ''}
-            ${report.fuel_receipt ? `
+            `
+                : ""
+            }
+            ${
+              report.fuel_receipt
+                ? `
                 <div>
                     <div style="font-size: 10px; font-weight: bold; color: #666; margin-bottom: 5px;">Nota BBM</div>
                     <div class="doc-container">
                         <img src="${report.fuel_receipt}" class="doc-img" />
                     </div>
                 </div>
-            ` : ''}
+            `
+                : ""
+            }
           </div>
 
           <div class="section">
@@ -401,6 +423,42 @@ const deletePmrImage = async (reportId, index) => {
   useEffect(() => {
     loadData();
   }, [filters, search]);
+
+  const sortedReports = useMemo(() => {
+    let sortableReports = [...reports];
+    if (sortConfig !== null) {
+      sortableReports.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Handle specific fields
+        if (sortConfig.key === "maintenance_date") {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        } else if (typeof aValue === "string") {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableReports;
+  }, [reports, sortConfig]);
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
 
   const stats = useMemo(() => {
     return {
@@ -715,17 +773,59 @@ const deletePmrImage = async (reportId, index) => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <th
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-1"
+                      onClick={() => handleSort("maintenance_date")}
+                    >
                       WAKTU
+                      {sortConfig.key === "maintenance_date" &&
+                        (sortConfig.direction === "asc" ? (
+                          <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                        ) : (
+                          <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                        ))}
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      PERANGKAT
+                    <th
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => handleSort("device_name")}
+                    >
+                      <div className="flex items-center gap-1">
+                        PERANGKAT
+                        {sortConfig.key === "device_name" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      TEKNISI
+                    <th
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => handleSort("technician_name")}
+                    >
+                      <div className="flex items-center gap-1">
+                        TEKNISI
+                        {sortConfig.key === "technician_name" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      STATUS
+                    <th
+                      className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => handleSort("status")}
+                    >
+                      <div className="flex items-center gap-1">
+                        STATUS
+                        {sortConfig.key === "status" &&
+                          (sortConfig.direction === "asc" ? (
+                            <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                          ) : (
+                            <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                          ))}
+                      </div>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
                       AKSI
@@ -742,7 +842,7 @@ const deletePmrImage = async (reportId, index) => {
                         Memuat riwayat maintenance...
                       </td>
                     </tr>
-                  ) : reports.length === 0 ? (
+                  ) : sortedReports.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-20 text-center">
                         <div className="flex flex-col items-center gap-2">
@@ -757,7 +857,7 @@ const deletePmrImage = async (reportId, index) => {
                       </td>
                     </tr>
                   ) : (
-                    reports.map((report) => (
+                    sortedReports.map((report) => (
                       <tr
                         key={report.id}
                         className="hover:bg-slate-50/50 transition-colors group"
@@ -774,12 +874,15 @@ const deletePmrImage = async (reportId, index) => {
                           </p>
                           <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">
                             Sub:{" "}
-                            {new Date(report.created_at).toLocaleString("id-ID", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              timeZone: "Asia/Jakarta",
-                              hour12: false,
-                            })}
+                            {new Date(report.created_at).toLocaleString(
+                              "id-ID",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                timeZone: "Asia/Jakarta",
+                                hour12: false,
+                              },
+                            )}
                           </p>
                         </td>
                         <td className="px-6 py-4">
@@ -887,7 +990,11 @@ const deletePmrImage = async (reportId, index) => {
                         <p className="text-[10px] font-bold text-slate-700">
                           {new Date(report.maintenance_date).toLocaleDateString(
                             "id-ID",
-                            { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" },
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              timeZone: "Asia/Jakarta",
+                            },
                           )}{" "}
                           ·{" "}
                           {new Date(report.created_at).toLocaleString("id-ID", {
@@ -896,15 +1003,15 @@ const deletePmrImage = async (reportId, index) => {
                             timeZone: "Asia/Jakarta",
                           })}
                         </p>
-                        </div>
-                        <div>
+                      </div>
+                      <div>
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
                           Teknisi
                         </p>
                         <p className="text-[10px] font-bold text-slate-700 truncate">
                           {report.technician_name}
                         </p>
-                        </div>
+                      </div>
                       <div className="col-span-2">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
                           Lokasi STO
@@ -1218,7 +1325,7 @@ const deletePmrImage = async (reportId, index) => {
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <PhotoCameraIcon sx={{ fontSize: 14 }} /> Dokumentasi
                   </h3>
-                  
+
                   {imageLoading && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-3xl">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
@@ -1229,58 +1336,139 @@ const deletePmrImage = async (reportId, index) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
                       <FileUploadIcon className="text-slate-400" />
-                      <span className="text-[10px] font-black text-slate-500 uppercase">Upload Foto Kegiatan</span>
-                      <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => addPmrImages(selectedReport.id, Array.from(e.target.files), 'photo')} />
+                      <span className="text-[10px] font-black text-slate-500 uppercase">
+                        Upload Foto Kegiatan
+                      </span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          addPmrImages(
+                            selectedReport.id,
+                            Array.from(e.target.files),
+                            "photo",
+                          )
+                        }
+                      />
                     </label>
                     <label className="cursor-pointer flex flex-col items-center justify-center gap-2 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-blue-300 transition-all">
                       <FileUploadIcon className="text-slate-400" />
-                      <span className="text-[10px] font-black text-slate-500 uppercase">Upload Nota BBM</span>
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => addPmrImages(selectedReport.id, [e.target.files[0]], 'receipt')} />
+                      <span className="text-[10px] font-black text-slate-500 uppercase">
+                        Upload Nota BBM
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          addPmrImages(
+                            selectedReport.id,
+                            [e.target.files[0]],
+                            "receipt",
+                          )
+                        }
+                      />
                     </label>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {selectedReport.maintenance_photo && (() => {
-                      try {
-                        let photos = selectedReport.maintenance_photo;
-                        if (typeof photos === 'string') {
-                          while (typeof photos === 'string' && (photos.startsWith('[') || photos.startsWith('"{'))) {
-                            photos = JSON.parse(photos);
+                    {selectedReport.maintenance_photo &&
+                      (() => {
+                        try {
+                          let photos = selectedReport.maintenance_photo;
+                          if (typeof photos === "string") {
+                            while (
+                              typeof photos === "string" &&
+                              (photos.startsWith("[") ||
+                                photos.startsWith('"{'))
+                            ) {
+                              photos = JSON.parse(photos);
+                            }
                           }
-                        }
-                        
-                        if (Array.isArray(photos)) {
-                          return (
-                            <div className="space-y-2">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase">
-                                Foto Kegiatan
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {photos.map((p, idx) => (
-                                  <div key={idx} className="relative group">
-                                    <img src={p} alt={`Kegiatan ${idx}`} onClick={() => setActiveImage(p)} className="rounded-2xl w-24 h-24 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
-                                    <button 
-                                      className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
-                                      onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, idx); }}
-                                    >
-                                      <CloseIcon sx={{ fontSize: 12 }} />
-                                    </button>
-                                  </div>
-                                ))}
+
+                          if (Array.isArray(photos)) {
+                            return (
+                              <div className="space-y-2">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                  Foto Kegiatan
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {photos.map((p, idx) => (
+                                    <div key={idx} className="relative group">
+                                      <img
+                                        src={p}
+                                        alt={`Kegiatan ${idx}`}
+                                        onClick={() => setActiveImage(p)}
+                                        className="rounded-2xl w-24 h-24 object-cover border border-slate-100 cursor-pointer hover:opacity-80"
+                                      />
+                                      <button
+                                        className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          deletePmrImage(
+                                            selectedReport.id,
+                                            idx,
+                                          );
+                                        }}
+                                      >
+                                        <CloseIcon sx={{ fontSize: 12 }} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        } else {
+                            );
+                          } else {
+                            return (
+                              <div className="space-y-2">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                  Foto Kegiatan
+                                </p>
+                                <div className="relative inline-block">
+                                  <img
+                                    src={photos}
+                                    alt="Foto Kegiatan"
+                                    onClick={() => setActiveImage(photos)}
+                                    className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80"
+                                  />
+                                  <button
+                                    className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deletePmrImage(selectedReport.id, 0);
+                                    }}
+                                  >
+                                    <CloseIcon sx={{ fontSize: 12 }} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
+                        } catch (e) {
                           return (
                             <div className="space-y-2">
                               <p className="text-[9px] font-bold text-slate-400 uppercase">
                                 Foto Kegiatan
                               </p>
                               <div className="relative inline-block">
-                                <img src={photos} alt="Foto Kegiatan" onClick={() => setActiveImage(photos)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
-                                <button 
+                                <img
+                                  src={selectedReport.maintenance_photo}
+                                  alt="Foto Kegiatan"
+                                  onClick={() =>
+                                    setActiveImage(
+                                      selectedReport.maintenance_photo,
+                                    )
+                                  }
+                                  className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80"
+                                />
+                                <button
                                   className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
-                                  onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, 0); }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deletePmrImage(selectedReport.id, 0);
+                                  }}
                                 >
                                   <CloseIcon sx={{ fontSize: 12 }} />
                                 </button>
@@ -1288,25 +1476,7 @@ const deletePmrImage = async (reportId, index) => {
                             </div>
                           );
                         }
-                      } catch (e) {
-                        return (
-                          <div className="space-y-2">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase">
-                              Foto Kegiatan
-                            </p>
-                            <div className="relative inline-block">
-                              <img src={selectedReport.maintenance_photo} alt="Foto Kegiatan" onClick={() => setActiveImage(selectedReport.maintenance_photo)} className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80" />
-                              <button 
-                                className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
-                                onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, 0); }}
-                              >
-                                <CloseIcon sx={{ fontSize: 12 }} />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      }
-                    })()}
+                      })()}
                     {selectedReport.fuel_receipt && (
                       <div className="space-y-2 relative">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">
@@ -1316,12 +1486,17 @@ const deletePmrImage = async (reportId, index) => {
                           <img
                             src={selectedReport.fuel_receipt}
                             alt="Nota BBM"
-                            onClick={() => setActiveImage(selectedReport.fuel_receipt)}
+                            onClick={() =>
+                              setActiveImage(selectedReport.fuel_receipt)
+                            }
                             className="rounded-2xl w-full h-48 object-cover border border-slate-100 cursor-pointer hover:opacity-80"
                           />
-                          <button 
+                          <button
                             className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-1 shadow-md"
-                            onClick={(e) => { e.stopPropagation(); deletePmrImage(selectedReport.id, 'receipt'); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deletePmrImage(selectedReport.id, "receipt");
+                            }}
                           >
                             <CloseIcon sx={{ fontSize: 14 }} />
                           </button>
@@ -1366,18 +1541,29 @@ const deletePmrImage = async (reportId, index) => {
                 onClick={() => setShowDetailModal(false)}
                 className="px-8 py-3 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200"
               >
-                Tutup Detail
+                Simpan Detail Laporan
               </button>
             </footer>
           </div>
         </div>
       )}
-      
+
       {/* Fullscreen Image Viewer */}
       {activeImage && (
-        <div className="fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center p-4" onClick={() => setActiveImage(null)}>
-          <img src={activeImage} className="max-w-full max-h-full object-contain" />
-          <button className="absolute top-4 right-4 text-white p-2" onClick={() => setActiveImage(null)}><CloseIcon sx={{ fontSize: 32 }} /></button>
+        <div
+          className="fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setActiveImage(null)}
+        >
+          <img
+            src={activeImage}
+            className="max-w-full max-h-full object-contain"
+          />
+          <button
+            className="absolute top-4 right-4 text-white p-2"
+            onClick={() => setActiveImage(null)}
+          >
+            <CloseIcon sx={{ fontSize: 32 }} />
+          </button>
         </div>
       )}
     </div>
