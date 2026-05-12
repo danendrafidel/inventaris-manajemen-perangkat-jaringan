@@ -34,10 +34,7 @@ router.put(
   inventoryController.updatePmrReport,
 );
 
-router.delete(
-  "/pmr/:id/image/:index",
-  inventoryController.removePmrImage
-);
+router.delete("/pmr/:id/image/:index", inventoryController.removePmrImage);
 
 // User Management Routes
 router.get("/users", inventoryController.getAllUsers);

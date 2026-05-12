@@ -26,7 +26,8 @@ export default function Sidebar() {
   const location = useLocation();
   const user = getStoredUser();
   const role = user?.role?.toLowerCase();
-  const isAdminOrOfficer = role === "admin" || role === "super officer" || role === "officer";
+  const isAdminOrOfficer =
+    role === "admin" || role === "super officer" || role === "officer";
   const canPrintBarcode = isAdminOrOfficer;
 
   const handleLogout = () => {
