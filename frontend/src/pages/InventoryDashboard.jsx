@@ -393,6 +393,12 @@ export default function InventoryDashboard() {
     setPage(1);
   };
 
+  const handleFilterByStatus = (status) => {
+    setFilters((prev) => ({ ...prev, status }));
+    setDraftFilters((prev) => ({ ...prev, status }));
+    setPage(1);
+  };
+
   const handleResetFilters = () => {
     const initial = {
       sto_id: "",
@@ -454,12 +460,14 @@ export default function InventoryDashboard() {
                 value: stats?.stats?.totalDevices ?? 0,
                 icon: <InventoryIcon />,
                 color: "bg-blue-600",
+                onClick: () => handleResetFilters(),
               },
               {
                 title: "KONDISI BAIK",
                 value: stats?.stats?.statusBaik ?? 0,
                 icon: <VerifiedIcon />,
                 color: "bg-emerald-500",
+                onClick: () => handleFilterByStatus("OPERATED"),
               },
               {
                 title: "PERLU ATENSI",
@@ -468,17 +476,22 @@ export default function InventoryDashboard() {
                   items.filter((i) => i.status === "RUSAK").length,
                 icon: <BoltIcon />,
                 color: "bg-amber-500",
+                onClick: () => handleFilterByStatus("RUSAK"),
               },
               {
                 title: "CAKUPAN AREA",
                 value: stats?.stats?.areaTercoverCount ?? 0,
                 icon: <PublicIcon />,
                 color: "bg-indigo-500",
+                onClick: null,
               },
             ].map((c, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all"
+                onClick={c.onClick}
+                className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all ${
+                  c.onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.02]" : ""
+                }`}
               >
                 <div className="flex items-start justify-between">
                   <div>
