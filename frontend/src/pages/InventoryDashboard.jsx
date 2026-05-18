@@ -9,6 +9,7 @@ import {
   createInventoryDevice,
   deleteInventoryDevice,
   updateInventoryDevice,
+  pingInventoryDevices,
 } from "../services/inventoryService";
 
 // Modular Components
@@ -86,6 +87,7 @@ export default function InventoryDashboard() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState({});
 
   const [formData, setFormData] = useState({
     deviceId: "",
@@ -195,6 +197,31 @@ export default function InventoryDashboard() {
     }
     setSortConfig({ key, direction });
   };
+
+  const checkConnectivity = async () => {
+    if (items.length === 0) return;
+    const ips = items.map((i) => i.ip).filter((ip) => ip && ip.trim() !== "");
+    if (ips.length === 0) return;
+
+    try {
+      const results = await pingInventoryDevices(ips);
+      const newStatus = {};
+      results.forEach((r) => {
+        newStatus[r.ip] = r.status;
+      });
+      setConnectionStatus((prev) => ({ ...prev, ...newStatus }));
+    } catch (err) {
+      console.error("Connectivity check failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (items.length > 0) {
+      checkConnectivity();
+      const interval = setInterval(checkConnectivity, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [items]);
 
   useEffect(() => {
     if (!user) {
@@ -765,7 +792,15 @@ export default function InventoryDashboard() {
                               <p className="text-sm font-black text-slate-900 tracking-tight group-hover:text-blue-700 transition-colors">
                                 {item.name}
                               </p>
-                              <p className="text-[10px] font-bold text-slate-400 font-mono tracking-tighter">
+                              <p
+                                className={`text-[10px] font-bold font-mono tracking-tighter ${
+                                  connectionStatus[item.ip] === "online"
+                                    ? "text-emerald-600"
+                                    : connectionStatus[item.ip] === "offline"
+                                      ? "text-rose-600"
+                                      : "text-slate-400"
+                                }`}
+                              >
                                 {item.ip}
                               </p>
                             </div>
@@ -866,7 +901,15 @@ export default function InventoryDashboard() {
                           <h3 className="text-sm font-black text-slate-900 leading-tight">
                             {item.name}
                           </h3>
-                          <p className="text-[10px] font-bold text-slate-400 font-mono">
+                          <p
+                            className={`text-[10px] font-bold font-mono ${
+                              connectionStatus[item.ip] === "online"
+                                ? "text-emerald-600"
+                                : connectionStatus[item.ip] === "offline"
+                                  ? "text-rose-600"
+                                  : "text-slate-400"
+                            }`}
+                          >
                             {item.ip}
                           </p>
                         </div>

@@ -231,3 +231,20 @@ export async function fetchPmrReports({
 
   return data.data;
 }
+
+export async function pingInventoryDevices(ips) {
+  const response = await fetch(`${API_BASE}/api/inventory/ping`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ips }),
+  });
+  const data = await handleResponse(response);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to ping devices");
+  }
+
+  return data.data;
+}

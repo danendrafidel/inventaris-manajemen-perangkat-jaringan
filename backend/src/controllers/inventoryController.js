@@ -1147,3 +1147,33 @@ exports.updatePmrReport = async (req, res) => {
     handleError(res, error, "Gagal memperbarui laporan PMR");
   }
 };
+
+const { exec } = require("child_process");
+
+exports.pingDevices = async (req, res) => {
+  try {
+    const { ips } = req.body;
+    if (!ips || !Array.isArray(ips)) {
+      return res.status(400).json({ success: false, message: "Daftar IP diperlukan" });
+    }
+
+    const results = await Promise.all(
+      ips.map((ip) => {
+        return new Promise((resolve) => {
+          const command =
+            process.platform === "win32"
+              ? `ping -n 1 -w 1000 ${ip}`
+              : `ping -c 1 -W 1 ${ip}`;
+
+          exec(command, (error) => {
+            resolve({ ip, status: !error ? "online" : "offline" });
+          });
+        });
+      }),
+    );
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    handleError(res, error, "Gagal melakukan pengecekan koneksi perangkat");
+  }
+};
