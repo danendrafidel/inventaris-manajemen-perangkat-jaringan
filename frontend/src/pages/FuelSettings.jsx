@@ -135,7 +135,6 @@ export default function FuelSettings() {
                                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-lg font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 transition-all"
                                 value={formData.fuel_ratio}
                                 onChange={handleChange}
-                                placeholder="12"
                             />
                             <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">
                                 KM / 1L
@@ -158,7 +157,6 @@ export default function FuelSettings() {
                                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-6 py-4 text-lg font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 transition-all"
                                 value={formData.fuel_price_per_liter}
                                 onChange={handleChange}
-                                placeholder="10000"
                             />
                         </div>
                     </div>
