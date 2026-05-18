@@ -1,14 +1,6 @@
 const db = require('../config/db');
 const cache = require('../config/cache');
-
-const handleError = (res, error, message = 'Internal Server Error') => {
-  console.error("--- API ERROR ---");
-  console.error("Message:", message);
-  console.error("Error Detail:", error);
-  if (error.stack) console.error("Stack:", error.stack);
-  console.error("-----------------");
-  res.status(500).json({ success: false, message, detail: error.message });
-};
+const { handleError } = require("../utils/helper");
 
 // AREA CONTROLLERS (Sebelumnya Kota)
 exports.getAllAreas = async (req, res) => {

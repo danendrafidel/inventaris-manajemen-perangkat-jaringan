@@ -5,6 +5,10 @@ const cors = require('cors')
 const helmet = require('helmet')
 const compression = require('compression')
 const inventoryRoutes = require('./routes/inventoryRoutes')
+const authRoutes = require('./routes/authRoutes')
+const pmrRoutes = require('./routes/pmrRoutes')
+const userRoutes = require('./routes/userRoutes')
+const dashboardRoutes = require('./routes/dashboardRoutes')
 const areaRoutes = require('./routes/areaRoutes')
 const settingsRoutes = require('./routes/settingsRoutes')
 
@@ -30,7 +34,11 @@ app.use(express.json())
 app.use('/api/uploads', corsMiddleware, express.static(path.join(__dirname, '../uploads')))
 
 // Routes API
+app.use('/api', authRoutes)
 app.use('/api', inventoryRoutes)
+app.use('/api', pmrRoutes)
+app.use('/api', userRoutes)
+app.use('/api', dashboardRoutes)
 app.use('/api/area', areaRoutes)
 app.use('/api/settings', settingsRoutes)
 

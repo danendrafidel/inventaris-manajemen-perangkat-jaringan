@@ -1,11 +1,5 @@
 const db = require('../config/db');
-
-const handleError = (res, error, message = 'Internal Server Error') => {
-  console.error("--- SETTINGS API ERROR ---");
-  console.error("Message:", message);
-  console.error("Error Detail:", error);
-  res.status(500).json({ success: false, message, detail: error.message });
-};
+const { handleError } = require("../utils/helper");
 
 exports.getFuelSettings = async (req, res) => {
   try {

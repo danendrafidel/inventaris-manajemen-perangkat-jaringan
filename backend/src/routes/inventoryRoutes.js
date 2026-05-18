@@ -2,9 +2,6 @@ const express = require("express");
 const router = express.Router();
 const inventoryController = require("../controllers/inventoryController");
 
-router.post("/login", inventoryController.login);
-router.post("/forgot-password", inventoryController.forgotPassword);
-router.post("/reset-password", inventoryController.resetPassword);
 router.get("/inventory/stats", inventoryController.getInventoryStats);
 router.get("/inventory/options", inventoryController.getInventoryOptions);
 router.get("/inventory/devices", inventoryController.fetchInventoryDevices);
@@ -12,40 +9,5 @@ router.post("/inventory/ping", inventoryController.pingDevices);
 router.post("/inventory/devices", inventoryController.createDevice);
 router.put("/inventory/devices/:id", inventoryController.updateDevice);
 router.delete("/inventory/devices/:id", inventoryController.deleteDevice);
-router.get("/dashboard", inventoryController.getDashboard);
-
-const upload = require("../config/upload");
-
-// PMR Routes
-router.get("/pmr", inventoryController.getAllPmrReports);
-router.post(
-  "/pmr",
-  upload.fields([
-    { name: "maintenance_photo", maxCount: 10 },
-    { name: "fuel_receipt", maxCount: 1 },
-  ]),
-  inventoryController.createPmrReport,
-);
-router.put(
-  "/pmr/:id",
-  upload.fields([
-    { name: "maintenance_photo", maxCount: 10 },
-    { name: "fuel_receipt", maxCount: 1 },
-  ]),
-  inventoryController.updatePmrReport,
-);
-
-router.delete("/pmr/:id/image/:index", inventoryController.removePmrImage);
-
-// User Management Routes
-router.get("/users", inventoryController.getAllUsers);
-router.post("/users", inventoryController.createUser);
-router.put("/users/:id", inventoryController.updateUser);
-router.patch("/users/:id/password", inventoryController.changePassword);
-router.patch("/users/:id/status", inventoryController.toggleUserStatus);
-
-// Profile Routes
-router.get("/profile/:id", inventoryController.getProfile);
-router.put("/profile/:id", inventoryController.updateProfile);
 
 module.exports = router;
