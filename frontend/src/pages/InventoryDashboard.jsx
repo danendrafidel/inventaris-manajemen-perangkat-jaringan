@@ -476,7 +476,7 @@ export default function InventoryDashboard() {
                   items.filter((i) => i.status === "RUSAK").length,
                 icon: <BoltIcon />,
                 color: "bg-amber-500",
-                onClick: () => handleFilterByStatus("RUSAK"),
+                onClick: () => handleFilterByStatus("MAINTENANCE"),
               },
               {
                 title: "CAKUPAN AREA",
