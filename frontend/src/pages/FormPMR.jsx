@@ -6,6 +6,7 @@ import {
   fetchInventoryDevices,
   createPmrReport,
 } from "../services/inventoryService";
+import { fetchFuelSettings } from "../services/settingsService";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
 import ErrorAlert from "../components/ErrorAlert";
@@ -91,6 +92,7 @@ export default function FormPMR() {
   const [destination, setDestination] = useState(null);
   const [distance, setDistance] = useState(0);
   const [fuelCost, setFuelCost] = useState(0);
+  const [fuelSettings, setFuelSettings] = useState({ fuel_ratio: 12, fuel_price_per_liter: 10000 });
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [foundDevice, setFoundDevice] = useState(null);
@@ -148,11 +150,18 @@ export default function FormPMR() {
       setLoading(true);
       setError("");
       try {
-        const [stoData, areaData] = await Promise.all([
+        const [stoData, areaData, fuelData] = await Promise.all([
           fetchAllStos(),
           fetchAllAreas(),
+          fetchFuelSettings(),
         ]);
         setStos(stoData);
+        if (fuelData) {
+          setFuelSettings({
+            fuel_ratio: parseFloat(fuelData.fuel_ratio),
+            fuel_price_per_liter: parseFloat(fuelData.fuel_price_per_liter)
+          });
+        }
 
         // Set origin based on user office if available, otherwise fallback to area
         if (user.kantor_latitude && user.kantor_longitude) {
@@ -200,8 +209,8 @@ export default function FormPMR() {
           const dist = route.distance / 1000;
           setDistance(dist.toFixed(2));
 
-          // Fuel calc: (Distance / 12 kmpl) * 10,000 IDR
-          const fuel = (dist / 12) * 10000;
+          // Fuel calc: (Distance / Ratio) * Price per Liter
+          const fuel = (dist / fuelSettings.fuel_ratio) * fuelSettings.fuel_price_per_liter;
           setFuelCost(Math.round(fuel));
 
           // OSRM returns [lng, lat], Leaflet needs [lat, lng]
@@ -217,7 +226,7 @@ export default function FormPMR() {
     };
 
     fetchRoute();
-  }, [origin, destination]);
+  }, [origin, destination, fuelSettings]);
 
   const handleFileChange = (e, type) => {
     const files = Array.from(e.target.files);

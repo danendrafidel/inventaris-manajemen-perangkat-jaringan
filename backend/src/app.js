@@ -6,6 +6,7 @@ const helmet = require('helmet')
 const compression = require('compression')
 const inventoryRoutes = require('./routes/inventoryRoutes')
 const areaRoutes = require('./routes/areaRoutes')
+const settingsRoutes = require('./routes/settingsRoutes')
 
 const app = express()
 
@@ -31,6 +32,7 @@ app.use('/api/uploads', corsMiddleware, express.static(path.join(__dirname, '../
 // Routes API
 app.use('/api', inventoryRoutes)
 app.use('/api/area', areaRoutes)
+app.use('/api/settings', settingsRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

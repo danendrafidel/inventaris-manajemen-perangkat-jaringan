@@ -12,6 +12,7 @@ import LaporanPMR from "./pages/LaporanPMR";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DeviceScanPage from "./pages/DeviceScanPage";
 import PrintBarcode from "./pages/PrintBarcode";
+import FuelSettings from "./pages/FuelSettings";
 import { getStoredUser } from "./services/authService";
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
@@ -112,6 +113,16 @@ function App() {
               allowedRoles={["admin", "super officer", "officer"]}
             >
               <MappingOffice />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/fuel"
+          element={
+            <ProtectedRoute
+              allowedRoles={["super officer", "officer"]}
+            >
+              <FuelSettings />
             </ProtectedRoute>
           }
         />

@@ -212,9 +212,11 @@ export default function PrintBarcode() {
       />
 
       <div className="flex-1 md:ml-64">
-        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 w-full sm:w-auto">
-            <div>
+        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 py-3 flex items-center gap-4">
+          <div className="md:hidden"></div>
+
+          <div className="flex items-center gap-4 flex-1">
+            <div className="ml-10 md:ml-0">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 INVENTARIS / <span className="text-blue-600">BULK PRINT</span>
               </div>
@@ -224,7 +226,7 @@ export default function PrintBarcode() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-4">
             <button
               onClick={handlePrintSelected}
               disabled={selectedIds.length === 0}
@@ -248,14 +250,31 @@ export default function PrintBarcode() {
           {/* Filters */}
           <section className="bg-white rounded-3xl border border-slate-200 p-4 md:p-6 mb-8 shadow-sm space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100/50 transition-all group">
-                <SearchIcon className="text-slate-400 group-focus-within:text-blue-500" />
-                <input
-                  className="bg-transparent outline-none text-sm font-bold w-full text-slate-700"
-                  placeholder="Cari ID, Nama, atau SN..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+              <div className="flex flex-1 items-center gap-4">
+                <div className="flex-1 flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100/50 transition-all group">
+                  <SearchIcon className="text-slate-400 group-focus-within:text-blue-500" />
+                  <input
+                    className="bg-transparent outline-none text-sm font-bold w-full text-slate-700"
+                    placeholder="Cari ID, Nama, atau SN..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    const initialFilters = {
+                      area_id: !isSuperUser ? user?.area_id || "" : "",
+                      sto_id: "",
+                    };
+                    setFilters(initialFilters);
+                    setSelectedIds([]);
+                  }}
+                  className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shrink-0"
+                  title="Reset Filters"
+                >
+                  <RefreshIcon />
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-3 md:w-1/2">
@@ -295,22 +314,6 @@ export default function PrintBarcode() {
                   ))}
                 </select>
               </div>
-
-              <button
-                onClick={() => {
-                  setSearch("");
-                  const initialFilters = {
-                    area_id: !isSuperUser ? user?.area_id || "" : "",
-                    sto_id: "",
-                  };
-                  setFilters(initialFilters);
-                  setSelectedIds([]);
-                }}
-                className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"
-                title="Reset Filters"
-              >
-                <RefreshIcon />
-              </button>
             </div>
           </section>
 
