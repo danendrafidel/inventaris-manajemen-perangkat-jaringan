@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { getStoredUser } from "../services/authService";
 import { fetchDashboardSummary } from "../services/dashboardService";
 import {
@@ -49,7 +56,9 @@ function StatCard({ title, value, suffix, icon, tone, isInteractive = true }) {
               };
 
   return (
-    <div className={`group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all ${isInteractive ? "hover:shadow-md hover:scale-[1.02] cursor-pointer" : ""}`}>
+    <div
+      className={`group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all ${isInteractive ? "hover:shadow-md hover:scale-[1.02] cursor-pointer" : ""}`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
@@ -141,7 +150,7 @@ export default function Dashboard() {
         if (role !== "admin" && role !== "super officer") {
           params.area_id = user.area_id;
         }
-        
+
         const allDevices = await fetchInventoryDevices({
           ...params,
           role,
@@ -251,7 +260,7 @@ export default function Dashboard() {
                 <span className="text-blue-600">GAMBARAN UMUM</span>
               </div>
               <h1 className="text-lg md:text-xl font-extrabold text-slate-900 tracking-tight">
-                Gambaran Umum Dashboard
+                Dashboard
               </h1>
             </div>
           </div>
@@ -317,7 +326,7 @@ export default function Dashboard() {
               tone="pink"
               isInteractive={false}
             />
-            <div onClick={() => navigate('/inventory')}>
+            <div onClick={() => navigate("/inventory")}>
               <StatCard
                 title="PERANGKAT DIKELOLA"
                 value={dashboard?.stats?.totalDevices ?? 0}
@@ -326,19 +335,35 @@ export default function Dashboard() {
                 tone="blue"
               />
             </div>
-            <div onClick={() => navigate('/inventory', { state: { filter: 'online' } })}>
+            <div
+              onClick={() =>
+                navigate("/inventory", { state: { filter: "online" } })
+              }
+            >
               <StatCard
                 title="PERANGKAT HIDUP"
-                value={Object.keys(connectionStatus).length > 0 ? liveStats.online : (dashboard?.stats?.statusBaik ?? 0)}
+                value={
+                  Object.keys(connectionStatus).length > 0
+                    ? liveStats.online
+                    : (dashboard?.stats?.statusBaik ?? 0)
+                }
                 suffix="online"
                 icon={<VerifiedIcon />}
                 tone="emerald"
               />
             </div>
-            <div onClick={() => navigate('/inventory', { state: { filter: 'offline' } })}>
+            <div
+              onClick={() =>
+                navigate("/inventory", { state: { filter: "offline" } })
+              }
+            >
               <StatCard
                 title="PERANGKAT MATI"
-                value={Object.keys(connectionStatus).length > 0 ? liveStats.offline : (dashboard?.stats?.perluPerhatian ?? 0)}
+                value={
+                  Object.keys(connectionStatus).length > 0
+                    ? liveStats.offline
+                    : (dashboard?.stats?.perluPerhatian ?? 0)
+                }
                 suffix="offline"
                 icon={<CloseIcon />}
                 tone="rose"
@@ -356,15 +381,15 @@ export default function Dashboard() {
                   Data Real-time
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'Online', value: liveStats.online },
-                          { name: 'Offline', value: liveStats.offline },
+                          { name: "Online", value: liveStats.online },
+                          { name: "Offline", value: liveStats.offline },
                         ]}
                         cx="50%"
                         cy="50%"
@@ -381,22 +406,32 @@ export default function Dashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="rounded-2xl bg-indigo-50 p-5 border border-indigo-100">
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total STO</p>
-                    <p className="text-2xl font-black text-indigo-900">{dashboard?.stats?.units ?? 0}</p>
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">
+                      Total STO
+                    </p>
+                    <p className="text-2xl font-black text-indigo-900">
+                      {dashboard?.stats?.units ?? 0}
+                    </p>
                   </div>
                   <div className="rounded-2xl bg-purple-50 p-5 border border-purple-100">
-                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">Total Area</p>
-                    <p className="text-2xl font-black text-purple-900">{dashboard?.stats?.totalAreas ?? 0}</p>
+                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">
+                      Total Area
+                    </p>
+                    <p className="text-2xl font-black text-purple-900">
+                      {dashboard?.stats?.totalAreas ?? 0}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <p className="text-slate-600 leading-relaxed font-medium text-sm mt-8">
-                Sistem saat ini berjalan normal dengan sinkronisasi aktif ke {dashboard?.stats?.units ?? 0} STO dan {dashboard?.stats?.totalAreas ?? 0} area.
-                Pantau ketersediaan jaringan melalui chart di atas untuk respon cepat.
+                Sistem saat ini berjalan normal dengan sinkronisasi aktif ke{" "}
+                {dashboard?.stats?.units ?? 0} STO dan{" "}
+                {dashboard?.stats?.totalAreas ?? 0} area. Pantau ketersediaan
+                jaringan melalui chart di atas untuk respon cepat.
               </p>
             </div>
 

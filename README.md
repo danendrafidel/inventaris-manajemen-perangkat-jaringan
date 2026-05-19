@@ -21,7 +21,7 @@ Berikut adalah daftar library pihak ketiga yang digunakan dalam proyek:
 ### Backend
 - **Framework API**: `express`, `compression`, `helmet` (Security), `cors`
 - **Database**: `pg` (PostgreSQL client)
-- **Utility**: `dotenv` (Environment variables), `multer` (File upload), `nodemailer` (Email)
+- **Utility**: `axios` (Telegram API), `dotenv` (Environment variables), `multer` (File upload), `nodemailer` (Email)
 
 
 ---
@@ -49,6 +49,7 @@ Sistem ini dirancang dengan arsitektur **Client-Server** untuk pemisahan logika 
   - **Dokumentasi**: Unggah foto kegiatan maintenance dan nota BBM.
   - **Laporan PDF**: Cetak laporan teknis lengkap beserta dokumentasi visual.
   - **Ekspor Excel**: Ekspor data laporan dengan format Tanggal & Waktu yang sinkron (WIB).
+- **Notifikasi Telegram**: Bot otomatis yang mengirim pemberitahuan ke Group Telegram jika ada perangkat jaringan yang terdeteksi DOWN (offline).
 - **Manajemen Pengguna**: Autentikasi berbasis peran (`admin`, `super officer`, `officer`, `user`).
 - **Sinkronisasi Waktu**: Sistem terstandarisasi ke zona waktu `Asia/Jakarta` (WIB) untuk seluruh timestamp.
 
@@ -88,7 +89,8 @@ Untuk menjalankan dan mengembangkan aplikasi ini, pastikan perangkat Anda memili
    cp .env.example .env
    ```
 3. Sesuaikan `.env` dengan kredensial database Anda.
-4. Jalankan aplikasi:
+4. Untuk fitur notifikasi, isi `TELEGRAM_BOT_TOKEN` dan `TELEGRAM_CHAT_ID` di file `.env`.
+5. Jalankan aplikasi:
    ```bash
    npm run dev
    ```
