@@ -8,6 +8,6 @@ app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Backend berjalan di http://localhost:${PORT}`);
   
-  // Start monitoring devices for Telegram notifications (every 3 minutes)
-  startMonitoring(180000);
+  // Start monitoring devices for Telegram notifications (every 1 minute)
+  startMonitoring(60000);
 });
