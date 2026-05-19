@@ -7,6 +7,23 @@ Sistem terpadu untuk mengelola inventaris perangkat jaringan, mencakup manajemen
 - **Frontend**: React, Vite, Tailwind CSS, Material UI (MUI)
 - **Backend**: Express.js, PostgreSQL
 
+## 📦 Daftar Dependensi Utama
+
+Berikut adalah daftar library pihak ketiga yang digunakan dalam proyek:
+
+### Frontend
+- **Komunikasi Data**: `axios`
+- **UI/Visualisasi**: `recharts` (Chart), `leaflet` & `react-leaflet` (Peta)
+- **Utility**: `xlsx` (Excel), `@yudiel/react-qr-scanner` & `qrcode.react` (QR/Barcode)
+- **Routing**: `react-router-dom`
+- **Icons**: `@mui/icons-material`
+
+### Backend
+- **Framework API**: `express`, `compression`, `helmet` (Security), `cors`
+- **Database**: `pg` (PostgreSQL client)
+- **Utility**: `dotenv` (Environment variables), `multer` (File upload), `nodemailer` (Email)
+
+
 ---
 
 ## 🏗️ Arsitektur Sistem
