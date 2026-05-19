@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { getStoredUser } from "../services/authService";
 import { fetchDashboardSummary } from "../services/dashboardService";
 import {
@@ -349,37 +350,54 @@ export default function Dashboard() {
             <div className="lg:col-span-2 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                  Ringkasan Sistem
+                  Ringkasan Operasional
                 </h3>
-                <span className="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-200">
-                  Sistem Informasi
+                <span className="px-4 py-1.5 bg-emerald-50 rounded-full text-[10px] font-black text-emerald-600 uppercase tracking-widest border border-emerald-100">
+                  Data Real-time
                 </span>
               </div>
-              <p className="text-slate-600 leading-relaxed font-medium text-base mb-8">
-                Dashboard overview ini menyajikan ringkasan administratif
-                sistem. Untuk manajemen teknis, konfigurasi, dan pemantauan
-                spesifik per unit perangkat, silakan gunakan modul{" "}
-                <span className="font-bold text-blue-600">Inventaris</span>.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-2xl bg-slate-50 p-5 border border-slate-100 group hover:border-emerald-200 transition-colors">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                    Status Keamanan
-                  </p>
-                  <p className="text-sm font-bold text-emerald-600">
-                    TERENKRIPSI & AMAN
-                  </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Online', value: liveStats.online },
+                          { name: 'Offline', value: liveStats.offline },
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        <Cell fill="#10b981" />
+                        <Cell fill="#f43f5e" />
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="rounded-2xl bg-slate-50 p-5 border border-slate-100 group hover:border-blue-200 transition-colors">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                    Sinkronisasi Database
-                  </p>
-                  <p className="text-sm font-bold text-blue-600">
-                    AKTIF REAL-TIME
-                  </p>
+                
+                <div className="space-y-4">
+                  <div className="rounded-2xl bg-indigo-50 p-5 border border-indigo-100">
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total STO</p>
+                    <p className="text-2xl font-black text-indigo-900">{dashboard?.stats?.units ?? 0}</p>
+                  </div>
+                  <div className="rounded-2xl bg-purple-50 p-5 border border-purple-100">
+                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">Total Area</p>
+                    <p className="text-2xl font-black text-purple-900">{dashboard?.stats?.totalAreas ?? 0}</p>
+                  </div>
                 </div>
               </div>
+
+              <p className="text-slate-600 leading-relaxed font-medium text-sm mt-8">
+                Sistem saat ini berjalan normal dengan sinkronisasi aktif ke {dashboard?.stats?.units ?? 0} STO dan {dashboard?.stats?.totalAreas ?? 0} area.
+                Pantau ketersediaan jaringan melalui chart di atas untuk respon cepat.
+              </p>
             </div>
 
             <div className="rounded-4xl border border-slate-200 bg-slate-900 p-8 text-white shadow-xl shadow-slate-200 relative overflow-hidden group">
