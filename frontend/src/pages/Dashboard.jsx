@@ -2,12 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import { fetchDashboardSummary } from "../services/dashboardService";
+import {
+  fetchInventoryDevices,
+  pingInventoryDevices,
+} from "../services/inventoryService";
 import Sidebar from "../components/Sidebar";
 import ErrorAlert from "../components/ErrorAlert";
 import Toast from "../components/Toast";
 
 import PeopleIcon from "@mui/icons-material/People";
 import RouterIcon from "@mui/icons-material/Router";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import InventoryIcon from "@mui/icons-material/Inventory";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import PublicIcon from "@mui/icons-material/Public";
@@ -17,7 +23,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import BusinessIcon from "@mui/icons-material/Business";
 
-function StatCard({ title, value, suffix, icon, tone }) {
+function StatCard({ title, value, suffix, icon, tone, isInteractive = true }) {
   const toneClasses =
     tone === "blue"
       ? { iconBg: "bg-blue-500/10 text-blue-700", accent: "text-blue-700" }
@@ -31,13 +37,18 @@ function StatCard({ title, value, suffix, icon, tone }) {
               iconBg: "bg-emerald-500/10 text-emerald-700",
               accent: "text-emerald-700",
             }
-          : {
-              iconBg: "bg-slate-500/10 text-slate-700",
-              accent: "text-slate-700",
-            };
+          : tone === "rose"
+            ? {
+                iconBg: "bg-rose-500/10 text-rose-700",
+                accent: "text-rose-700",
+              }
+            : {
+                iconBg: "bg-slate-500/10 text-slate-700",
+                accent: "text-slate-700",
+              };
 
   return (
-    <div className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all">
+    <div className={`group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all ${isInteractive ? "hover:shadow-md hover:scale-[1.02] cursor-pointer" : ""}`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
@@ -68,7 +79,18 @@ export default function Dashboard() {
   const [user] = useState(() => getStoredUser());
   const [loadError, setLoadError] = useState("");
   const [dashboard, setDashboard] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState({});
   const [showAdminModal, setShowAdminModal] = useState(false);
+
+  // Computed real-time stats
+  const liveStats = useMemo(() => {
+    const statusValues = Object.values(connectionStatus);
+    return {
+      online: statusValues.filter((s) => s === "online").length,
+      offline: statusValues.filter((s) => s === "offline").length,
+    };
+  }, [connectionStatus]);
+
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -109,6 +131,35 @@ export default function Dashboard() {
         setLoadError(message);
         showNotify(message, "error");
       });
+
+    // Real-time ping logic
+    const fetchAndPing = async () => {
+      try {
+        const role = user.role?.toLowerCase();
+        const params = {};
+        if (role !== "admin" && role !== "super officer") {
+          params.area_id = user.area_id;
+        }
+        
+        const allDevices = await fetchInventoryDevices({
+          ...params,
+          role,
+          email: user.email,
+        });
+        if (allDevices?.items?.length > 0) {
+          const ips = allDevices.items.map((i) => i.ip).filter(Boolean);
+          const results = await pingInventoryDevices(ips);
+          const newStatus = {};
+          results.forEach((r) => {
+            newStatus[r.ip] = r.status;
+          });
+          setConnectionStatus(newStatus);
+        }
+      } catch (e) {
+        console.error("Ping sync failed:", e);
+      }
+    };
+    fetchAndPing();
   }, [user, navigate]);
 
   if (!user) return null;
@@ -263,30 +314,36 @@ export default function Dashboard() {
               suffix={dashboard?.meta?.usersSuffix}
               icon={<PeopleIcon />}
               tone="pink"
+              isInteractive={false}
             />
-            <StatCard
-              title="PERANGKAT DIKELOLA"
-              value={dashboard?.stats?.totalDevices ?? 0}
-              suffix={dashboard?.meta?.devicesSuffix}
-              icon={<RouterIcon />}
-              tone="blue"
-            />
-            <StatCard
-              title="JUMLAH AREA"
-              value={dashboard?.stats?.totalAreas ?? 0}
-              suffix={dashboard?.meta?.areasSuffix}
-              icon={<PublicIcon />}
-              tone="emerald"
-            />
-            <StatCard
-              title="TOTAL STO"
-              value={dashboard?.stats?.units ?? 0}
-              suffix={dashboard?.meta?.unitsSuffix}
-              icon={<ApartmentIcon />}
-              tone="amber"
-            />
+            <div onClick={() => navigate('/inventory')}>
+              <StatCard
+                title="PERANGKAT DIKELOLA"
+                value={dashboard?.stats?.totalDevices ?? 0}
+                suffix="Perangkat"
+                icon={<InventoryIcon />}
+                tone="blue"
+              />
+            </div>
+            <div onClick={() => navigate('/inventory', { state: { filter: 'online' } })}>
+              <StatCard
+                title="PERANGKAT HIDUP"
+                value={Object.keys(connectionStatus).length > 0 ? liveStats.online : (dashboard?.stats?.statusBaik ?? 0)}
+                suffix="online"
+                icon={<VerifiedIcon />}
+                tone="emerald"
+              />
+            </div>
+            <div onClick={() => navigate('/inventory', { state: { filter: 'offline' } })}>
+              <StatCard
+                title="PERANGKAT MATI"
+                value={Object.keys(connectionStatus).length > 0 ? liveStats.offline : (dashboard?.stats?.perluPerhatian ?? 0)}
+                suffix="offline"
+                icon={<CloseIcon />}
+                tone="rose"
+              />
+            </div>
           </div>
-
           {/* System Summary Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">

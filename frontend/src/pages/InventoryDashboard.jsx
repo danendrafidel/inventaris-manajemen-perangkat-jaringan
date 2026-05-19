@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { getStoredUser } from "../services/authService";
 import {
@@ -45,6 +45,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 export default function InventoryDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -88,6 +89,7 @@ export default function InventoryDashboard() {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState({});
+  const [activeConnectivityFilter, setActiveConnectivityFilter] = useState(null);
 
   const [formData, setFormData] = useState({
     deviceId: "",
@@ -103,6 +105,12 @@ export default function InventoryDashboard() {
     totalPort: "",
     idlePort: "",
   });
+
+  useEffect(() => {
+    if (location.state?.filter) {
+      setActiveConnectivityFilter(location.state.filter);
+    }
+  }, [location.state]);
 
   // Filtered STOs based on current Area selection
   const filteredStosForDraft = useMemo(() => {
@@ -158,10 +166,14 @@ export default function InventoryDashboard() {
   const DEVICE_STATUSES = ["OPERATED", "MAINTENANCE", "RUSAK"];
 
   const role = user?.role?.toLowerCase();
-  const canEdit = role === "admin" || role === "super officer" || role === "officer";
-  const canDelete = role === "admin" || role === "super officer" || role === "officer";
-  const canAdd = role === "admin" || role === "super officer" || role === "officer";
-  const canPrint = role === "admin" || role === "super officer" || role === "officer";
+  const canEdit =
+    role === "admin" || role === "super officer" || role === "officer";
+  const canDelete =
+    role === "admin" || role === "super officer" || role === "officer";
+  const canAdd =
+    role === "admin" || role === "super officer" || role === "officer";
+  const canPrint =
+    role === "admin" || role === "super officer" || role === "officer";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -170,6 +182,14 @@ export default function InventoryDashboard() {
 
   const sortedItems = useMemo(() => {
     let sortableItems = [...items];
+
+    // Apply connectivity filter if active
+    if (activeConnectivityFilter) {
+      sortableItems = sortableItems.filter(
+        (item) => connectionStatus[item.ip] === activeConnectivityFilter
+      );
+    }
+
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         let aValue = a[sortConfig.key] || "";
@@ -188,7 +208,7 @@ export default function InventoryDashboard() {
       });
     }
     return sortableItems;
-  }, [items, sortConfig]);
+  }, [items, sortConfig, connectionStatus, activeConnectivityFilter]);
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -230,7 +250,12 @@ export default function InventoryDashboard() {
     }
 
     // Only set default filters if they are not yet set
-    if (role !== "admin" && role !== "super officer" && !filters.area_id && user.area_id) {
+    if (
+      role !== "admin" &&
+      role !== "super officer" &&
+      !filters.area_id &&
+      user.area_id
+    ) {
       const defaultFilters = { ...filters, area_id: user.area_id };
       setFilters(defaultFilters);
       setDraftFilters(defaultFilters);
@@ -436,6 +461,7 @@ export default function InventoryDashboard() {
     setFilters(initial);
     setSearch("");
     setDraftSearch("");
+    setActiveConnectivityFilter(null);
     setPage(1);
   };
 
@@ -490,20 +516,26 @@ export default function InventoryDashboard() {
                 onClick: () => handleResetFilters(),
               },
               {
-                title: "KONDISI BAIK",
-                value: stats?.stats?.statusBaik ?? 0,
+                title: "PERANGKAT HIDUP",
+                value: items.filter((i) => connectionStatus[i.ip] === "online")
+                  .length,
                 icon: <VerifiedIcon />,
                 color: "bg-emerald-500",
-                onClick: () => handleFilterByStatus("OPERATED"),
+                onClick: () => {
+                  setActiveConnectivityFilter("online");
+                  setFilters((prev) => ({ ...prev, status: "" }));
+                },
               },
               {
-                title: "PERLU ATENSI",
-                value:
-                  (stats?.stats?.perluPerhatian ?? 0) +
-                  items.filter((i) => i.status === "RUSAK").length,
-                icon: <BoltIcon />,
-                color: "bg-amber-500",
-                onClick: () => handleFilterByStatus("MAINTENANCE"),
+                title: "PERANGKAT MATI",
+                value: items.filter((i) => connectionStatus[i.ip] === "offline")
+                  .length,
+                icon: <CloseIcon />,
+                color: "bg-rose-500",
+                onClick: () => {
+                  setActiveConnectivityFilter("offline");
+                  setFilters((prev) => ({ ...prev, status: "" }));
+                },
               },
               {
                 title: "CAKUPAN AREA",
@@ -517,7 +549,9 @@ export default function InventoryDashboard() {
                 key={i}
                 onClick={c.onClick}
                 className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all ${
-                  c.onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.02]" : ""
+                  c.onClick
+                    ? "cursor-pointer hover:shadow-md hover:scale-[1.02]"
+                    : ""
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -571,7 +605,11 @@ export default function InventoryDashboard() {
                     backgroundPosition: "right 0.75rem center",
                     backgroundSize: "0.85rem",
                   }}
-                  value={role !== "admin" && role !== "super officer" ? user.area_id : draftFilters.area_id}
+                  value={
+                    role !== "admin" && role !== "super officer"
+                      ? user.area_id
+                      : draftFilters.area_id
+                  }
                   disabled={role !== "admin" && role !== "super officer"}
                   onChange={(e) =>
                     handleDraftFilterChange("area_id", e.target.value)
@@ -789,7 +827,13 @@ export default function InventoryDashboard() {
                               <RouterIcon />
                             </div>
                             <div>
-                              <p className="text-sm font-black text-slate-900 tracking-tight group-hover:text-blue-700 transition-colors">
+                              <p
+                                className={`text-sm font-black tracking-tight transition-colors ${
+                                  connectionStatus[item.ip] === "offline"
+                                    ? "text-rose-600"
+                                    : "text-slate-900 group-hover:text-blue-700"
+                                }`}
+                              >
                                 {item.name}
                               </p>
                               <p
@@ -837,22 +881,23 @@ export default function InventoryDashboard() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                          {canPrint && (
+                            {canPrint && (
+                              <button
+                                onClick={() => handleOpenQRCodePreview(item)}
+                                className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                                title="Cetak QR Code"
+                              >
+                                <PrintIcon sx={{ fontSize: 18 }} />
+                              </button>
+                            )}
                             <button
-                              onClick={() => handleOpenQRCodePreview(item)}
-                              className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-                              title="Cetak QR Code"
+                              onClick={() => handleOpenDetail(item)}
+                              className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                              title="Lihat Detail"
                             >
-                              <PrintIcon sx={{ fontSize: 18 }} />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleOpenDetail(item)}
-                            className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                            title="Lihat Detail"
-                          >
-                            <VisibilityIcon sx={{ fontSize: 18 }} />
-                          </button>                            {canEdit && (
+                              <VisibilityIcon sx={{ fontSize: 18 }} />
+                            </button>{" "}
+                            {canEdit && (
                               <button
                                 onClick={() => handleOpenEdit(item)}
                                 className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all"
@@ -898,7 +943,13 @@ export default function InventoryDashboard() {
                           <RouterIcon />
                         </div>
                         <div>
-                          <h3 className="text-sm font-black text-slate-900 leading-tight">
+                          <h3
+                            className={`text-sm font-black leading-tight ${
+                              connectionStatus[item.ip] === "offline"
+                                ? "text-rose-600"
+                                : "text-slate-900"
+                            }`}
+                          >
                             {item.name}
                           </h3>
                           <p
