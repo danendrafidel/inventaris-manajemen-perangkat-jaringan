@@ -184,7 +184,7 @@ export default function Dashboard() {
 
       {/* Admin Modal */}
       {showAdminModal && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setShowAdminModal(false)}
@@ -250,7 +250,7 @@ export default function Dashboard() {
 
       <div className="flex-1 flex flex-col md:ml-64">
         {/* Topbar */}
-        <header className="sticky top-0 z-[1050] border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-10 md:hidden" />
             <div>

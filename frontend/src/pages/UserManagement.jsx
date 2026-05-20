@@ -111,9 +111,13 @@ export default function UserManagement() {
   const userStats = useMemo(
     () => ({
       total: displayUsers.length,
-      admin: displayUsers.filter((u) => u.role?.toLowerCase() === "admin").length,
-      super_officer: displayUsers.filter((u) => u.role?.toLowerCase() === "super officer").length,
-      officer: displayUsers.filter((u) => u.role?.toLowerCase() === "officer").length,
+      admin: displayUsers.filter((u) => u.role?.toLowerCase() === "admin")
+        .length,
+      super_officer: displayUsers.filter(
+        (u) => u.role?.toLowerCase() === "super officer",
+      ).length,
+      officer: displayUsers.filter((u) => u.role?.toLowerCase() === "officer")
+        .length,
       user: displayUsers.filter((u) => u.role?.toLowerCase() === "user").length,
     }),
     [displayUsers],
@@ -632,7 +636,7 @@ export default function UserManagement() {
 
       {/* Add / Edit User Modal */}
       {(showAddModal || showEditModal) && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={(e) => {
@@ -777,7 +781,11 @@ export default function UserManagement() {
                     className={`w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all appearance-none ${isOfficer ? "opacity-70 cursor-not-allowed" : ""}`}
                     value={formData.area_id}
                     onChange={(e) =>
-                      setFormData({ ...formData, area_id: e.target.value, office_id: "" })
+                      setFormData({
+                        ...formData,
+                        area_id: e.target.value,
+                        office_id: "",
+                      })
                     }
                   >
                     <option value="">Pilih Area</option>
@@ -835,7 +843,7 @@ export default function UserManagement() {
 
       {/* Change Password Modal */}
       {showPassModal && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 py-8 md:py-16">
+        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8 md:py-16">
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
             onClick={() => setShowPassModal(false)}
