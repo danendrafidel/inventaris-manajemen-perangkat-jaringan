@@ -125,22 +125,28 @@ export default function Dashboard() {
       return;
     }
 
-    // Apply role-based filtering for stats
-    const params = new URLSearchParams();
-    const role = user.role?.toLowerCase();
-    if (role !== "admin" && role !== "super officer") {
-      params.set("area_id", user.area_id);
-    }
+    const refreshDashboard = () => {
+      // Apply role-based filtering for stats
+      const params = new URLSearchParams();
+      const role = user.role?.toLowerCase();
+      if (role !== "admin" && role !== "super officer") {
+        params.set("area_id", user.area_id);
+      }
+      params.set("user_id", user.id);
 
-    fetchDashboardSummary(params.toString())
-      .then(setDashboard)
-      .catch((err) => {
-        const message =
-          err.message ||
-          "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
-        setLoadError(message);
-        showNotify(message, "error");
-      });
+      fetchDashboardSummary(params.toString())
+        .then(setDashboard)
+        .catch((err) => {
+          const message =
+            err.message ||
+            "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+          setLoadError(message);
+          showNotify(message, "error");
+        });
+    };
+
+    refreshDashboard();
+    const interval = setInterval(refreshDashboard, 120000); // Refresh every 2 minutes
 
     // Real-time ping logic
     const fetchAndPing = async () => {
@@ -170,6 +176,8 @@ export default function Dashboard() {
       }
     };
     fetchAndPing();
+
+    return () => clearInterval(interval);
   }, [user, navigate]);
 
   if (!user) return null;
@@ -319,7 +327,7 @@ export default function Dashboard() {
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
-              title="TOTAL PENGGUNA"
+              title="PENGGUNA AKTIF"
               value={dashboard?.stats?.totalUsers ?? 0}
               suffix={dashboard?.meta?.usersSuffix}
               icon={<PeopleIcon />}

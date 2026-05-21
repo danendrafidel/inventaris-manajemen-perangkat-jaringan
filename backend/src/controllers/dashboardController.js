@@ -4,7 +4,16 @@ const { handleError } = require("../utils/helper");
 
 exports.getDashboard = async (req, res) => {
   try {
-    const { area_id } = req.query;
+    const { area_id, user_id } = req.query;
+
+    // Update last_activity if user_id is provided
+    if (user_id) {
+      await db.query(
+        "UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = $1",
+        [user_id],
+      );
+    }
+
     const cacheKey = `dashboard:stats:${area_id || "all"}`;
     const cached = cache.get(cacheKey);
     if (cached)
@@ -18,10 +27,12 @@ exports.getDashboard = async (req, res) => {
       whereClause += ` AND area_id = $${params.length}`;
     }
 
-    let userQuery = "SELECT COUNT(*) FROM users";
+    // Count online users (active in the last 2 minutes)
+    let userQuery =
+      "SELECT COUNT(*) FROM users WHERE last_activity > CURRENT_TIMESTAMP - INTERVAL '2 minutes'";
     let userParams = [];
     if (area_id) {
-      userQuery += " WHERE area_id = $1";
+      userQuery += " AND area_id = $1";
       userParams.push(area_id);
     }
     const userCount = await db.query(userQuery, userParams);
@@ -60,14 +71,14 @@ exports.getDashboard = async (req, res) => {
         units: parseInt(stoCount.rows[0].count),
       },
       meta: {
-        usersSuffix: "active",
+        usersSuffix: "online",
         devicesSuffix: "online",
         areasSuffix: "areas",
         unitsSuffix: "units",
       },
     };
 
-    cache.set(cacheKey, data, 300000); // 5 minutes TTL
+    cache.set(cacheKey, data, 30000); // 30 seconds TTL
     res.json({ success: true, data });
   } catch (error) {
     handleError(res, error, "Gagal mengambil data dashboard");

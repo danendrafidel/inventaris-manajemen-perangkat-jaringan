@@ -26,6 +26,12 @@ exports.login = async (req, res) => {
 
     const user = rows[0];
 
+    // Update last_activity
+    await db.query(
+      "UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = $1",
+      [user.id],
+    );
+
     res.json({
       success: true,
       user: {

@@ -238,7 +238,7 @@ export default function InventoryDashboard() {
   useEffect(() => {
     if (items.length > 0) {
       checkConnectivity();
-      const interval = setInterval(checkConnectivity, 60000);
+      const interval = setInterval(checkConnectivity, 120000);
       return () => clearInterval(interval);
     }
   }, [items]);
