@@ -202,7 +202,16 @@ export async function updatePmrReportImages(id, { maintenance_photo, fuel_receip
   return result.data;
 }
 
-export async function fetchFuelRecap({ month, year, user_id, area_id, search } = {}) {
+export async function fetchFuelRecap({ 
+  month, 
+  year, 
+  user_id, 
+  area_id, 
+  sto_id,
+  search, 
+  start_date, 
+  end_date 
+} = {}) {
   const params = new URLSearchParams();
   
   if (month && year) {
@@ -211,10 +220,14 @@ export async function fetchFuelRecap({ month, year, user_id, area_id, search } =
     const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
     params.set("start_date", startDate);
     params.set("end_date", endDate);
+  } else {
+    if (start_date) params.set("start_date", start_date);
+    if (end_date) params.set("end_date", end_date);
   }
   
   if (user_id) params.set("user_id", user_id);
   if (area_id) params.set("area_id", area_id);
+  if (sto_id) params.set("sto_id", sto_id);
   if (search) params.set("search", search);
 
   const response = await fetch(`${API_BASE}/api/pmr?${params.toString()}`);

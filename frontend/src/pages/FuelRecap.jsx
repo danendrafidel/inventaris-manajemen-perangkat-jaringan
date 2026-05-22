@@ -197,22 +197,48 @@ export default function FuelRecap() {
       showNotify("Pilih data yang akan diekspor", "warning");
       return;
     }
-    const selectedData = reports.filter((r) => selectedIds.includes(r.id));
+    const selectedData = sortedReports.filter((r) =>
+      selectedIds.includes(r.id),
+    );
     const worksheet = XLSX.utils.json_to_sheet(
-      selectedData.map((r) => ({
-        ID: r.id,
-        Tanggal: new Date(r.maintenance_date).toLocaleDateString("id-ID"),
+      selectedData.map((r, idx) => ({
+        No: idx + 1,
+        "Tanggal Maintenance": new Date(r.maintenance_date).toLocaleDateString(
+          "id-ID",
+          {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            timeZone: "Asia/Jakarta",
+          },
+        ),
         Teknisi: r.technician_name,
-        NIK: r.nik,
         Area: r.technician_area,
-        Perangkat: r.device_name,
-        "Jarak (KM)": r.distance,
-        "Biaya BBM (Rp)": r.fuel_cost,
+        "Nama Perangkat": r.device_name,
+        STO: r.device_sto,
+        "Jarak (KM)": parseFloat(r.distance || 0),
+        "Biaya BBM (Rp)": parseFloat(r.fuel_cost || 0),
       })),
     );
+
+    // Set column widths
+    const wscols = [
+      { wch: 5 }, // No
+      { wch: 20 }, // Tanggal
+      { wch: 20 }, // Teknisi
+      { wch: 15 }, // Area
+      { wch: 25 }, // Nama Perangkat
+      { wch: 15 }, // STO
+      { wch: 12 }, // Jarak
+      { wch: 15 }, // Biaya
+    ];
+    worksheet["!cols"] = wscols;
+
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap_BBM");
-    XLSX.writeFile(workbook, `Rekap_BBM_${new Date().getTime()}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap BBM");
+
+    const fileName = `Rekap_BBM_${draftFilters.start_date || "All"}_to_${draftFilters.end_date || "All"}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
   };
 
   const sortedReports = useMemo(() => {
@@ -786,15 +812,12 @@ export default function FuelRecap() {
                             },
                           )}{" "}
                           ·{" "}
-                          {new Date(r.created_at).toLocaleString(
-                            "id-ID",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              timeZone: "Asia/Jakarta",
-                              hour12: false,
-                            },
-                          )}
+                          {new Date(r.created_at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "Asia/Jakarta",
+                            hour12: false,
+                          })}
                         </p>
                       </div>
                       <div>
