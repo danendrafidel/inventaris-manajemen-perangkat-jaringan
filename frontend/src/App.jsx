@@ -131,7 +131,7 @@ function App() {
           path="/fuel/recap"
           element={
             <ProtectedRoute
-              allowedRoles={["super officer", "officer"]}
+              allowedRoles={["super officer", "officer", "admin"]}
             >
               <FuelRecap />
             </ProtectedRoute>

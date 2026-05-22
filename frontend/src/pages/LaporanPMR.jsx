@@ -904,13 +904,18 @@ export default function LaporanPMR() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[9px] font-black">
-                              {report.technician_name.charAt(0)}
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-black uppercase">
+                              {report.technician_name?.charAt(0)}
                             </div>
-                            <p className="text-xs font-bold text-slate-700">
-                              {report.technician_name}
-                            </p>
+                            <div>
+                              <p className="text-xs font-black text-slate-700">
+                                {report.technician_name}
+                              </p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                {report.technician_area}
+                              </p>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -1013,6 +1018,9 @@ export default function LaporanPMR() {
                         </p>
                         <p className="text-[10px] font-bold text-slate-700 truncate">
                           {report.technician_name}
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase truncate">
+                          {report.technician_area}
                         </p>
                       </div>
                       <div className="col-span-2">

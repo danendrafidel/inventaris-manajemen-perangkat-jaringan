@@ -211,44 +211,45 @@ export default function Sidebar() {
               </Link>
             )}
 
-            {(role === "super officer" || role === "officer") && (
-              <Link
-                to="/fuel/recap"
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                  isActive("/fuel/recap")
-                    ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                }`}
-              >
-                <PaymentsIcon fontSize="small" /> Rekap BBM
-              </Link>
-            )}
-
-            {isAdminOrOfficer ? (
-              <Link
-                to="/pmr/laporan"
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                  isActive("/pmr/laporan")
-                    ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                }`}
-              >
-                <HistoryIcon fontSize="small" /> Laporan PMR
-              </Link>
+            {/* PMR Navigation */}
+            {role === "user" ? (
+              <div className="flex flex-col gap-1.5">
+                <Link
+                  to="/pmr"
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                    isActive("/pmr")
+                      ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <BuildIcon fontSize="small" /> Formulir PMR
+                </Link>
+                <Link
+                  to="/pmr/laporan"
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                    isActive("/pmr/laporan")
+                      ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <HistoryIcon fontSize="small" /> Laporan PMR
+                </Link>
+              </div>
             ) : (
               <div className="flex flex-col gap-1">
                 <button
                   onClick={togglePmr}
                   className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                    location.pathname.startsWith("/pmr")
+                    location.pathname.startsWith("/pmr") ||
+                    location.pathname.startsWith("/fuel")
                       ? "bg-slate-50 text-blue-700"
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <BuildIcon fontSize="small" /> PMR
+                    <BuildIcon fontSize="small" /> PMR & BBM
                   </div>
                   {isPmrOpen ? (
                     <KeyboardArrowUpIcon sx={{ fontSize: 18 }} />
@@ -259,17 +260,21 @@ export default function Sidebar() {
 
                 {isPmrOpen && (
                   <div className="ml-9 flex flex-col gap-1 border-l-2 border-slate-100 pl-2">
-                    <Link
-                      to="/pmr"
-                      onClick={() => setIsOpen(false)}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-                        isActive("/pmr")
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
-                      }`}
-                    >
-                      <ListAltIcon sx={{ fontSize: 14 }} /> Formulir PMR
-                    </Link>
+                    {role !== "super officer" &&
+                      role !== "officer" &&
+                      role !== "admin" && (
+                        <Link
+                          to="/pmr"
+                          onClick={() => setIsOpen(false)}
+                          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                            isActive("/pmr")
+                              ? "bg-blue-50 text-blue-700"
+                              : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                          }`}
+                        >
+                          <ListAltIcon sx={{ fontSize: 14 }} /> Formulir PMR
+                        </Link>
+                      )}
                     <Link
                       to="/pmr/laporan"
                       onClick={() => setIsOpen(false)}
@@ -281,6 +286,21 @@ export default function Sidebar() {
                     >
                       <HistoryIcon sx={{ fontSize: 14 }} /> Laporan PMR
                     </Link>
+                    {(role === "super officer" ||
+                      role === "officer" ||
+                      role === "admin") && (
+                      <Link
+                        to="/fuel/recap"
+                        onClick={() => setIsOpen(false)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                          isActive("/fuel/recap")
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                        }`}
+                      >
+                        <PaymentsIcon sx={{ fontSize: 14 }} /> Rekap BBM
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>
