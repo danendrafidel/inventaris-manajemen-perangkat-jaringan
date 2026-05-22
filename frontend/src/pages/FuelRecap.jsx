@@ -573,7 +573,7 @@ export default function FuelRecap() {
                           </p>
                           <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">
                             Sub:{" "}
-                            {new Date(r.maintenance_date).toLocaleString(
+                            {new Date(r.created_at).toLocaleTimeString(
                               "id-ID",
                               {
                                 hour: "2-digit",
@@ -786,7 +786,7 @@ export default function FuelRecap() {
                             },
                           )}{" "}
                           ·{" "}
-                          {new Date(r.maintenance_date).toLocaleString(
+                          {new Date(r.created_at).toLocaleString(
                             "id-ID",
                             {
                               hour: "2-digit",
