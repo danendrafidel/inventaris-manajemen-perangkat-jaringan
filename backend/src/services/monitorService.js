@@ -37,7 +37,7 @@ const sendDailyPMRSummary = async () => {
 
     rows.forEach((report, index) => {
       message += `${index + 1}. <b>${report.device_name}</b>\n`;
-      message += `   🆔 ID: ${report.device_id} | 🔢 SN: <code>${report.serial_number}</code>\n`;
+      message += `   🔢 SN: <code>${report.serial_number}</code>\n`;
       message += `   🌐 IP: <code>${report.ip}</code>\n`;
       message += `   📍 Lokasi: ${report.area} - ${report.sto}\n`;
       message += `   👤 Teknisi: ${report.technician_name}\n`;
@@ -80,7 +80,9 @@ const checkDevices = async () => {
         const message =
           `✅ <b>PERANGKAT KEMBALI ONLINE</b> ✅\n\n` +
           `<b>Nama:</b> ${device.name}\n` +
+          `<b>ID:</b> ${device.device_id}\n` +
           `<b>IP:</b> <code>${device.ip}</code>\n` +
+          `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
           `🕒 Perangkat sudah dapat diakses kembali.`;
 
         await sendTelegramMessage(message);
@@ -94,7 +96,7 @@ const checkDevices = async () => {
 };
 
 const startMonitoring = (intervalMs = 120000) => {
-  // Default 5 minutes
+  // Default 2 minutes
   console.log(`Starting background monitoring every ${intervalMs / 1000}s...`);
   // Run once immediately
   checkDevices();

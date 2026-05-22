@@ -19,6 +19,7 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import HistoryIcon from "@mui/icons-material/History";
 import QrCodeIcon from "@mui/icons-material/QrCode";
 import LocalGasStationIcon from "@mui/icons-material/LocalGasStation";
+import PaymentsIcon from "@mui/icons-material/Payments";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,8 +30,7 @@ export default function Sidebar() {
   const role = user?.role?.toLowerCase();
   const isAdminOrOfficer =
     role === "admin" || role === "super officer" || role === "officer";
-  const isSuperOfficerOrOfficer =
-    role === "super officer" || role === "officer";
+  const isSuperOfficer = role === "super officer";
   const canPrintBarcode = isAdminOrOfficer;
 
   const handleLogout = () => {
@@ -197,7 +197,7 @@ export default function Sidebar() {
               </Link>
             )}
 
-            {isSuperOfficerOrOfficer && (
+            {isSuperOfficer && (
               <Link
                 to="/settings/fuel"
                 onClick={() => setIsOpen(false)}
@@ -208,6 +208,20 @@ export default function Sidebar() {
                 }`}
               >
                 <LocalGasStationIcon fontSize="small" /> Pengaturan BBM
+              </Link>
+            )}
+
+            {(role === "super officer" || role === "officer") && (
+              <Link
+                to="/fuel/recap"
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  isActive("/fuel/recap")
+                    ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <PaymentsIcon fontSize="small" /> Rekap BBM
               </Link>
             )}
 

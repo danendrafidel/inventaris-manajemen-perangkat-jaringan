@@ -13,6 +13,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DeviceScanPage from "./pages/DeviceScanPage";
 import PrintBarcode from "./pages/PrintBarcode";
 import FuelSettings from "./pages/FuelSettings";
+import FuelRecap from "./pages/FuelRecap";
 import { getStoredUser } from "./services/authService";
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
@@ -120,9 +121,19 @@ function App() {
           path="/settings/fuel"
           element={
             <ProtectedRoute
-              allowedRoles={["super officer", "officer"]}
+              allowedRoles={["super officer"]}
             >
               <FuelSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fuel/recap"
+          element={
+            <ProtectedRoute
+              allowedRoles={["super officer", "officer"]}
+            >
+              <FuelRecap />
             </ProtectedRoute>
           }
         />

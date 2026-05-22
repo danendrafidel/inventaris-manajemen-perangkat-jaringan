@@ -265,3 +265,40 @@ exports.removePmrImage = async (req, res) => {
     handleError(res, error, "Gagal menghapus foto");
   }
 };
+
+exports.updatePmrMetadata = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fuel_cost, distance } = req.body;
+
+    if (fuel_cost === undefined && distance === undefined) {
+      return res.status(400).json({ success: false, message: "Tidak ada data yang diubah" });
+    }
+
+    let queryParts = [];
+    let queryValues = [];
+    let counter = 1;
+
+    if (fuel_cost !== undefined) {
+      queryParts.push(`fuel_cost = $${counter++}`);
+      queryValues.push(fuel_cost);
+    }
+    if (distance !== undefined) {
+      queryParts.push(`distance = $${counter++}`);
+      queryValues.push(distance);
+    }
+
+    queryValues.push(id);
+    const query = `UPDATE pmr_reports SET ${queryParts.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = $${counter} RETURNING *`;
+    
+    const { rows } = await db.query(query, queryValues);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Laporan tidak ditemukan" });
+    }
+
+    res.json({ success: true, data: rows[0], message: "Data PMR berhasil diperbarui" });
+  } catch (error) {
+    handleError(res, error, "Gagal memperbarui data PMR");
+  }
+};

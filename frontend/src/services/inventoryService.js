@@ -202,6 +202,40 @@ export async function updatePmrReportImages(id, { maintenance_photo, fuel_receip
   return result.data;
 }
 
+export async function fetchFuelRecap({ month, year, user_id, area_id, search } = {}) {
+  const params = new URLSearchParams();
+  
+  if (month && year) {
+    const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+    params.set("start_date", startDate);
+    params.set("end_date", endDate);
+  }
+  
+  if (user_id) params.set("user_id", user_id);
+  if (area_id) params.set("area_id", area_id);
+  if (search) params.set("search", search);
+
+  const response = await fetch(`${API_BASE}/api/pmr?${params.toString()}`);
+  const data = await handleResponse(response);
+  if (!data.success) {
+    throw new Error(data.message || "Gagal memuat rekapitulasi BBM");
+  }
+  return data.data;
+}
+
+export async function updateFuelReport(id, payload) {
+  const response = await fetch(`${API_BASE}/api/pmr/${id}/metadata`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  return await handleResponse(response);
+}
+
 export async function fetchPmrReports({
   area_id,
   role,

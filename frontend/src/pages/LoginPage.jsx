@@ -93,6 +93,8 @@ export default function LoginPage() {
             <h2 className="text-4xl font-black tracking-tight mb-4">Inventaris <br /> Sistem Manajemen</h2>
             <p className="text-blue-100/80 text-sm font-medium max-w-xs mx-auto leading-relaxed">
               Selamat datang ke inventaris perangkat jaringan.
+              <br />
+              <span className="font-bold text-white text-base">IS Cybersecurity</span>
             </p>
           </div>
           <div className="absolute inset-0 bg-white/2 pointer-events-none" />

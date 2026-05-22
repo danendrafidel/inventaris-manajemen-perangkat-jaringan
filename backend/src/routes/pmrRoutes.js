@@ -22,5 +22,6 @@ router.put(
 );
 
 router.delete("/pmr/:id/image/:index", pmrController.removePmrImage);
+router.patch("/pmr/:id/metadata", pmrController.updatePmrMetadata);
 
 module.exports = router;

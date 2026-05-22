@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { getStoredUser } from "../services/authService";
 import { fetchFuelSettings, updateFuelSettings } from "../services/settingsService";
 import Sidebar from "../components/Sidebar";
@@ -12,6 +12,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import RouteIcon from "@mui/icons-material/Route";
 import PaymentsIcon from "@mui/icons-material/Payments";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 export default function FuelSettings() {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function FuelSettings() {
 
   useEffect(() => {
     const role = user?.role?.toLowerCase();
-    if (!user || (role !== "super officer" && role !== "officer")) {
+    if (!user || role !== "super officer") {
       navigate("/dashboard");
       return;
     }
@@ -90,7 +91,7 @@ export default function FuelSettings() {
       <div className="flex-1 md:ml-64">
         <header className="sticky top-0 z-1050 border-b border-slate-200 bg-white/80 backdrop-blur-md px-6 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="ml-10 md:ml-0">
+            <div>
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                 SISTEM / <span className="text-blue-600">PENGATURAN</span>
               </div>
@@ -98,6 +99,13 @@ export default function FuelSettings() {
                 Pengaturan BBM
               </h1>
             </div>
+            <Link
+              to="/profile"
+              className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-linear-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 uppercase hover:scale-110 transition-transform text-sm md:text-base"
+              title="Lihat Profil"
+            >
+              {user?.name?.charAt(0)}
+            </Link>
           </div>
         </header>
 

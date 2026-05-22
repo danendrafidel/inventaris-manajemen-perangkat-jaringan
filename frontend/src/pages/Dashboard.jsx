@@ -30,6 +30,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import BusinessIcon from "@mui/icons-material/Business";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import { motion } from "framer-motion";
 
 function StatCard({ title, value, suffix, icon, tone, isInteractive = true }) {
   const toneClasses =
@@ -190,15 +192,15 @@ export default function Dashboard() {
       />
       <Sidebar />
 
-      {/* Admin Modal */}
+      {/* Admin Modal & Mobile Backdrop */}
       {showAdminModal && (
-        <div className="fixed inset-0 z-2000 flex items-center justify-center p-4">
+        <>
           <div
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            className="fixed inset-0 z-1999 bg-slate-900/20 backdrop-blur-xs"
             onClick={() => setShowAdminModal(false)}
           />
-          <div className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between mb-6">
+          <div className="fixed bottom-28 right-8 z-2000 w-[calc(100vw-4rem)] md:w-96 bg-white rounded-3xl p-8 shadow-2xl animate-in slide-in-from-bottom-10 fade-in duration-300 border border-slate-100">
+            <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900">
                 Hubungi Admin
               </h3>
@@ -214,7 +216,7 @@ export default function Dashboard() {
                 href="mailto:admin@telkom.co.id"
                 className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors"
               >
-                <EmailIcon className="text-blue-600" />
+                <EmailIcon className="text-blue-600 text-xl" />
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase">
                     Email
@@ -230,10 +232,10 @@ export default function Dashboard() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50 transition-colors"
               >
-                <PhoneIcon className="text-emerald-600" />
+                <PhoneIcon className="text-emerald-600 text-xl" />
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase">
-                    Kontak (WhatsApp)
+                    WhatsApp
                   </p>
                   <p className="text-sm font-bold text-slate-900">
                     0821-3376-5908
@@ -241,19 +243,19 @@ export default function Dashboard() {
                 </div>
               </a>
               <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50">
-                <BusinessIcon className="text-indigo-600" />
+                <BusinessIcon className="text-indigo-600 text-xl" />
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase">
                     Kantor
                   </p>
-                  <p className="text-sm font-bold text-slate-900">
-                    Telkom Landmark Tower Surabaya, Indonesia
+                  <p className="text-sm font-bold text-slate-900 leading-tight">
+                    Telkom Landmark Tower Surabaya
                   </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <div className="flex-1 flex flex-col md:ml-64">
@@ -265,7 +267,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
                 <span>Dashboard</span>
                 <span>/</span>
-                <span className="text-blue-600">GAMBARAN UMUM</span>
+                <span className="text-blue-600">UTAMA</span>
               </div>
               <h1 className="text-lg md:text-xl font-extrabold text-slate-900 tracking-tight">
                 Dashboard
@@ -286,6 +288,14 @@ export default function Dashboard() {
         <main className="p-4 md:p-8">
           {/* Welcome banner */}
           <section className="relative overflow-hidden rounded-4xl md:rounded-[2.5rem] bg-linear-to-br from-indigo-600 to-blue-700 p-6 md:p-12 text-white shadow-xl shadow-blue-200 mb-8">
+            <motion.div
+              initial={{ rotate: -10, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="absolute top-8 right-8 md:top-12 md:right-12 text-white/30"
+            >
+              <AutoAwesomeIcon style={{ fontSize: "5rem" }} />
+            </motion.div>
             <div className="relative z-10">
               <h2 className="text-2xl md:text-4xl font-black tracking-tight">
                 Selamat Datang, {user.name}!
@@ -379,8 +389,8 @@ export default function Dashboard() {
             </div>
           </div>
           {/* System Summary Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="lg:col-span-3 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">
                   Ringkasan Operasional
@@ -442,28 +452,20 @@ export default function Dashboard() {
                 jaringan melalui chart di atas untuk respon cepat.
               </p>
             </div>
-
-            <div className="rounded-4xl border border-slate-200 bg-slate-900 p-8 text-white shadow-xl shadow-slate-200 relative overflow-hidden group">
-              <div className="relative z-10 h-full flex flex-col">
-                <h3 className="text-xl font-black tracking-tight mb-3">
-                  Pusat Bantuan
-                </h3>
-                <p className="text-slate-400 text-sm font-medium mb-10 leading-relaxed">
-                  Butuh bantuan navigasi sistem atau pelaporan kendala teknis?
-                </p>
-
-                <button
-                  onClick={() => setShowAdminModal(true)}
-                  className="mt-auto w-full rounded-2xl bg-white/10 border border-white/20 py-4 text-xs font-black hover:bg-white/20 transition-all uppercase tracking-widest"
-                >
-                  Hubungi Admin
-                </button>
-              </div>
-              <div className="absolute -right-10 -bottom-10 text-[10rem] opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                <SupportAgentIcon fontSize="inherit" />
-              </div>
-            </div>
           </div>
+
+          {/* Floating Help Button */}
+          <button
+            onClick={() => setShowAdminModal(!showAdminModal)}
+            className={`fixed bottom-8 right-8 h-16 w-16 rounded-full bg-slate-900 text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-2001 ${showAdminModal ? "rotate-180 bg-slate-700" : ""}`}
+            title="Pusat Bantuan"
+          >
+            {showAdminModal ? (
+              <CloseIcon />
+            ) : (
+              <SupportAgentIcon fontSize="large" />
+            )}
+          </button>
         </main>
       </div>
     </div>
