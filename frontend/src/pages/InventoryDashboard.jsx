@@ -61,6 +61,7 @@ export default function InventoryDashboard() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [stats, setStats] = useState(null);
@@ -362,15 +363,19 @@ export default function InventoryDashboard() {
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`Hapus perangkat ${name}?`)) {
-      try {
-        await deleteInventoryDevice(id);
-        showNotify("Perangkat berhasil dihapus");
-        loadData();
-      } catch (err) {
-        showNotify(err.message, "error");
-      }
+  const handleDelete = async () => {
+    if (!selectedItem) return;
+    setIsSubmitting(true);
+    try {
+      await deleteInventoryDevice(selectedItem.id);
+      showNotify("Perangkat berhasil dihapus");
+      setShowDeleteModal(false);
+      setSelectedItem(null);
+      loadData();
+    } catch (err) {
+      showNotify(err.message, "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -908,7 +913,10 @@ export default function InventoryDashboard() {
                             )}
                             {canDelete && (
                               <button
-                                onClick={() => handleDelete(item.id, item.name)}
+                                onClick={() => {
+                                  setSelectedItem(item);
+                                  setShowDeleteModal(true);
+                                }}
                                 className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
                                 title="Hapus Perangkat"
                               >
@@ -1027,7 +1035,10 @@ export default function InventoryDashboard() {
                         )}
                         {canDelete && (
                           <button
-                            onClick={() => handleDelete(item.id, item.name)}
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setShowDeleteModal(true);
+                            }}
                             className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500"
                           >
                             <DeleteIcon sx={{ fontSize: 18 }} />
@@ -1499,10 +1510,8 @@ export default function InventoryDashboard() {
                 {canDelete && (
                   <button
                     onClick={() => {
-                      if (window.confirm(`Hapus ${selectedItem.name}?`)) {
-                        handleDelete(selectedItem.id, selectedItem.name);
-                        setShowDetailModal(false);
-                      }
+                      setShowDeleteModal(true);
+                      setShowDetailModal(false);
                     }}
                     className="h-14 md:h-16 w-full sm:w-16 rounded-2xl border-2 border-rose-50 text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-all shrink-0"
                   >
@@ -1579,6 +1588,47 @@ export default function InventoryDashboard() {
                   <PrintIcon sx={{ fontSize: 18 }} /> Cetak Sekarang
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedItem && (
+        <div className="fixed inset-0 z-2020 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => !isSubmitting && setShowDeleteModal(false)}
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-white/50 p-8 animate-in zoom-in-95 duration-300">
+            <div className="h-16 w-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6">
+              <DeleteIcon fontSize="inherit" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 text-center mb-2">
+              Hapus Perangkat
+            </h3>
+            <p className="text-xs font-bold text-slate-500 text-center mb-8">
+              Apakah Anda yakin ingin menghapus{" "}
+              <span className="text-slate-900 font-black">
+                {selectedItem.name}
+              </span>
+              ? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isSubmitting}
+                className="px-4 py-3 rounded-xl border border-slate-200 text-xs font-black uppercase text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="px-4 py-3 rounded-xl bg-rose-600 text-xs font-black uppercase text-white hover:bg-rose-700 transition-all shadow-lg shadow-rose-200"
+              >
+                {isSubmitting ? "Menghapus..." : "Hapus"}
+              </button>
             </div>
           </div>
         </div>

@@ -306,14 +306,14 @@ export default function FormPMR() {
                   destination.lng,
                 );
 
-                if (distanceToDevice <= 1) {
+                if (distanceToDevice <= 0.5) {
                   setIsVerified(true);
                   showNotify("Perangkat terverifikasi di lokasi!", "success");
                 } else {
                   showNotify(
                     `Gagal! Anda berada ${distanceToDevice.toFixed(
                       2,
-                    )} KM dari perangkat. Maksimal 1 KM.`,
+                    )} KM dari perangkat. Maksimal 500 M.`,
                     "error",
                   );
                   setIsVerified(false);

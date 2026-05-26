@@ -46,6 +46,7 @@ export default function MappingOffice() {
   const [error, setError] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedOffice, setSelectedOffice] = useState(null);
   const [formData, setFormData] = useState({ name: "", area_id: "", latitude: "", longitude: "" });
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
@@ -171,19 +172,17 @@ export default function MappingOffice() {
     }
   };
 
-  const handleDelete = async (id) => {
-    const office = offices.find(o => o.id === id);
-    if (!canManage(office)) return;
-
-    if (window.confirm("Hapus Kantor ini?")) {
-      try {
-        await deleteOffice(id);
-        showNotify("Kantor berhasil dihapus");
-        loadData();
-      } catch (err) {
-        const message = err.message || "The server returned an unexpected response. Please try again later.";
-        showNotify(message, "error");
-      }
+  const handleDelete = async () => {
+    if (!selectedOffice || !canManage(selectedOffice)) return;
+    try {
+      await deleteOffice(selectedOffice.id);
+      showNotify("Kantor berhasil dihapus");
+      setShowDeleteModal(false);
+      setSelectedOffice(null);
+      loadData();
+    } catch (err) {
+      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      showNotify(message, "error");
     }
   };
 
@@ -327,7 +326,7 @@ export default function MappingOffice() {
                             <div className="flex items-center justify-end gap-2">
                               <button onClick={() => handleToggleStatus(o.id)} className={`h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center transition-all ${o.status === "active" ? "text-rose-500 hover:bg-rose-50" : "text-emerald-500 hover:bg-emerald-50"}`} title={o.status === "active" ? "Nonaktifkan" : "Aktifkan"}>{o.status === "active" ? <BlockIcon sx={{ fontSize: 16 }} /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}</button>
                               <button onClick={() => { setSelectedOffice(o); setFormData({ name: o.name, area_id: o.area_id || "", latitude: o.latitude || "", longitude: o.longitude || "" }); setShowModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all" title="Edit"><EditIcon sx={{ fontSize: 16 }} /></button>
-                              <button onClick={() => handleDelete(o.id)} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all" title="Hapus"><DeleteIcon sx={{ fontSize: 16 }} /></button>
+                              <button onClick={() => { setSelectedOffice(o); setShowDeleteModal(true); }} className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all" title="Hapus"><DeleteIcon sx={{ fontSize: 16 }} /></button>
                             </div>
                           )}
                         </td>
@@ -448,6 +447,43 @@ export default function MappingOffice() {
                 {selectedOffice ? "SIMPAN PERUBAHAN" : "TAMBAH KANTOR"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedOffice && (
+        <div className="fixed inset-0 z-2020 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => setShowDeleteModal(false)}
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-white/50 p-8 animate-in zoom-in-95 duration-300">
+            <div className="h-16 w-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6">
+              <DeleteIcon fontSize="inherit" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 text-center mb-2">
+              Hapus Kantor
+            </h3>
+            <p className="text-xs font-bold text-slate-500 text-center mb-8">
+              Apakah Anda yakin ingin menghapus{" "}
+              <span className="text-slate-900 font-black">{selectedOffice.name}</span>
+              ? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-3 rounded-xl border border-slate-200 text-xs font-black uppercase text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-3 rounded-xl bg-rose-600 text-xs font-black uppercase text-white hover:bg-rose-700 transition-all shadow-lg shadow-rose-200"
+              >
+                Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}

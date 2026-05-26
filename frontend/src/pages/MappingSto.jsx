@@ -52,6 +52,7 @@ export default function MappingSto() {
     direction: "asc",
   });
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSto, setSelectedSto] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -213,20 +214,18 @@ export default function MappingSto() {
     }
   };
 
-  const handleDelete = async (id) => {
-    const sto = stos.find((s) => s.id === id);
-    if (!canManage(sto)) return;
-
-    if (window.confirm("Hapus STO ini?")) {
-      try {
-        await deleteSto(id);
-        showNotify("STO berhasil dihapus");
-        loadData();
-      } catch (err) {
-        const message =
-          "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
-        showNotify(message, "error");
-      }
+  const handleDelete = async () => {
+    if (!selectedSto || !canManage(selectedSto)) return;
+    try {
+      await deleteSto(selectedSto.id);
+      showNotify("STO berhasil dihapus");
+      setShowDeleteModal(false);
+      setSelectedSto(null);
+      loadData();
+    } catch (err) {
+      const message =
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
+      showNotify(message, "error");
     }
   };
 
@@ -489,7 +488,10 @@ export default function MappingSto() {
                                 <EditIcon sx={{ fontSize: 16 }} />
                               </button>
                               <button
-                                onClick={() => handleDelete(s.id)}
+                                onClick={() => {
+                                  setSelectedSto(s);
+                                  setShowDeleteModal(true);
+                                }}
                                 className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
                                 title="Hapus"
                               >
@@ -714,6 +716,43 @@ export default function MappingSto() {
                 SIMPAN
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedSto && (
+        <div className="fixed inset-0 z-2020 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => setShowDeleteModal(false)}
+          />
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-white/50 p-8 animate-in zoom-in-95 duration-300">
+            <div className="h-16 w-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6">
+              <DeleteIcon fontSize="inherit" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 text-center mb-2">
+              Hapus STO
+            </h3>
+            <p className="text-xs font-bold text-slate-500 text-center mb-8">
+              Apakah Anda yakin ingin menghapus{" "}
+              <span className="text-slate-900 font-black">{selectedSto.name}</span>
+              ? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-3 rounded-xl border border-slate-200 text-xs font-black uppercase text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-3 rounded-xl bg-rose-600 text-xs font-black uppercase text-white hover:bg-rose-700 transition-all shadow-lg shadow-rose-200"
+              >
+                Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}
