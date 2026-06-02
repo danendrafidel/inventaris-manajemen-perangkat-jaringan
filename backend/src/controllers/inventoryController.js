@@ -1,7 +1,11 @@
 const db = require("../config/db");
 const cache = require("../config/cache");
 const { exec } = require("child_process");
-const { handleError, mapDeviceFromDB, invalidateAllStats } = require("../utils/helper");
+const {
+  handleError,
+  mapDeviceFromDB,
+  invalidateAllStats,
+} = require("../utils/helper");
 
 exports.getInventoryOptions = async (req, res) => {
   try {
@@ -21,7 +25,7 @@ exports.getInventoryOptions = async (req, res) => {
         ),
         db.query("SELECT DISTINCT status FROM inventory_devices"),
         db.query("SELECT DISTINCT device_type FROM inventory_devices"),
-        db.query("SELECT DISTINCT role FROM users"),
+        db.query("SELECT DISTINCT role FROM users WHERE role != 'root'"),
         db.query(
           "SELECT id, name, area_id FROM offices WHERE status = 'active' ORDER BY name ASC",
         ),
@@ -344,7 +348,9 @@ exports.pingDevices = async (req, res) => {
   try {
     const { ips } = req.body;
     if (!ips || !Array.isArray(ips)) {
-      return res.status(400).json({ success: false, message: "Daftar IP diperlukan" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Daftar IP diperlukan" });
     }
 
     const results = await Promise.all(

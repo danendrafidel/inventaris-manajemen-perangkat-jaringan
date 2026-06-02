@@ -68,14 +68,12 @@ export default function UserManagement() {
   });
 
   const role = currentUser?.role?.toLowerCase();
-  const isAdmin = role === "admin" || role === "super officer";
+  const isAdmin = role === "admin" || role === "super officer" || role === "root";
   const isOfficer = role === "officer";
 
   const displayUsers = useMemo(() => {
-    if (isAdmin) return users;
-    if (isOfficer)
-      return users.filter((u) => u.area_id == currentUser?.area_id);
-    return [];
+    const filtered = isAdmin ? users : isOfficer ? users.filter((u) => u.area_id == currentUser?.area_id) : [];
+    return filtered.filter((u) => u.role?.toLowerCase() !== "root");
   }, [users, isAdmin, isOfficer, currentUser?.area_id]);
 
   const sortedUsers = useMemo(() => {
@@ -150,7 +148,7 @@ export default function UserManagement() {
     const role = currentUser?.role?.toLowerCase();
     if (
       !currentUser ||
-      (role !== "admin" && role !== "super officer" && role !== "officer")
+      (role !== "admin" && role !== "super officer" && role !== "officer" && role !== "root")
     ) {
       navigate("/dashboard");
       return;

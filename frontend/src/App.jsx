@@ -71,7 +71,7 @@ function App() {
           path="/inventory/print"
           element={
             <ProtectedRoute
-              allowedRoles={["admin", "super officer", "officer"]}
+              allowedRoles={["admin", "super officer", "officer", "root"]}
             >
               <PrintBarcode />
             </ProtectedRoute>
@@ -81,7 +81,7 @@ function App() {
           path="/users"
           element={
             <ProtectedRoute
-              allowedRoles={["admin", "super officer", "officer"]}
+              allowedRoles={["admin", "super officer", "officer", "root"]}
             >
               <UserManagement />
             </ProtectedRoute>
@@ -91,7 +91,7 @@ function App() {
           path="/mapping/area"
           element={
             <ProtectedRoute
-              allowedRoles={["admin", "super officer", "officer"]}
+              allowedRoles={["admin", "super officer", "officer", "root"]}
             >
               <MappingArea />
             </ProtectedRoute>
@@ -101,7 +101,7 @@ function App() {
           path="/mapping/sto"
           element={
             <ProtectedRoute
-              allowedRoles={["admin", "super officer", "officer"]}
+              allowedRoles={["admin", "super officer", "officer", "root"]}
             >
               <MappingSto />
             </ProtectedRoute>
@@ -111,7 +111,7 @@ function App() {
           path="/mapping/office"
           element={
             <ProtectedRoute
-              allowedRoles={["admin", "super officer", "officer"]}
+              allowedRoles={["admin", "super officer", "officer", "root"]}
             >
               <MappingOffice />
             </ProtectedRoute>
@@ -120,9 +120,7 @@ function App() {
         <Route
           path="/settings/fuel"
           element={
-            <ProtectedRoute
-              allowedRoles={["super officer"]}
-            >
+            <ProtectedRoute allowedRoles={["super officer", "root"]}>
               <FuelSettings />
             </ProtectedRoute>
           }
@@ -131,7 +129,7 @@ function App() {
           path="/fuel/recap"
           element={
             <ProtectedRoute
-              allowedRoles={["super officer", "officer", "admin"]}
+              allowedRoles={["super officer", "officer", "admin", "root"]}
             >
               <FuelRecap />
             </ProtectedRoute>

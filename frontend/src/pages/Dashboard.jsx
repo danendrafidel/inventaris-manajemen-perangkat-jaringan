@@ -117,6 +117,7 @@ export default function Dashboard() {
     const r = String(user?.role || "").toLowerCase();
     if (r === "admin") return "Administrator";
     if (r === "super officer") return "Super Officer";
+    if (r === "root") return "Maintenance Root";
     if (r === "officer") return "Officer";
     return "User";
   }, [user?.role]);
@@ -131,7 +132,7 @@ export default function Dashboard() {
       // Apply role-based filtering for stats
       const params = new URLSearchParams();
       const role = user.role?.toLowerCase();
-      if (role !== "admin" && role !== "super officer") {
+      if (role !== "admin" && role !== "super officer" && role !== "root") {
         params.set("area_id", user.area_id);
       }
       params.set("user_id", user.id);
@@ -155,7 +156,7 @@ export default function Dashboard() {
       try {
         const role = user.role?.toLowerCase();
         const params = {};
-        if (role !== "admin" && role !== "super officer") {
+        if (role !== "admin" && role !== "super officer" && role !== "root") {
           params.area_id = user.area_id;
         }
 

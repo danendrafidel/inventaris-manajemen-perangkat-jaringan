@@ -49,8 +49,8 @@ export default function PrintBarcode() {
   };
 
   const role = user?.role?.toLowerCase();
-  const isSuperUser = ["admin", "super officer"].includes(role);
-  const canPrint = ["admin", "super officer", "officer"].includes(role);
+  const isSuperUser = ["admin", "super officer", "root"].includes(role);
+  const canPrint = ["admin", "super officer", "officer", "root"].includes(role);
 
   useEffect(() => {
     if (!user || !canPrint) {

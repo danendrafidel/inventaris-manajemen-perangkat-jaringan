@@ -69,7 +69,8 @@ export default function MappingSto() {
 
   const isAdmin =
     user?.role?.toLowerCase() === "admin" ||
-    user?.role?.toLowerCase() === "super officer";
+    user?.role?.toLowerCase() === "super officer" ||
+    user?.role?.toLowerCase() === "root";
   const isOfficer = user?.role?.toLowerCase() === "officer";
 
   const displayStos = useMemo(() => {

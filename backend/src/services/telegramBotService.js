@@ -71,7 +71,7 @@ bot.command("ping", async (ctx) => {
 
 const startBot = () => {
   setBotCommands(); // Set commands on startup
-  bot.launch().then(() => console.log("Telegram Bot started"));
+  bot.launch().then(() => {});
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
 };

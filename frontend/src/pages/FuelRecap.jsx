@@ -78,7 +78,7 @@ export default function FuelRecap() {
   });
 
   const role = user?.role?.toLowerCase();
-  const isAdminOrSuper = role === "admin" || role === "super officer";
+  const isAdminOrSuper = role === "admin" || role === "super officer" || role === "root";
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
@@ -118,7 +118,7 @@ export default function FuelRecap() {
   useEffect(() => {
     if (
       !user ||
-      (role !== "super officer" && role !== "officer" && role !== "admin")
+      (role !== "super officer" && role !== "officer" && role !== "admin" && role !== "root")
     ) {
       navigate("/dashboard");
       return;

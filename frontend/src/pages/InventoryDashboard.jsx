@@ -168,13 +168,13 @@ export default function InventoryDashboard() {
 
   const role = user?.role?.toLowerCase();
   const canEdit =
-    role === "admin" || role === "super officer" || role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
   const canDelete =
-    role === "admin" || role === "super officer" || role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
   const canAdd =
-    role === "admin" || role === "super officer" || role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
   const canPrint =
-    role === "admin" || role === "super officer" || role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -272,7 +272,7 @@ export default function InventoryDashboard() {
     setError("");
 
     const roleParams = {};
-    if (role !== "admin" && role !== "super officer") {
+    if (role !== "admin" && role !== "super officer" && role !== "root") {
       roleParams.area_id = user.area_id;
     }
 
@@ -1225,9 +1225,9 @@ export default function InventoryDashboard() {
                       AREA
                     </label>
                     <select
-                      className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" && role !== "super officer" ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" && role !== "super officer" && role !== "root" ? "opacity-70 cursor-not-allowed" : ""}`}
                       value={formData.area_id}
-                      disabled={role !== "admin" && role !== "super officer"}
+                      disabled={role !== "admin" && role !== "super officer" && role !== "root"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,

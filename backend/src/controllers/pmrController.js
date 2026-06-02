@@ -122,7 +122,7 @@ exports.getAllPmrReports = async (req, res) => {
 
     const userRole = String(role || "").toLowerCase();
     const isAdminEquivalent =
-      userRole === "admin" || userRole === "super officer";
+      userRole === "admin" || userRole === "super officer" || userRole === "root";
 
     if (user_id && !isAdminEquivalent && userRole !== "officer") {
       params.push(user_id);

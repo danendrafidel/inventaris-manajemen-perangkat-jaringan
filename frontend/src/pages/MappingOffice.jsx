@@ -52,7 +52,7 @@ export default function MappingOffice() {
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "super officer";
+  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "super officer" || user?.role?.toLowerCase() === "root";
   const isOfficer = user?.role?.toLowerCase() === "officer";
 
   const displayOffices = useMemo(() => {

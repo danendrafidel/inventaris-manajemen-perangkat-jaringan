@@ -125,12 +125,12 @@ export default function LaporanPMR() {
         // Fetch fresh data for the report to ensure state consistency
         const updatedReports = await fetchPmrReports({
           area_id:
-            role !== "admin" && role !== "super officer"
+            role !== "admin" && role !== "super officer" && role !== "root"
               ? user?.area_id
               : filters.area_id || null,
           role: role,
           user_id:
-            role === "admin" || role === "super officer" ? undefined : user?.id,
+            role === "admin" || role === "super officer" || role === "root" ? undefined : user?.id,
         });
         const updatedReport = updatedReports.find((r) => r.id === reportId);
         setSelectedReport(updatedReport);
@@ -360,12 +360,12 @@ export default function LaporanPMR() {
     try {
       const data = await fetchPmrReports({
         area_id:
-          role !== "admin" && role !== "super officer"
+          role !== "admin" && role !== "super officer" && role !== "root"
             ? user?.area_id
             : filters.area_id || null,
         role: role,
         user_id:
-          role === "admin" || role === "super officer" ? undefined : user?.id,
+          role === "admin" || role === "super officer" || role === "root" ? undefined : user?.id,
         search,
         sto_id: filters.sto_id,
         status: filters.status,

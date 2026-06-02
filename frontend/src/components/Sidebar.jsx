@@ -29,8 +29,8 @@ export default function Sidebar() {
   const user = getStoredUser();
   const role = user?.role?.toLowerCase();
   const isAdminOrOfficer =
-    role === "admin" || role === "super officer" || role === "officer";
-  const isSuperOfficer = role === "super officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+  const isSuperOfficer = role === "super officer" || role === "root";
   const canPrintBarcode = isAdminOrOfficer;
 
   const handleLogout = () => {
@@ -262,7 +262,8 @@ export default function Sidebar() {
                   <div className="ml-9 flex flex-col gap-1 border-l-2 border-slate-100 pl-2">
                     {role !== "super officer" &&
                       role !== "officer" &&
-                      role !== "admin" && (
+                      role !== "admin" &&
+                      role !== "root" && (
                         <Link
                           to="/pmr"
                           onClick={() => setIsOpen(false)}
@@ -288,7 +289,8 @@ export default function Sidebar() {
                     </Link>
                     {(role === "super officer" ||
                       role === "officer" ||
-                      role === "admin") && (
+                      role === "admin" ||
+                      role === "root") && (
                       <Link
                         to="/fuel/recap"
                         onClick={() => setIsOpen(false)}

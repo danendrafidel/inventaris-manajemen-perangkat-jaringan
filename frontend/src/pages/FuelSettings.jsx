@@ -36,7 +36,7 @@ export default function FuelSettings() {
 
   useEffect(() => {
     const role = user?.role?.toLowerCase();
-    if (!user || role !== "super officer") {
+    if (!user || (role !== "super officer" && role !== "root")) {
       navigate("/dashboard");
       return;
     }
