@@ -1,6 +1,7 @@
 require("dotenv").config();
 const app = require("./app");
 const { startMonitoring } = require("./services/monitorService");
+const { startBot } = require("./services/telegramBotService");
 
 const PORT = process.env.PORT || 3000;
 
@@ -10,4 +11,6 @@ app.listen(PORT, () => {
   
   // Start monitoring devices for Telegram notifications (every 1 minute)
   startMonitoring(60000);
+  // Start Telegram bot for command interactions
+  startBot();
 });

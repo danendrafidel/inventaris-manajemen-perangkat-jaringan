@@ -109,4 +109,4 @@ const startMonitoring = (intervalMs = 120000) => {
   });
 };
 
-module.exports = { startMonitoring };
+module.exports = { startMonitoring, pingIP };

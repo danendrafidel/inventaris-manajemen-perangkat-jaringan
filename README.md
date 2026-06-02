@@ -89,8 +89,11 @@ Untuk menjalankan dan mengembangkan aplikasi ini, pastikan perangkat Anda memili
    cp .env.example .env
    ```
 3. Sesuaikan `.env` dengan kredensial database Anda.
-4. Untuk fitur notifikasi, isi `TELEGRAM_BOT_TOKEN` dan `TELEGRAM_CHAT_ID` di file `.env`.
-5. Jalankan aplikasi:
+4. Untuk fitur notifikasi, isi `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID_1`, dan `TELEGRAM_CHAT_ID_2` di file `.env`.
+5. Bot Telegram mendukung perintah berikut:
+   - `/info <IP Device>`: Mendapatkan informasi detail perangkat berdasarkan IP.
+   - `/ping <IP Device>`: Melakukan pengecekan koneksi perangkat berdasarkan IP.
+6. Jalankan aplikasi:
    ```bash
    npm run dev
    ```
