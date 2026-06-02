@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Alert, AlertTitle } from "@mui/material";
 import { getStoredUser } from "../services/authService";
 import {
   fetchInventoryDevices,
@@ -317,8 +318,47 @@ export default function PrintBarcode() {
             </div>
           </section>
 
+          {/* Print Requirements Note */}
+          <Alert
+            severity="info"
+            sx={{
+              borderRadius: "24px",
+              mb: 8,
+              px: 3,
+              py: 1,
+              "& .MuiAlert-message": { width: "100%" },
+            }}
+          >
+            <AlertTitle
+              sx={{
+                fontWeight: 900,
+                textTransform: "uppercase",
+                fontSize: "12px",
+              }}
+            >
+              Petunjuk Pencetakan
+            </AlertTitle>
+            <ul className="text-[11px] font-bold text-blue-800 space-y-1.5 list-disc list-inside">
+              <li>
+                Pastikan perangkat terhubung dengan printer label atau kertas
+                stiker.
+              </li>
+              <li>
+                Disarankan menggunakan browser Chrome atau Edge untuk hasil
+                cetak terbaik.
+              </li>
+              <li>
+                Atur "Scale" atau "Skala" pada pengaturan printer menjadi 100%
+                (default).
+              </li>
+              <li>
+                Gunakan kertas label ukuran standar agar barcode proporsional.
+              </li>
+            </ul>
+          </Alert>
+
           {/* List */}
-          <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -480,6 +520,37 @@ export default function PrintBarcode() {
               )}
             </div>
           </section>
+
+          {/* Barcode Preview Section */}
+          {selectedIds.length > 0 && (
+            <section className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6">
+                Preview Barcode ({selectedIds.length})
+              </h2>
+              <div className="flex flex-wrap gap-4">
+                {items
+                  .filter((i) => selectedIds.includes(i.id))
+                  .map((item) => {
+                    const scanUrl = `${window.location.origin}/scan/${encodeURIComponent(item.serialNumber)}`;
+                    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(scanUrl)}`;
+                    return (
+                      <div
+                        key={item.id}
+                        className="w-24 h-28 border border-slate-200 rounded-lg p-2 flex flex-col items-center justify-center bg-white"
+                      >
+                        <p className="text-[8px] font-bold truncate w-full text-center uppercase mb-1">
+                          {item.name}
+                        </p>
+                        <img src={qrCodeUrl} alt="QR" className="w-16 h-16" />
+                        <p className="text-[7px] font-black mt-1 uppercase">
+                          {item.serialNumber}
+                        </p>
+                      </div>
+                    );
+                  })}
+              </div>
+            </section>
+          )}
         </main>
 
         {/* Sticky Print Button (Footer) */}

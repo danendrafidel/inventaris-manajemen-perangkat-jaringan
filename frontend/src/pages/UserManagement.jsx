@@ -764,7 +764,7 @@ export default function UserManagement() {
                     }
                   >
                     <option value="">Pilih Role</option>
-                    {["admin", "super officer", "officer", "user"].map((r) => (
+                    {(isOfficer ? ["user"] : ["admin", "super officer", "officer", "user"]).map((r) => (
                       <option key={r} value={r}>
                         {r.toUpperCase()}
                       </option>
