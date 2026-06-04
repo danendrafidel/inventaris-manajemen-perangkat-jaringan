@@ -29,7 +29,7 @@ bot.command("info", async (ctx) => {
     return ctx.reply("Gunakan format: /info <IP/ID/Nama/SN Device>");
   }
 
-  const searchTerm = args[1];
+  const query = args[1];
   try {
     const { rows } = await db.query(
       "SELECT * FROM inventory_devices WHERE ip = $1 OR device_id::text = $1 OR name = $1 OR serial_number = $1",
