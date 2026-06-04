@@ -8,8 +8,15 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const setBotCommands = async () => {
   try {
     await bot.telegram.setMyCommands([
-      { command: "info", description: "Mendapatkan informasi detail perangkat berdasarkan IP" },
-      { command: "ping", description: "Melakukan pengecekan koneksi perangkat berdasarkan IP" },
+      {
+        command: "info",
+        description:
+          "Mendapatkan informasi detail perangkat berdasarkan IP/ID/Nama/SN",
+      },
+      {
+        command: "ping",
+        description: "Melakukan pengecekan koneksi perangkat berdasarkan IP",
+      },
     ]);
   } catch (error) {
     console.error("Failed to set bot commands:", error);
@@ -19,18 +26,18 @@ const setBotCommands = async () => {
 bot.command("info", async (ctx) => {
   const args = ctx.message.text.split(" ");
   if (args.length < 2) {
-    return ctx.reply("Gunakan format: /info <IP Device>");
+    return ctx.reply("Gunakan format: /info <IP/ID/Nama/SN Device>");
   }
 
-  const ip = args[1];
+  const searchTerm = args[1];
   try {
     const { rows } = await db.query(
-      "SELECT * FROM inventory_devices WHERE ip = $1",
-      [ip]
+      "SELECT * FROM inventory_devices WHERE ip = $1 OR device_id::text = $1 OR name = $1 OR serial_number = $1",
+      [query],
     );
 
     if (rows.length === 0) {
-      return ctx.reply(`Perangkat dengan IP ${ip} tidak ditemukan.`);
+      return ctx.reply(`Perangkat dengan kriteria ${query} tidak ditemukan.`);
     }
 
     const device = rows[0];
@@ -59,10 +66,12 @@ bot.command("ping", async (ctx) => {
   const ip = args[1];
   try {
     ctx.reply(`Sedang melakukan ping ke ${ip}...`);
-    
+
     const status = await pingIP(ip);
-    
-    ctx.reply(`Hasil ping untuk <b>${ip}</b>: <b>${status.toUpperCase()}</b>`, { parse_mode: "HTML" });
+
+    ctx.reply(`Hasil ping untuk <b>${ip}</b>: <b>${status.toUpperCase()}</b>`, {
+      parse_mode: "HTML",
+    });
   } catch (error) {
     console.error("Bot error:", error);
     ctx.reply("Terjadi kesalahan saat melakukan ping.");
