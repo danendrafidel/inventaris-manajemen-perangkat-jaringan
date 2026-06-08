@@ -40,6 +40,8 @@ import MapIcon from "@mui/icons-material/Map";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import SearchIcon from "@mui/icons-material/Search";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 export default function MappingSto() {
   const user = getStoredUser();
@@ -67,6 +69,17 @@ export default function MappingSto() {
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
 
+  const [search, setSearch] = useState("");
+  const [draftSearch, setDraftSearch] = useState("");
+  const [filters, setFilters] = useState({
+    area_id: "",
+    status: "",
+  });
+  const [draftFilters, setDraftFilters] = useState({
+    area_id: "",
+    status: "",
+  });
+
   const isAdmin =
     user?.role?.toLowerCase() === "admin" ||
     user?.role?.toLowerCase() === "super officer" ||
@@ -74,10 +87,38 @@ export default function MappingSto() {
   const isOfficer = user?.role?.toLowerCase() === "officer";
 
   const displayStos = useMemo(() => {
-    if (isAdmin) return stos;
-    if (isOfficer) return stos.filter((s) => s.area_id == user?.area_id);
-    return [];
-  }, [stos, isAdmin, isOfficer, user?.area_id]);
+    let result = stos;
+
+    // Role-based filtering
+    if (isOfficer) {
+      result = result.filter((s) => s.area_id == user?.area_id);
+    } else if (!isAdmin) {
+      return [];
+    }
+
+    // Search filter
+    if (search) {
+      const lowSearch = search.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.name?.toLowerCase().includes(lowSearch) ||
+          s.generated_id?.toLowerCase().includes(lowSearch) ||
+          String(s.id).includes(lowSearch),
+      );
+    }
+
+    // Area filter
+    if (filters.area_id) {
+      result = result.filter((s) => s.area_id == filters.area_id);
+    }
+
+    // Status filter
+    if (filters.status) {
+      result = result.filter((s) => s.status === filters.status);
+    }
+
+    return result;
+  }, [stos, isAdmin, isOfficer, user?.area_id, search, filters]);
 
   const sortedStos = useMemo(() => {
     let sortableItems = [...displayStos];
@@ -113,6 +154,26 @@ export default function MappingSto() {
       direction = "desc";
     }
     setSortConfig({ key, direction });
+  };
+
+  const handleDraftFilterChange = (key, value) => {
+    setDraftFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    setFilters({ ...draftFilters });
+    setSearch(draftSearch);
+  };
+
+  const handleResetFilters = () => {
+    const initial = {
+      area_id: isOfficer ? user?.area_id : "",
+      status: "",
+    };
+    setDraftFilters(initial);
+    setFilters(initial);
+    setSearch("");
+    setDraftSearch("");
   };
 
   const stats = useMemo(
@@ -336,6 +397,91 @@ export default function MappingSto() {
               </div>
             ))}
           </div>
+
+          {/* Search & Filter Bar */}
+          <section className="bg-white rounded-3xl md:rounded-4xl border border-slate-200 p-4 md:p-6 mb-8 shadow-sm space-y-5">
+            {/* Top Row: Wide Search Input */}
+            <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl px-4 md:px-5 py-3 md:py-3.5 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100/50 transition-all group">
+              <span className="text-slate-400 group-focus-within:text-blue-500 transition-colors text-lg md:text-xl">
+                <SearchIcon />
+              </span>
+              <input
+                className="bg-transparent outline-none text-xs md:text-sm font-bold w-full text-slate-700 placeholder:text-slate-400"
+                placeholder="Cari ID atau Nama STO..."
+                value={draftSearch}
+                onChange={(e) => setDraftSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleApplyFilters()}
+              />
+            </div>
+
+            {/* Bottom Row: Dropdowns & Action Buttons */}
+            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-center gap-3 flex-1">
+                <select
+                  className={`w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all appearance-none pr-10 ${
+                    isOfficer
+                      ? "opacity-50 cursor-not-allowed bg-slate-100"
+                      : "cursor-pointer"
+                  }`}
+                  style={{
+                    backgroundImage:
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 0.75rem center",
+                    backgroundSize: "0.85rem",
+                  }}
+                  value={isOfficer ? user?.area_id : draftFilters.area_id}
+                  disabled={isOfficer}
+                  onChange={(e) =>
+                    handleDraftFilterChange("area_id", e.target.value)
+                  }
+                >
+                  <option value="">Area</option>
+                  {areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
+                  style={{
+                    backgroundImage:
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 0.75rem center",
+                    backgroundSize: "0.85rem",
+                  }}
+                  value={draftFilters.status}
+                  onChange={(e) =>
+                    handleDraftFilterChange("status", e.target.value)
+                  }
+                >
+                  <option value="">Status</option>
+                  <option value="active">ACTIVE</option>
+                  <option value="inactive">INACTIVE</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                <button
+                  onClick={handleApplyFilters}
+                  className="flex-1 xl:flex-none px-6 md:px-8 py-3 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.15em] shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95"
+                >
+                  TERAPKAN FILTER
+                </button>
+
+                <button
+                  onClick={handleResetFilters}
+                  className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm shrink-0"
+                  title="Reset Semua"
+                >
+                  <RefreshIcon />
+                </button>
+              </div>
+            </div>
+          </section>
+
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
@@ -736,7 +882,9 @@ export default function MappingSto() {
             </h3>
             <p className="text-xs font-bold text-slate-500 text-center mb-8">
               Apakah Anda yakin ingin menghapus{" "}
-              <span className="text-slate-900 font-black">{selectedSto.name}</span>
+              <span className="text-slate-900 font-black">
+                {selectedSto.name}
+              </span>
               ? Tindakan ini tidak dapat dibatalkan.
             </p>
 
