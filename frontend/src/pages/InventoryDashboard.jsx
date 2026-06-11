@@ -1052,7 +1052,7 @@ export default function InventoryDashboard() {
             </div>
 
             <div className="p-4 md:p-5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between gap-4">
-              {/* Page Control + Limit Selector */}
+              {/* Page Control + Jump */}
               <div className="flex items-center gap-4">
                 {/* Page Display & Jump */}
                 <div className="flex items-center gap-2">
@@ -1077,7 +1077,10 @@ export default function InventoryDashboard() {
                   />
                   <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
                 </div>
-
+              </div>
+              
+              {/* Limit Selector + Navigation Buttons */}
+              <div className="flex items-center gap-4">
                 {/* Limit Selector */}
                 <select
                   className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-black text-slate-600 outline-none cursor-pointer"
@@ -1091,24 +1094,23 @@ export default function InventoryDashboard() {
                   <option value={25}>25</option>
                   <option value={50}>50</option>
                 </select>
-              </div>
-              
-              {/* Navigation Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
-                >
-                  ← Prev
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
-                >
-                  Next →
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    Next →
+                  </button>
+                </div>
               </div>
             </div>
           </section>
