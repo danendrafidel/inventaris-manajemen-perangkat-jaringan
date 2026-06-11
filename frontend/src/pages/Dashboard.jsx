@@ -91,17 +91,7 @@ export default function Dashboard() {
   const [user] = useState(() => getStoredUser());
   const [loadError, setLoadError] = useState("");
   const [dashboard, setDashboard] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState({});
   const [showAdminModal, setShowAdminModal] = useState(false);
-
-  // Computed real-time stats
-  const liveStats = useMemo(() => {
-    const statusValues = Object.values(connectionStatus);
-    return {
-      online: statusValues.filter((s) => s === "online").length,
-      offline: statusValues.filter((s) => s === "offline").length,
-    };
-  }, [connectionStatus]);
 
   const [notification, setNotification] = useState({
     open: false,
@@ -150,35 +140,6 @@ export default function Dashboard() {
 
     refreshDashboard();
     const interval = setInterval(refreshDashboard, 120000); // Refresh every 2 minutes
-
-    // Real-time ping logic
-    const fetchAndPing = async () => {
-      try {
-        const role = user.role?.toLowerCase();
-        const params = {};
-        if (role !== "admin" && role !== "super officer" && role !== "root") {
-          params.area_id = user.area_id;
-        }
-
-        const allDevices = await fetchInventoryDevices({
-          ...params,
-          role,
-          email: user.email,
-        });
-        if (allDevices?.items?.length > 0) {
-          const ips = allDevices.items.map((i) => i.ip).filter(Boolean);
-          const results = await pingInventoryDevices(ips);
-          const newStatus = {};
-          results.forEach((r) => {
-            newStatus[r.ip] = r.status;
-          });
-          setConnectionStatus(newStatus);
-        }
-      } catch (e) {
-        console.error("Ping sync failed:", e);
-      }
-    };
-    fetchAndPing();
 
     return () => clearInterval(interval);
   }, [user, navigate]);
@@ -361,11 +322,7 @@ export default function Dashboard() {
             >
               <StatCard
                 title="PERANGKAT HIDUP"
-                value={
-                  Object.keys(connectionStatus).length > 0
-                    ? liveStats.online
-                    : (dashboard?.stats?.statusBaik ?? 0)
-                }
+                value={dashboard?.stats?.onlineDevices ?? 0}
                 suffix="online"
                 icon={<VerifiedIcon />}
                 tone="emerald"
@@ -378,11 +335,7 @@ export default function Dashboard() {
             >
               <StatCard
                 title="PERANGKAT MATI"
-                value={
-                  Object.keys(connectionStatus).length > 0
-                    ? liveStats.offline
-                    : (dashboard?.stats?.perluPerhatian ?? 0)
-                }
+                value={dashboard?.stats?.offlineDevices ?? 0}
                 suffix="offline"
                 icon={<CloseIcon />}
                 tone="rose"
@@ -407,8 +360,8 @@ export default function Dashboard() {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: "Online", value: liveStats.online },
-                          { name: "Offline", value: liveStats.offline },
+                          { name: "Online", value: dashboard?.stats?.onlineDevices ?? 0 },
+                          { name: "Offline", value: dashboard?.stats?.offlineDevices ?? 0 },
                         ]}
                         cx="50%"
                         cy="50%"

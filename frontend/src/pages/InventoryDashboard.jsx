@@ -80,19 +80,19 @@ export default function InventoryDashboard() {
     sto_id: "",
     area_id: "",
     status: "",
+    connectivity_status: "",
   });
   const [draftFilters, setDraftFilters] = useState({
     sto_id: "",
     area_id: "",
     status: "",
+    connectivity_status: "",
   });
   const [page, setPage] = useState(1);
   const [jumpPage, setJumpPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState({});
-  const [activeConnectivityFilter, setActiveConnectivityFilter] =
-    useState(null);
 
   useEffect(() => {
     setJumpPage(page);
@@ -115,7 +115,8 @@ export default function InventoryDashboard() {
 
   useEffect(() => {
     if (location.state?.filter) {
-      setActiveConnectivityFilter(location.state.filter);
+      setFilters((prev) => ({ ...prev, connectivity_status: location.state.filter }));
+      setDraftFilters((prev) => ({ ...prev, connectivity_status: location.state.filter }));
     }
   }, [location.state]);
 
@@ -202,13 +203,6 @@ export default function InventoryDashboard() {
   const sortedItems = useMemo(() => {
     let sortableItems = [...items];
 
-    // Apply connectivity filter if active
-    if (activeConnectivityFilter) {
-      sortableItems = sortableItems.filter(
-        (item) => connectionStatus[item.ip] === activeConnectivityFilter,
-      );
-    }
-
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         let aValue = a[sortConfig.key] || "";
@@ -227,7 +221,7 @@ export default function InventoryDashboard() {
       });
     }
     return sortableItems;
-  }, [items, sortConfig, connectionStatus, activeConnectivityFilter]);
+  }, [items, sortConfig]);
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -317,6 +311,15 @@ export default function InventoryDashboard() {
       setOptions(o);
       setItems(d.items);
       setTotal(d.total);
+
+      // Sync connectionStatus with initial data from DB
+      const initialStatus = {};
+      d.items.forEach((item) => {
+        if (item.ip) {
+          initialStatus[item.ip] = item.connectivityStatus;
+        }
+      });
+      setConnectionStatus((prev) => ({ ...prev, ...initialStatus }));
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err.message);
@@ -479,12 +482,12 @@ export default function InventoryDashboard() {
       sto_id: "",
       area_id: role !== "admin" && role !== "super officer" ? user.area_id : "",
       status: "",
+      connectivity_status: "",
     };
     setDraftFilters(initial);
     setFilters(initial);
     setSearch("");
     setDraftSearch("");
-    setActiveConnectivityFilter(null);
     setPage(1);
   };
 
@@ -540,24 +543,40 @@ export default function InventoryDashboard() {
               },
               {
                 title: "PERANGKAT HIDUP",
-                value: items.filter((i) => connectionStatus[i.ip] === "online")
-                  .length,
+                value: stats?.stats?.onlineCount ?? 0,
                 icon: <VerifiedIcon />,
                 color: "bg-emerald-500",
                 onClick: () => {
-                  setActiveConnectivityFilter("online");
-                  setFilters((prev) => ({ ...prev, status: "" }));
+                  setFilters((prev) => ({
+                    ...prev,
+                    connectivity_status: "online",
+                    status: "",
+                  }));
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    connectivity_status: "online",
+                    status: "",
+                  }));
+                  setPage(1);
                 },
               },
               {
                 title: "PERANGKAT MATI",
-                value: items.filter((i) => connectionStatus[i.ip] === "offline")
-                  .length,
+                value: stats?.stats?.offlineCount ?? 0,
                 icon: <CloseIcon />,
                 color: "bg-rose-500",
                 onClick: () => {
-                  setActiveConnectivityFilter("offline");
-                  setFilters((prev) => ({ ...prev, status: "" }));
+                  setFilters((prev) => ({
+                    ...prev,
+                    connectivity_status: "offline",
+                    status: "",
+                  }));
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    connectivity_status: "offline",
+                    status: "",
+                  }));
+                  setPage(1);
                 },
               },
               {

@@ -46,6 +46,16 @@ exports.getDashboard = async (req, res) => {
       params,
     );
 
+    const onlineDevices = await db.query(
+      `SELECT COUNT(*) FROM inventory_devices ${deviceWhere} ${deviceWhere ? "AND" : "WHERE"} connectivity_status = 'online'`,
+      params,
+    );
+
+    const offlineDevices = await db.query(
+      `SELECT COUNT(*) FROM inventory_devices ${deviceWhere} ${deviceWhere ? "AND" : "WHERE"} connectivity_status = 'offline'`,
+      params,
+    );
+
     let stoQuery = "SELECT COUNT(*) FROM stos";
     let stoParams = [];
     if (area_id) {
@@ -67,6 +77,8 @@ exports.getDashboard = async (req, res) => {
       stats: {
         totalUsers: parseInt(userCount.rows[0].count),
         totalDevices: parseInt(deviceCount.rows[0].count),
+        onlineDevices: parseInt(onlineDevices.rows[0].count),
+        offlineDevices: parseInt(offlineDevices.rows[0].count),
         totalAreas: parseInt(areaCount.rows[0].count),
         units: parseInt(stoCount.rows[0].count),
       },

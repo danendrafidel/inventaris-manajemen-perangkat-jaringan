@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const cache = require("../config/cache");
 const { exec } = require("child_process");
+const { lastStatus } = require("../services/monitorService");
 const {
   handleError,
   mapDeviceFromDB,
@@ -70,7 +71,7 @@ exports.getInventoryStats = async (req, res) => {
       whereClause = "WHERE area_id = $1";
     }
 
-    const [totalDevices, statusBaik, perluPerhatian, areaTercover] =
+    const [totalDevices, statusBaik, perluPerhatian, areaTercover, onlineStatus, offlineStatus] =
       await Promise.all([
         db.query(
           `SELECT COUNT(*) FROM inventory_devices ${whereClause}`,
@@ -81,11 +82,19 @@ exports.getInventoryStats = async (req, res) => {
           params,
         ),
         db.query(
-          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status IN ('MAINTENANCE', 'PROBLEM')`,
+          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status IN ('MAINTENANCE', 'PROBLEM', 'RUSAK')`,
           params,
         ),
         db.query(
           `SELECT COUNT(DISTINCT area_id) FROM inventory_devices ${whereClause}`,
+          params,
+        ),
+        db.query(
+          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} connectivity_status = 'online'`,
+          params,
+        ),
+        db.query(
+          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} connectivity_status = 'offline'`,
           params,
         ),
       ]);
@@ -96,10 +105,12 @@ exports.getInventoryStats = async (req, res) => {
         statusBaik: parseInt(statusBaik.rows[0].count),
         perluPerhatian: parseInt(perluPerhatian.rows[0].count),
         areaTercoverCount: parseInt(areaTercover.rows[0].count),
+        onlineCount: parseInt(onlineStatus.rows[0].count),
+        offlineCount: parseInt(offlineStatus.rows[0].count),
       },
     };
 
-    cache.set(cacheKey, data, 60000); // 1 minute TTL for stats
+    cache.set(cacheKey, data, 30000); // 30 seconds TTL for stats
     res.json({ success: true, data });
   } catch (error) {
     handleError(res, error, "Gagal memuat statistik inventaris");
@@ -108,7 +119,7 @@ exports.getInventoryStats = async (req, res) => {
 
 exports.fetchInventoryDevices = async (req, res) => {
   try {
-    const { search, sto_id, area_id, status, page, limit } = req.query;
+    const { search, sto_id, area_id, status, connectivity_status, page, limit } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
     let where = [];
     let params = [];
@@ -130,6 +141,10 @@ exports.fetchInventoryDevices = async (req, res) => {
     if (status) {
       params.push(status);
       where.push(`i.status = $${params.length}`);
+    }
+    if (connectivity_status) {
+      params.push(connectivity_status);
+      where.push(`i.connectivity_status = $${params.length}`);
     }
 
     const whereClause = where.length > 0 ? "WHERE " + where.join(" AND ") : "";
@@ -206,8 +221,8 @@ exports.createDevice = async (req, res) => {
       INSERT INTO inventory_devices (
         device_id, ip, name, device_type, storage_location, 
         serial_number, status, room, area_id, sto_id, 
-        area, sto, total_port, idle_port
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        area, sto, total_port, idle_port, connectivity_status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
 
@@ -226,6 +241,7 @@ exports.createDevice = async (req, res) => {
       sto_name,
       totalPort || 0,
       idlePort || 0,
+      'unknown'
     ]);
 
     invalidateAllStats();

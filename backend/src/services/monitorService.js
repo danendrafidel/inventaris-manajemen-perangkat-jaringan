@@ -54,17 +54,23 @@ const sendDailyPMRSummary = async () => {
 const checkDevices = async () => {
   try {
     const { rows: devices } = await db.query(
-      "SELECT id, device_id, name, ip, area, sto FROM inventory_devices WHERE ip IS NOT NULL AND ip != ''",
+      "SELECT id, device_id, name, ip, area, sto, connectivity_status FROM inventory_devices WHERE ip IS NOT NULL AND ip != ''",
     );
 
     for (const device of devices) {
       const currentStatus = await pingIP(device.ip);
-      const previousStatus = lastStatus.get(device.id);
+      const previousStatus = device.connectivity_status;
+
+      // Update database with new status
+      await db.query(
+        "UPDATE inventory_devices SET connectivity_status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+        [currentStatus, device.id]
+      );
 
       // Only notify if status changes from online (or unknown) to offline
       if (
         currentStatus === "offline" &&
-        (previousStatus === "online" || previousStatus === undefined)
+        (previousStatus === "online" || previousStatus === "unknown" || previousStatus === null)
       ) {
         const message =
           `🚨 <b>PERANGKAT DOWN</b> 🚨\n\n` +
@@ -109,4 +115,4 @@ const startMonitoring = (intervalMs = 120000) => {
   });
 };
 
-module.exports = { startMonitoring, pingIP };
+module.exports = { startMonitoring, pingIP, lastStatus };

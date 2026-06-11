@@ -10,6 +10,7 @@ function mapDeviceFromDB(row) {
     storageLocation: row.storage_location,
     serialNumber: row.serial_number,
     status: row.status,
+    connectivityStatus: row.connectivity_status,
     room: row.room,
     area: row.area_name || row.area,
     area_id: row.area_id,
