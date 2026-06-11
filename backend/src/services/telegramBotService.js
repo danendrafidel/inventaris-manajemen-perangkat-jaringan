@@ -11,7 +11,7 @@ const setBotCommands = async () => {
       {
         command: "info",
         description:
-          "Mendapatkan informasi detail perangkat berdasarkan IP/ID/Nama/SN",
+          "Mendapatkan informasi detail perangkat berdasarkan IP atau SN",
       },
       {
         command: "ping",
@@ -26,18 +26,18 @@ const setBotCommands = async () => {
 bot.command("info", async (ctx) => {
   const args = ctx.message.text.split(" ");
   if (args.length < 2) {
-    return ctx.reply("Gunakan format: /info <IP/ID/Nama/SN Device>");
+    return ctx.reply("Gunakan format: /info <IP/SN Device>");
   }
 
   const query = args[1];
   try {
     const { rows } = await db.query(
-      "SELECT * FROM inventory_devices WHERE ip = $1 OR device_id::text = $1 OR name = $1 OR serial_number = $1",
+      "SELECT * FROM inventory_devices WHERE ip = $1 OR serial_number = $1",
       [query],
     );
 
     if (rows.length === 0) {
-      return ctx.reply(`Perangkat dengan kriteria ${query} tidak ditemukan.`);
+      return ctx.reply(`Perangkat dengan IP atau SN ${query} tidak ditemukan.`);
     }
 
     const device = rows[0];

@@ -1052,13 +1052,48 @@ export default function InventoryDashboard() {
             </div>
 
             <div className="p-4 md:p-5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Page {page} <span className="text-slate-300">/</span>{" "}
-                  {totalPages}
-                </p>
+              {/* Page Control + Limit Selector */}
+              <div className="flex items-center gap-4">
+                {/* Page Display & Jump */}
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Page
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    className="w-10 h-7 text-center border border-slate-200 rounded-lg text-xs font-bold"
+                    placeholder={page}
+                    value={page}
+                    onChange={(e) => setPage(Number(e.target.value))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const p = parseInt(e.target.value);
+                        if (p >= 1 && p <= totalPages) setPage(p);
+                      }
+                    }}
+                  />
+                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
+                </div>
+
+                {/* Limit Selector */}
+                <select
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-black text-slate-600 outline-none cursor-pointer"
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
               </div>
+              
+              {/* Navigation Buttons */}
               <div className="flex items-center gap-2">
                 <button
                   disabled={page <= 1}
