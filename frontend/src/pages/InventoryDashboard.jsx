@@ -87,10 +87,16 @@ export default function InventoryDashboard() {
     status: "",
   });
   const [page, setPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState({});
-  const [activeConnectivityFilter, setActiveConnectivityFilter] = useState(null);
+  const [activeConnectivityFilter, setActiveConnectivityFilter] =
+    useState(null);
+
+  useEffect(() => {
+    setJumpPage(page);
+  }, [page]);
 
   const [formData, setFormData] = useState({
     deviceId: "",
@@ -168,13 +174,25 @@ export default function InventoryDashboard() {
 
   const role = user?.role?.toLowerCase();
   const canEdit =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
   const canDelete =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
   const canAdd =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
   const canPrint =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -187,7 +205,7 @@ export default function InventoryDashboard() {
     // Apply connectivity filter if active
     if (activeConnectivityFilter) {
       sortableItems = sortableItems.filter(
-        (item) => connectionStatus[item.ip] === activeConnectivityFilter
+        (item) => connectionStatus[item.ip] === activeConnectivityFilter,
       );
     }
 
@@ -264,7 +282,7 @@ export default function InventoryDashboard() {
     }
 
     loadData();
-  }, [user, page, search, filters, role]);
+  }, [user, page, search, filters, role, limit]);
 
   const loadData = async () => {
     console.log("Fetching data with filters:", filters);
@@ -1066,19 +1084,33 @@ export default function InventoryDashboard() {
                     max={totalPages}
                     className="w-10 h-7 text-center border border-slate-200 rounded-lg text-xs font-bold"
                     placeholder={page}
-                    value={page}
-                    onChange={(e) => setPage(Number(e.target.value))}
+                    value={jumpPage}
+                    onChange={(e) => setJumpPage(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        const p = parseInt(e.target.value);
-                        if (p >= 1 && p <= totalPages) setPage(p);
+                        const p = parseInt(jumpPage);
+                        if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                          setPage(p);
+                        } else {
+                          setJumpPage(page);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      const p = parseInt(jumpPage);
+                      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                        setPage(p);
+                      } else {
+                        setJumpPage(page);
                       }
                     }}
                   />
-                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
+                  <span className="text-[10px] text-slate-400 font-bold">
+                    / {totalPages}
+                  </span>
                 </div>
               </div>
-              
+
               {/* Limit Selector + Navigation Buttons */}
               <div className="flex items-center gap-4">
                 {/* Limit Selector */}
@@ -1264,7 +1296,11 @@ export default function InventoryDashboard() {
                     <select
                       className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" && role !== "super officer" && role !== "root" ? "opacity-70 cursor-not-allowed" : ""}`}
                       value={formData.area_id}
-                      disabled={role !== "admin" && role !== "super officer" && role !== "root"}
+                      disabled={
+                        role !== "admin" &&
+                        role !== "super officer" &&
+                        role !== "root"
+                      }
                       onChange={(e) =>
                         setFormData({
                           ...formData,
