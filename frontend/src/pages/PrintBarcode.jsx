@@ -33,10 +33,19 @@ export default function PrintBarcode() {
   });
 
   const [search, setSearch] = useState("");
+  const [draftSearch, setDraftSearch] = useState("");
   const [filters, setFilters] = useState({
     area_id: "",
     sto_id: "",
   });
+  const [draftFilters, setDraftFilters] = useState({
+    area_id: "",
+    sto_id: "",
+  });
+
+  const [page, setPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const [notification, setNotification] = useState({
     open: false,
@@ -67,7 +76,9 @@ export default function PrintBarcode() {
       setOptions(o);
       // Auto-select area if only one available (for non-superusers)
       if (!isSuperUser && o.areas.length === 1 && !filters.area_id) {
-        setFilters((prev) => ({ ...prev, area_id: o.areas[0].id }));
+        const areaId = o.areas[0].id;
+        setFilters((prev) => ({ ...prev, area_id: areaId }));
+        setDraftFilters((prev) => ({ ...prev, area_id: areaId }));
       }
     } catch (err) {
       console.error("Failed to load options", err);
@@ -93,6 +104,7 @@ export default function PrintBarcode() {
         limit: 100, // Load more for bulk printing
       });
       setItems(d.items);
+      setSelectedIds([]);
     } catch (err) {
       setError(err.message);
       showNotify(err.message, "error");
@@ -115,12 +127,57 @@ export default function PrintBarcode() {
     );
   };
 
+  const handleDraftFilterChange = (key, value) => {
+    setDraftFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "area_id") next.sto_id = "";
+      return next;
+    });
+  };
+
+  const handleApplyFilters = () => {
+    setFilters({ ...draftFilters });
+    setSearch(draftSearch);
+    setPage(1);
+  };
+
+  const handleResetFilters = () => {
+    const initialFilters = {
+      area_id: !isSuperUser ? user?.area_id || "" : "",
+      sto_id: "",
+    };
+    setDraftFilters(initialFilters);
+    setFilters(initialFilters);
+    setDraftSearch("");
+    setSearch("");
+    setSelectedIds([]);
+    setPage(1);
+  };
+
   const filteredStos = useMemo(() => {
     const targetAreaId =
-      !isSuperUser && user?.area_id ? user.area_id : filters.area_id;
+      !isSuperUser && user?.area_id ? user.area_id : draftFilters.area_id;
     if (!targetAreaId) return options.stos;
     return options.stos.filter((s) => s.area_id == targetAreaId);
-  }, [options.stos, filters.area_id, isSuperUser, user?.area_id]);
+  }, [options.stos, draftFilters.area_id, isSuperUser, user?.area_id]);
+
+  const totalPages = useMemo(
+    () => Math.ceil(items.length / limit) || 1,
+    [items.length, limit],
+  );
+
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * limit;
+    return items.slice(start, start + limit);
+  }, [items, page, limit]);
+
+  useEffect(() => {
+    setJumpPage(page);
+  }, [page]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   const handlePrintSelected = () => {
     if (selectedIds.length === 0) {
@@ -250,44 +307,26 @@ export default function PrintBarcode() {
 
           {/* Filters */}
           <section className="bg-white rounded-3xl border border-slate-200 p-4 md:p-6 mb-8 shadow-sm space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex flex-1 items-center gap-4">
-                <div className="flex-1 flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100/50 transition-all group">
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,48rem)] gap-4 xl:items-end">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 min-w-0 flex-1 items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-2 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100/50 transition-all group">
                   <SearchIcon className="text-slate-400 group-focus-within:text-blue-500" />
                   <input
                     className="bg-transparent outline-none text-sm font-bold w-full text-slate-700"
                     placeholder="Cari ID, Nama, atau SN..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={draftSearch}
+                    onChange={(e) => setDraftSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleApplyFilters()}
                   />
                 </div>
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    const initialFilters = {
-                      area_id: !isSuperUser ? user?.area_id || "" : "",
-                      sto_id: "",
-                    };
-                    setFilters(initialFilters);
-                    setSelectedIds([]);
-                  }}
-                  className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shrink-0"
-                  title="Reset Filters"
-                >
-                  <RefreshIcon />
-                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:w-1/2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_max-content] gap-3">
                 <select
-                  className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={filters.area_id}
+                  className="h-11 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  value={draftFilters.area_id}
                   onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      area_id: e.target.value,
-                      sto_id: "",
-                    })
+                    handleDraftFilterChange("area_id", e.target.value)
                   }
                   disabled={!isSuperUser}
                 >
@@ -301,10 +340,10 @@ export default function PrintBarcode() {
                   ))}
                 </select>
                 <select
-                  className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none"
-                  value={filters.sto_id}
+                  className="h-11 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none"
+                  value={draftFilters.sto_id}
                   onChange={(e) =>
-                    setFilters({ ...filters, sto_id: e.target.value })
+                    handleDraftFilterChange("sto_id", e.target.value)
                   }
                 >
                   <option value="">Semua STO</option>
@@ -314,6 +353,21 @@ export default function PrintBarcode() {
                     </option>
                   ))}
                 </select>
+                <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-1">
+                  <button
+                    onClick={handleResetFilters}
+                    className="h-11 w-11 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shrink-0"
+                    title="Reset Filters"
+                  >
+                    <RefreshIcon />
+                  </button>
+                  <button
+                    onClick={handleApplyFilters}
+                    className="flex h-11 flex-1 items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 active:scale-95 whitespace-nowrap"
+                  >
+                    Terapkan Filter
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -399,13 +453,13 @@ export default function PrintBarcode() {
                     <tr>
                       <td
                         colSpan={4}
-                        className="px-6 py-20 text-center text-xs font-bold text-slate-400 uppercase"
+                        className="px-6 py-20 text-center text-slate-400 font-bold uppercase text-xs"
                       >
-                        Tidak ada perangkat ditemukan
+                        Tidak ada perangkat
                       </td>
                     </tr>
                   ) : (
-                    items.map((item) => (
+                    paginatedItems.map((item) => (
                       <tr
                         key={item.id}
                         className={`group hover:bg-slate-50 transition-colors cursor-pointer ${selectedIds.includes(item.id) ? "bg-blue-50/30" : ""}`}
@@ -485,7 +539,7 @@ export default function PrintBarcode() {
                   Tidak ada perangkat
                 </div>
               ) : (
-                items.map((item) => (
+                paginatedItems.map((item) => (
                   <div
                     key={item.id}
                     className={`p-4 flex items-center gap-4 ${selectedIds.includes(item.id) ? "bg-blue-50/30" : ""}`}
@@ -518,6 +572,77 @@ export default function PrintBarcode() {
                   </div>
                 ))
               )}
+            </div>
+
+            <div className="p-4 md:p-5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Page
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    className="w-10 h-7 text-center border border-slate-200 rounded-lg text-xs font-bold"
+                    placeholder={page}
+                    value={jumpPage}
+                    onChange={(e) => setJumpPage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const p = parseInt(jumpPage);
+                        if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                          setPage(p);
+                        } else {
+                          setJumpPage(page);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      const p = parseInt(jumpPage);
+                      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                        setPage(p);
+                      } else {
+                        setJumpPage(page);
+                      }
+                    }}
+                  />
+                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <select
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-black text-slate-600 outline-none cursor-pointer"
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
 

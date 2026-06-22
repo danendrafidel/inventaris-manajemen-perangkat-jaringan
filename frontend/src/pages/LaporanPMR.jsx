@@ -72,6 +72,9 @@ export default function LaporanPMR() {
     start_date: "",
     end_date: "",
   });
+  const [page, setPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -146,13 +149,13 @@ export default function LaporanPMR() {
   };
 
   const handleExport = () => {
-    if (reports.length === 0) {
+    if (sortedReports.length === 0) {
       showNotify("Tidak ada data untuk diekspor", "error");
       return;
     }
 
     const worksheet = XLSX.utils.json_to_sheet(
-      reports.map((r) => ({
+      sortedReports.map((r) => ({
         "ID Laporan": r.id,
         "Tanggal & Waktu": `${new Date(r.maintenance_date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })} ${new Date(r.created_at).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta" })}`,
         Teknisi: r.technician_name,
@@ -455,6 +458,16 @@ export default function LaporanPMR() {
     return sortableReports;
   }, [reports, sortConfig]);
 
+  const totalPages = useMemo(
+    () => Math.ceil(sortedReports.length / limit) || 1,
+    [sortedReports.length, limit],
+  );
+
+  const paginatedReports = useMemo(() => {
+    const start = (page - 1) * limit;
+    return sortedReports.slice(start, start + limit);
+  }, [sortedReports, page, limit]);
+
   const handleSort = (key) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -462,6 +475,14 @@ export default function LaporanPMR() {
     }
     setSortConfig({ key, direction });
   };
+
+  useEffect(() => {
+    setJumpPage(page);
+  }, [page]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   const stats = useMemo(() => {
     return {
@@ -503,6 +524,7 @@ export default function LaporanPMR() {
   const handleApplyFilters = () => {
     setFilters({ ...draftFilters });
     setSearch(draftSearch);
+    setPage(1);
   };
 
   const handleResetFilters = () => {
@@ -518,6 +540,7 @@ export default function LaporanPMR() {
     setFilters(initial);
     setSearch("");
     setDraftSearch("");
+    setPage(1);
   };
 
   const setStatusFilter = (status) => {
@@ -860,7 +883,7 @@ export default function LaporanPMR() {
                       </td>
                     </tr>
                   ) : (
-                    sortedReports.map((report) => (
+                    paginatedReports.map((report) => (
                       <tr
                         key={report.id}
                         className="hover:bg-slate-50/50 transition-colors group"
@@ -956,12 +979,12 @@ export default function LaporanPMR() {
                 <div className="p-10 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs">
                   Memuat Data...
                 </div>
-              ) : reports.length === 0 ? (
+              ) : sortedReports.length === 0 ? (
                 <div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
                   Tidak ada laporan
                 </div>
               ) : (
-                reports.map((report) => (
+                paginatedReports.map((report) => (
                   <div key={report.id} className="p-4 space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -1033,28 +1056,103 @@ export default function LaporanPMR() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleViewDetail(report)}
-                        className="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2"
-                      >
-                        <VisibilityIcon sx={{ fontSize: 14 }} /> DETAIL
-                      </button>
-                      <button
-                        onClick={() => handlePrint(report)}
-                        className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
-                      >
-                        <FileDownloadIcon sx={{ fontSize: 14 }} /> PDF
-                      </button>
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-50">
+                      <span className="inline-block px-2 py-1 rounded bg-slate-100 text-[9px] font-bold text-slate-600 font-mono">
+                        PMR-{report.id}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleViewDetail(report)}
+                          className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                        >
+                          <VisibilityIcon sx={{ fontSize: 18 }} />
+                        </button>
+                        <button
+                          onClick={() => handlePrint(report)}
+                          className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all"
+                        >
+                          <FileDownloadIcon sx={{ fontSize: 18 }} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
               )}
             </div>
+
+            <div className="p-4 md:p-5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Page
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    className="w-10 h-7 text-center border border-slate-200 rounded-lg text-xs font-bold"
+                    placeholder={page}
+                    value={jumpPage}
+                    onChange={(e) => setJumpPage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const p = parseInt(jumpPage);
+                        if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                          setPage(p);
+                        } else {
+                          setJumpPage(page);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      const p = parseInt(jumpPage);
+                      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                        setPage(p);
+                      } else {
+                        setJumpPage(page);
+                      }
+                    }}
+                  />
+                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <select
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-black text-slate-600 outline-none cursor-pointer"
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>
-
       {/* Detail Modal */}
       {showDetailModal && selectedReport && (
         <div className="fixed inset-0 z-2000 flex items-center justify-center p-4 py-8">

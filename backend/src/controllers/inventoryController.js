@@ -1,7 +1,6 @@
 const db = require("../config/db");
 const cache = require("../config/cache");
 const { exec } = require("child_process");
-const { lastStatus } = require("../services/monitorService");
 const {
   handleError,
   mapDeviceFromDB,
@@ -71,7 +70,7 @@ exports.getInventoryStats = async (req, res) => {
       whereClause = "WHERE area_id = $1";
     }
 
-    const [totalDevices, statusBaik, perluPerhatian, areaTercover, onlineStatus, offlineStatus] =
+    const [totalDevices, statusBaik, perluPerhatian, areaTercover, onlineDevices, offlineDevices] =
       await Promise.all([
         db.query(
           `SELECT COUNT(*) FROM inventory_devices ${whereClause}`,
@@ -82,7 +81,7 @@ exports.getInventoryStats = async (req, res) => {
           params,
         ),
         db.query(
-          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status IN ('MAINTENANCE', 'PROBLEM', 'RUSAK')`,
+          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status IN ('MAINTENANCE', 'PROBLEM')`,
           params,
         ),
         db.query(
@@ -105,12 +104,12 @@ exports.getInventoryStats = async (req, res) => {
         statusBaik: parseInt(statusBaik.rows[0].count),
         perluPerhatian: parseInt(perluPerhatian.rows[0].count),
         areaTercoverCount: parseInt(areaTercover.rows[0].count),
-        onlineCount: parseInt(onlineStatus.rows[0].count),
-        offlineCount: parseInt(offlineStatus.rows[0].count),
+        onlineCount: parseInt(onlineDevices.rows[0].count),
+        offlineCount: parseInt(offlineDevices.rows[0].count),
       },
     };
 
-    cache.set(cacheKey, data, 30000); // 30 seconds TTL for stats
+    cache.set(cacheKey, data, 5000); // 5 seconds TTL for stats
     res.json({ success: true, data });
   } catch (error) {
     handleError(res, error, "Gagal memuat statistik inventaris");
@@ -127,7 +126,7 @@ exports.fetchInventoryDevices = async (req, res) => {
     if (search) {
       params.push(`%${search}%`);
       where.push(
-        `(i.device_id ILIKE $${params.length} OR i.name ILIKE $${params.length} OR i.serial_number ILIKE $${params.length})`,
+        `(i.device_id ILIKE $${params.length} OR i.name ILIKE $${params.length} OR i.serial_number ILIKE $${params.length} OR a.name ILIKE $${params.length} OR s.name ILIKE $${params.length})`,
       );
     }
     if (sto_id) {
@@ -149,17 +148,20 @@ exports.fetchInventoryDevices = async (req, res) => {
 
     const whereClause = where.length > 0 ? "WHERE " + where.join(" AND ") : "";
 
+    const joinClause = `
+        LEFT JOIN areas a ON i.area_id = a.id
+        LEFT JOIN stos s ON i.sto_id = s.id`;
+
     const [total, items] = await Promise.all([
       db.query(
-        `SELECT COUNT(*) FROM inventory_devices i ${whereClause}`,
+        `SELECT COUNT(*) FROM inventory_devices i ${joinClause} ${whereClause}`,
         params,
       ),
       db.query(
         `
         SELECT i.*, a.name as area_name, s.name as sto_name 
         FROM inventory_devices i
-        LEFT JOIN areas a ON i.area_id = a.id
-        LEFT JOIN stos s ON i.sto_id = s.id
+        ${joinClause}
         ${whereClause} 
         ORDER BY i.created_at DESC 
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -221,8 +223,8 @@ exports.createDevice = async (req, res) => {
       INSERT INTO inventory_devices (
         device_id, ip, name, device_type, storage_location, 
         serial_number, status, room, area_id, sto_id, 
-        area, sto, total_port, idle_port, connectivity_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        area, sto, total_port, idle_port
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
 
@@ -241,7 +243,6 @@ exports.createDevice = async (req, res) => {
       sto_name,
       totalPort || 0,
       idlePort || 0,
-      'unknown'
     ]);
 
     invalidateAllStats();

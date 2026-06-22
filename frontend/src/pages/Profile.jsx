@@ -111,10 +111,7 @@ export default function Profile() {
       const updated = await updateProfile(storedUser.id, formData);
       setProfile(updated);
       const current = getStoredUser();
-      persistUser(
-        { ...current, ...updated },
-        localStorage.getItem("auth-user") !== null,
-      );
+      persistUser({ ...current, ...updated });
       setIsEditing(false);
       showNotify("Profil berhasil diperbarui");
     } catch (err) {

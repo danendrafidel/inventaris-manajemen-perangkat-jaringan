@@ -322,7 +322,7 @@ export default function Dashboard() {
             >
               <StatCard
                 title="PERANGKAT HIDUP"
-                value={dashboard?.stats?.onlineDevices ?? 0}
+                value={dashboard?.stats?.onlineCount ?? 0}
                 suffix="online"
                 icon={<VerifiedIcon />}
                 tone="emerald"
@@ -335,7 +335,7 @@ export default function Dashboard() {
             >
               <StatCard
                 title="PERANGKAT MATI"
-                value={dashboard?.stats?.offlineDevices ?? 0}
+                value={dashboard?.stats?.offlineCount ?? 0}
                 suffix="offline"
                 icon={<CloseIcon />}
                 tone="rose"
@@ -360,8 +360,8 @@ export default function Dashboard() {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: "Online", value: dashboard?.stats?.onlineDevices ?? 0 },
-                          { name: "Offline", value: dashboard?.stats?.offlineDevices ?? 0 },
+                          { name: "Online", value: dashboard?.stats?.onlineCount ?? 0 },
+                          { name: "Offline", value: dashboard?.stats?.offlineCount ?? 0 },
                         ]}
                         cx="50%"
                         cy="50%"

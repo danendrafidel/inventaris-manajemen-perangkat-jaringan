@@ -80,23 +80,22 @@ export default function InventoryDashboard() {
     sto_id: "",
     area_id: "",
     status: "",
-    connectivity_status: "",
   });
   const [draftFilters, setDraftFilters] = useState({
     sto_id: "",
     area_id: "",
     status: "",
-    connectivity_status: "",
   });
   const [page, setPage] = useState(1);
   const [jumpPage, setJumpPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
-  const [connectionStatus, setConnectionStatus] = useState({});
 
   useEffect(() => {
     setJumpPage(page);
   }, [page]);
+  const [connectionStatus, setConnectionStatus] = useState({});
+  const [activeConnectivityFilter, setActiveConnectivityFilter] = useState(null);
 
   const [formData, setFormData] = useState({
     deviceId: "",
@@ -115,8 +114,7 @@ export default function InventoryDashboard() {
 
   useEffect(() => {
     if (location.state?.filter) {
-      setFilters((prev) => ({ ...prev, connectivity_status: location.state.filter }));
-      setDraftFilters((prev) => ({ ...prev, connectivity_status: location.state.filter }));
+      setActiveConnectivityFilter(location.state.filter);
     }
   }, [location.state]);
 
@@ -136,64 +134,102 @@ export default function InventoryDashboard() {
     message: "",
     severity: "success",
   });
+  const [isExporting, setIsExporting] = useState(false);
 
   const showNotify = (message, severity = "success") => {
     setNotification({ open: true, message, severity });
   };
 
-  const handleExport = () => {
-    if (items.length === 0) {
-      showNotify("Tidak ada data untuk diekspor", "error");
-      return;
+  const fetchAllInventoryRowsForExport = async () => {
+    const roleParams = {};
+    if (role !== "admin" && role !== "super officer" && role !== "root") {
+      roleParams.area_id = user.area_id;
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(
-      items.map((item) => ({
-        "Device ID": item.deviceId,
-        IP: item.ip,
-        Nama: item.name,
-        Tipe: item.deviceType,
-        "Lokasi Penyimpanan": item.storageLocation,
-        "Serial Number": item.serialNumber,
-        Status: item.status,
-        Ruangan: item.room,
-        Area: item.area,
-        STO: item.sto,
-        "Total Port": item.totalPort,
-        "Port Idle": item.idlePort,
-      })),
-    );
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventaris");
-    XLSX.writeFile(
-      workbook,
-      `Inventaris_${new Date().toLocaleDateString("id-ID").replace(/\//g, "-")}.xlsx`,
-    );
+    const baseParams = {
+      role,
+      email: user.email,
+      search,
+      ...filters,
+      connectivity_status: activeConnectivityFilter,
+      ...roleParams,
+    };
+
+    const pageSize = 100;
+    let pageIndex = 1;
+    let totalRows = null;
+    let rows = [];
+
+    while (true) {
+      const result = await fetchInventoryDevices({
+        ...baseParams,
+        page: pageIndex,
+        limit: pageSize,
+      });
+
+      totalRows = result.total;
+      rows = rows.concat(result.items || []);
+
+      if (rows.length >= totalRows || (result.items || []).length < pageSize) {
+        break;
+      }
+
+      pageIndex += 1;
+    }
+
+    return rows;
+  };
+
+  const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const exportItems = await fetchAllInventoryRowsForExport();
+      if (exportItems.length === 0) {
+        showNotify("Tidak ada data untuk diekspor", "error");
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(
+        exportItems.map((item) => ({
+          "Device ID": item.deviceId,
+          IP: item.ip,
+          Nama: item.name,
+          Tipe: item.deviceType,
+          "Lokasi Penyimpanan": item.storageLocation,
+          "Serial Number": item.serialNumber,
+          Status: item.status,
+          Ruangan: item.room,
+          Area: item.area,
+          STO: item.sto,
+          "Total Port": item.totalPort,
+          "Port Idle": item.idlePort,
+        })),
+      );
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Inventaris");
+      XLSX.writeFile(
+        workbook,
+        `Inventaris_${new Date().toLocaleDateString("id-ID").replace(/\//g, "-")}.xlsx`,
+      );
+    } catch (err) {
+      showNotify(err.message || "Gagal mengekspor data", "error");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const DEVICE_STATUSES = ["OPERATED", "MAINTENANCE", "RUSAK"];
 
   const role = user?.role?.toLowerCase();
   const canEdit =
-    role === "admin" ||
-    role === "super officer" ||
-    role === "root" ||
-    role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
   const canDelete =
-    role === "admin" ||
-    role === "super officer" ||
-    role === "root" ||
-    role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
   const canAdd =
-    role === "admin" ||
-    role === "super officer" ||
-    role === "root" ||
-    role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
   const canPrint =
-    role === "admin" ||
-    role === "super officer" ||
-    role === "root" ||
-    role === "officer";
+    role === "admin" || role === "super officer" || role === "root" || role === "officer";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -221,7 +257,7 @@ export default function InventoryDashboard() {
       });
     }
     return sortableItems;
-  }, [items, sortConfig]);
+  }, [items, sortConfig, connectionStatus, activeConnectivityFilter]);
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -231,30 +267,12 @@ export default function InventoryDashboard() {
     setSortConfig({ key, direction });
   };
 
-  const checkConnectivity = async () => {
-    if (items.length === 0) return;
-    const ips = items.map((i) => i.ip).filter((ip) => ip && ip.trim() !== "");
-    if (ips.length === 0) return;
-
-    try {
-      const results = await pingInventoryDevices(ips);
-      const newStatus = {};
-      results.forEach((r) => {
-        newStatus[r.ip] = r.status;
-      });
-      setConnectionStatus((prev) => ({ ...prev, ...newStatus }));
-    } catch (err) {
-      console.error("Connectivity check failed:", err);
-    }
-  };
-
   useEffect(() => {
-    if (items.length > 0) {
-      checkConnectivity();
-      const interval = setInterval(checkConnectivity, 120000);
-      return () => clearInterval(interval);
-    }
-  }, [items]);
+    const interval = setInterval(() => {
+      loadData();
+    }, 5000); // Auto refresh every 5 seconds to get fresh status from background monitor
+    return () => clearInterval(interval);
+  }, [search, filters, page, limit, activeConnectivityFilter, role, user]);
 
   useEffect(() => {
     if (!user) {
@@ -276,7 +294,7 @@ export default function InventoryDashboard() {
     }
 
     loadData();
-  }, [user, page, search, filters, role, limit]);
+  }, [user, page, limit, search, filters, role, activeConnectivityFilter]);
 
   const loadData = async () => {
     console.log("Fetching data with filters:", filters);
@@ -304,6 +322,7 @@ export default function InventoryDashboard() {
           page,
           limit,
           ...filters,
+          connectivity_status: activeConnectivityFilter,
           ...roleParams,
         }),
       ]);
@@ -312,10 +331,10 @@ export default function InventoryDashboard() {
       setItems(d.items);
       setTotal(d.total);
 
-      // Sync connectionStatus with initial data from DB
+      // Initialize connection status from backend data
       const initialStatus = {};
       d.items.forEach((item) => {
-        if (item.ip) {
+        if (item.connectivityStatus) {
           initialStatus[item.ip] = item.connectivityStatus;
         }
       });
@@ -482,12 +501,12 @@ export default function InventoryDashboard() {
       sto_id: "",
       area_id: role !== "admin" && role !== "super officer" ? user.area_id : "",
       status: "",
-      connectivity_status: "",
     };
     setDraftFilters(initial);
     setFilters(initial);
     setSearch("");
     setDraftSearch("");
+    setActiveConnectivityFilter(null);
     setPage(1);
   };
 
@@ -547,17 +566,8 @@ export default function InventoryDashboard() {
                 icon: <VerifiedIcon />,
                 color: "bg-emerald-500",
                 onClick: () => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    connectivity_status: "online",
-                    status: "",
-                  }));
-                  setDraftFilters((prev) => ({
-                    ...prev,
-                    connectivity_status: "online",
-                    status: "",
-                  }));
-                  setPage(1);
+                  setActiveConnectivityFilter("online");
+                  setFilters((prev) => ({ ...prev, status: "" }));
                 },
               },
               {
@@ -566,17 +576,8 @@ export default function InventoryDashboard() {
                 icon: <CloseIcon />,
                 color: "bg-rose-500",
                 onClick: () => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    connectivity_status: "offline",
-                    status: "",
-                  }));
-                  setDraftFilters((prev) => ({
-                    ...prev,
-                    connectivity_status: "offline",
-                    status: "",
-                  }));
-                  setPage(1);
+                  setActiveConnectivityFilter("offline");
+                  setFilters((prev) => ({ ...prev, status: "" }));
                 },
               },
               {
@@ -624,7 +625,7 @@ export default function InventoryDashboard() {
               </span>
               <input
                 className="bg-transparent outline-none text-xs md:text-sm font-bold w-full text-slate-700 placeholder:text-slate-400"
-                placeholder="Cari ID, Nama, atau SN..."
+                placeholder="Cari ID, Nama, SN, Area, atau STO..."
                 value={draftSearch}
                 onChange={(e) => setDraftSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleApplyFilters()}
@@ -1124,12 +1125,10 @@ export default function InventoryDashboard() {
                       }
                     }}
                   />
-                  <span className="text-[10px] text-slate-400 font-bold">
-                    / {totalPages}
-                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
                 </div>
               </div>
-
+              
               {/* Limit Selector + Navigation Buttons */}
               <div className="flex items-center gap-4">
                 {/* Limit Selector */}
@@ -1315,11 +1314,7 @@ export default function InventoryDashboard() {
                     <select
                       className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" && role !== "super officer" && role !== "root" ? "opacity-70 cursor-not-allowed" : ""}`}
                       value={formData.area_id}
-                      disabled={
-                        role !== "admin" &&
-                        role !== "super officer" &&
-                        role !== "root"
-                      }
+                      disabled={role !== "admin" && role !== "super officer" && role !== "root"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,

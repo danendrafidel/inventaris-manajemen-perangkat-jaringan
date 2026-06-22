@@ -60,6 +60,7 @@ export async function fetchInventoryDevices({
   sto_id = "",
   area_id = "",
   status = "",
+  connectivity_status = "",
   page = 1,
   limit = 8,
 }) {
@@ -70,6 +71,7 @@ export async function fetchInventoryDevices({
   if (sto_id) params.set("sto_id", sto_id);
   if (area_id) params.set("area_id", area_id);
   if (status) params.set("status", status);
+  if (connectivity_status) params.set("connectivity_status", connectivity_status);
   params.set("page", String(toInt(page, 1)));
   params.set("limit", String(toInt(limit, 8)));
 

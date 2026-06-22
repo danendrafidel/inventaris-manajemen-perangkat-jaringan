@@ -32,14 +32,6 @@ export async function login(identity, password) {
 }
 
 export function getStoredUser() {
-  const fromSession = sessionStorage.getItem(STORAGE_KEY);
-  if (fromSession) {
-    try {
-      return JSON.parse(fromSession);
-    } catch {
-      return null;
-    }
-  }
   const fromLocal = localStorage.getItem(STORAGE_KEY);
   if (fromLocal) {
     try {
@@ -48,22 +40,31 @@ export function getStoredUser() {
       return null;
     }
   }
+  const fromSession = sessionStorage.getItem(STORAGE_KEY);
+  if (fromSession) {
+    try {
+      return JSON.parse(fromSession);
+    } catch {
+      return null;
+    }
+  }
   return null;
 }
 
-export function persistUser(user, remember) {
+export function persistUser(user, remember = true) {
   const raw = JSON.stringify(user);
+  localStorage.setItem(STORAGE_KEY, raw);
+  sessionStorage.removeItem(STORAGE_KEY);
   if (remember) {
-    localStorage.setItem(STORAGE_KEY, raw);
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(`${STORAGE_KEY}-remember`, "1");
   } else {
-    sessionStorage.setItem(STORAGE_KEY, raw);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(`${STORAGE_KEY}-remember`);
   }
 }
 
 export function clearAuth() {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(`${STORAGE_KEY}-remember`);
   sessionStorage.removeItem(STORAGE_KEY);
 }
 

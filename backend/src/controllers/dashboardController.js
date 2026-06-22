@@ -46,13 +46,13 @@ exports.getDashboard = async (req, res) => {
       params,
     );
 
-    const onlineDevices = await db.query(
-      `SELECT COUNT(*) FROM inventory_devices ${deviceWhere} ${deviceWhere ? "AND" : "WHERE"} connectivity_status = 'online'`,
+    const onlineCount = await db.query(
+      `SELECT COUNT(*) FROM inventory_devices ${deviceWhere}${deviceWhere ? " AND" : "WHERE"} connectivity_status = 'online'`,
       params,
     );
 
-    const offlineDevices = await db.query(
-      `SELECT COUNT(*) FROM inventory_devices ${deviceWhere} ${deviceWhere ? "AND" : "WHERE"} connectivity_status = 'offline'`,
+    const offlineCount = await db.query(
+      `SELECT COUNT(*) FROM inventory_devices ${deviceWhere}${deviceWhere ? " AND" : "WHERE"} connectivity_status = 'offline'`,
       params,
     );
 
@@ -77,10 +77,10 @@ exports.getDashboard = async (req, res) => {
       stats: {
         totalUsers: parseInt(userCount.rows[0].count),
         totalDevices: parseInt(deviceCount.rows[0].count),
-        onlineDevices: parseInt(onlineDevices.rows[0].count),
-        offlineDevices: parseInt(offlineDevices.rows[0].count),
         totalAreas: parseInt(areaCount.rows[0].count),
         units: parseInt(stoCount.rows[0].count),
+        onlineCount: parseInt(onlineCount.rows[0].count),
+        offlineCount: parseInt(offlineCount.rows[0].count),
       },
       meta: {
         usersSuffix: "online",

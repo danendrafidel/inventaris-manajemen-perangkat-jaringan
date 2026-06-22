@@ -79,6 +79,9 @@ export default function MappingSto() {
     area_id: "",
     status: "",
   });
+  const [page, setPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const isAdmin =
     user?.role?.toLowerCase() === "admin" ||
@@ -142,6 +145,16 @@ export default function MappingSto() {
     return sortableItems;
   }, [displayStos, sortConfig]);
 
+  const totalPages = useMemo(
+    () => Math.ceil(sortedStos.length / limit) || 1,
+    [sortedStos.length, limit],
+  );
+
+  const paginatedStos = useMemo(() => {
+    const start = (page - 1) * limit;
+    return sortedStos.slice(start, start + limit);
+  }, [sortedStos, page, limit]);
+
   const canManage = (sto) => {
     if (isAdmin) return true;
     if (isOfficer && sto.area_id == user?.area_id) return true;
@@ -163,6 +176,7 @@ export default function MappingSto() {
   const handleApplyFilters = () => {
     setFilters({ ...draftFilters });
     setSearch(draftSearch);
+    setPage(1);
   };
 
   const handleResetFilters = () => {
@@ -174,6 +188,7 @@ export default function MappingSto() {
     setFilters(initial);
     setSearch("");
     setDraftSearch("");
+    setPage(1);
   };
 
   const stats = useMemo(
@@ -184,6 +199,14 @@ export default function MappingSto() {
     }),
     [displayStos],
   );
+
+  useEffect(() => {
+    setJumpPage(page);
+  }, [page]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   const showNotify = (message, severity = "success") =>
     setNotification({ open: true, message, severity });
@@ -554,7 +577,7 @@ export default function MappingSto() {
                       </td>
                     </tr>
                   ) : (
-                    sortedStos.map((s) => (
+                    paginatedStos.map((s) => (
                       <tr
                         key={s.id}
                         className="group hover:bg-slate-50/50 transition-colors"
@@ -656,7 +679,7 @@ export default function MappingSto() {
 
             {/* Mobile View */}
             <div className="md:hidden divide-y divide-slate-100">
-              {sortedStos.map((s) => (
+              {paginatedStos.map((s) => (
                 <div key={s.id} className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -696,42 +719,118 @@ export default function MappingSto() {
                     </p>
                   </div>
                   {canManage(s) && (
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
-                      <button
-                        onClick={() => handleToggleStatus(s.id)}
-                        className={`h-8 w-8 rounded-lg border flex items-center justify-center ${s.status === "active" ? "text-rose-600 border-rose-200" : "text-emerald-600 border-emerald-200"}`}
-                      >
-                        {s.status === "active" ? (
-                          <BlockIcon sx={{ fontSize: 16 }} />
-                        ) : (
-                          <CheckCircleIcon sx={{ fontSize: 16 }} />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedSto(s);
-                          setFormData({
-                            name: s.name,
-                            area_id: s.area_id,
-                            latitude: s.latitude || "",
-                            longitude: s.longitude || "",
-                          });
-                          setShowModal(true);
-                        }}
-                        className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600"
-                      >
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(s.id)}
-                        className="h-8 w-8 rounded-lg border border-rose-200 flex items-center justify-center text-rose-600"
-                      >
-                        <DeleteIcon sx={{ fontSize: 16 }} />
-                      </button>
+                    <div className="flex items-center justify-between gap-2 pt-2">
+                      <span className="inline-block px-2 py-1 rounded bg-slate-100 text-[9px] font-bold text-slate-600 font-mono">
+                        STO ID: {s.id}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleStatus(s.id)}
+                          className={`h-9 w-9 rounded-xl border bg-white flex items-center justify-center transition-all ${s.status === "active" ? "text-rose-500 border-rose-200 hover:bg-rose-50 hover:text-rose-600" : "text-emerald-500 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"}`}
+                        >
+                          {s.status === "active" ? (
+                            <BlockIcon sx={{ fontSize: 18 }} />
+                          ) : (
+                            <CheckCircleIcon sx={{ fontSize: 18 }} />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedSto(s);
+                            setFormData({
+                              name: s.name,
+                              area_id: s.area_id,
+                              latitude: s.latitude || "",
+                              longitude: s.longitude || "",
+                            });
+                            setShowModal(true);
+                          }}
+                          className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                        >
+                          <EditIcon sx={{ fontSize: 18 }} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(s.id)}
+                          className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                        >
+                          <DeleteIcon sx={{ fontSize: 18 }} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
               ))}
+            </div>
+
+            <div className="p-4 md:p-5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Page
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    className="w-10 h-7 text-center border border-slate-200 rounded-lg text-xs font-bold"
+                    placeholder={page}
+                    value={jumpPage}
+                    onChange={(e) => setJumpPage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const p = parseInt(jumpPage);
+                        if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                          setPage(p);
+                        } else {
+                          setJumpPage(page);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      const p = parseInt(jumpPage);
+                      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                        setPage(p);
+                      } else {
+                        setJumpPage(page);
+                      }
+                    }}
+                  />
+                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <select
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-black text-slate-600 outline-none cursor-pointer"
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </main>
@@ -882,9 +981,7 @@ export default function MappingSto() {
             </h3>
             <p className="text-xs font-bold text-slate-500 text-center mb-8">
               Apakah Anda yakin ingin menghapus{" "}
-              <span className="text-slate-900 font-black">
-                {selectedSto.name}
-              </span>
+              <span className="text-slate-900 font-black">{selectedSto.name}</span>
               ? Tindakan ini tidak dapat dibatalkan.
             </p>
 

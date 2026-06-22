@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, persistUser, forgotPassword, resetPassword } from "../services/authService";
+import { login, persistUser, forgotPassword, resetPassword, getStoredUser } from "../services/authService";
 import telkomLogo from "../assets/Logo Telkom.png";
 import ErrorAlert from "../components/ErrorAlert";
 import Toast from "../components/Toast";
@@ -25,10 +25,16 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notification, setNotification] = useState({ open: false, message: "", severity: "error" });
+
+  useEffect(() => {
+    if (getStoredUser()) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   const showNotify = (message, severity = "error") => {
     setNotification({ open: true, message, severity });

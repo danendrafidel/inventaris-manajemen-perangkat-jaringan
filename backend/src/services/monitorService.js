@@ -51,63 +51,98 @@ const sendDailyPMRSummary = async () => {
   }
 };
 
+// Global flag to prevent concurrent executions
+let isChecking = false;
+
 const checkDevices = async () => {
+  if (isChecking) return;
+  isChecking = true;
+
   try {
     const { rows: devices } = await db.query(
-      "SELECT id, device_id, name, ip, area, sto, connectivity_status FROM inventory_devices WHERE ip IS NOT NULL AND ip != ''",
+      "SELECT id, device_id, name, ip, area, sto, connectivity_status, failure_count, last_notification_status FROM inventory_devices WHERE ip IS NOT NULL AND ip != ''",
     );
 
-    for (const device of devices) {
-      const currentStatus = await pingIP(device.ip);
-      const previousStatus = device.connectivity_status;
+    // Process all devices in parallel
+    await Promise.all(
+      devices.map(async (device) => {
+        try {
+          const pingResult = await pingIP(device.ip);
+          const previousStatus = device.connectivity_status;
+          const lastNotif = device.last_notification_status;
+          let newFailureCount = device.failure_count || 0;
+          let currentStatus = previousStatus;
+          let currentNotif = lastNotif;
 
-      // Update database with new status
-      await db.query(
-        "UPDATE inventory_devices SET connectivity_status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-        [currentStatus, device.id]
-      );
+          if (pingResult === "offline") {
+            newFailureCount++;
+            if (newFailureCount >= 5) {
+              currentStatus = "offline";
 
-      // Only notify if status changes from online (or unknown) to offline
-      if (
-        currentStatus === "offline" &&
-        (previousStatus === "online" || previousStatus === "unknown" || previousStatus === null)
-      ) {
-        const message =
-          `🚨 <b>PERANGKAT DOWN</b> 🚨\n\n` +
-          `<b>Nama:</b> ${device.name}\n` +
-          `<b>ID:</b> ${device.device_id}\n` +
-          `<b>IP:</b> <code>${device.ip}</code>\n` +
-          `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
-          `⚠️ Segera lakukan pengecekan!`;
+              if (lastNotif !== "offline") {
+                const message =
+                  `🚨 <b>PERANGKAT DOWN</b> 🚨\n\n` +
+                  `<b>Nama:</b> ${device.name}\n` +
+                  `<b>ID:</b> ${device.device_id}\n` +
+                  `<b>IP:</b> <code>${device.ip}</code>\n` +
+                  `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
+                  `⚠️ Segera lakukan pengecekan! (Terdeteksi RTO 5x)`;
 
-        await sendTelegramMessage(message);
-      } else if (currentStatus === "online" && previousStatus === "offline") {
-        // Optional: Notify when device is back online
-        const message =
-          `✅ <b>PERANGKAT KEMBALI ONLINE</b> ✅\n\n` +
-          `<b>Nama:</b> ${device.name}\n` +
-          `<b>ID:</b> ${device.device_id}\n` +
-          `<b>IP:</b> <code>${device.ip}</code>\n` +
-          `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
-          `🕒 Perangkat sudah dapat diakses kembali.`;
+                await sendTelegramMessage(message);
+                currentNotif = "offline";
+              }
+            }
+          } else {
+            newFailureCount = 0;
+            currentStatus = "online";
 
-        await sendTelegramMessage(message);
-      }
+            if (lastNotif === "offline") {
+              const message =
+                `✅ <b>PERANGKAT KEMBALI ONLINE</b> ✅\n\n` +
+                `<b>Nama:</b> ${device.name}\n` +
+                `<b>ID:</b> ${device.device_id}\n` +
+                `<b>IP:</b> <code>${device.ip}</code>\n` +
+                `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
+                `🕒 Perangkat sudah dapat diakses kembali.`;
 
-      lastStatus.set(device.id, currentStatus);
-    }
+              await sendTelegramMessage(message);
+              currentNotif = "online";
+            } else if (!lastNotif) {
+              currentNotif = "online";
+            }
+          }
+
+          if (
+            currentStatus !== previousStatus ||
+            newFailureCount !== device.failure_count ||
+            currentNotif !== lastNotif
+          ) {
+            await db.query(
+              "UPDATE inventory_devices SET connectivity_status = $1, failure_count = $2, last_notification_status = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4",
+              [currentStatus, newFailureCount, currentNotif, device.id],
+            );
+          }
+        } catch (deviceError) {
+          console.error(`Error checking device ${device.ip}:`, deviceError);
+        }
+      }),
+    );
   } catch (error) {
     console.error("Monitor service error:", error);
+  } finally {
+    isChecking = false;
   }
 };
 
-const startMonitoring = (intervalMs = 120000) => {
-  // Default 2 minutes
+const startMonitoring = (intervalMs = 1000) => {
   console.log(`Starting background monitoring every ${intervalMs / 1000}s...`);
-  // Run once immediately
-  checkDevices();
-  // Then set interval
-  setInterval(checkDevices, intervalMs);
+
+  const run = async () => {
+    await checkDevices();
+    setTimeout(run, intervalMs);
+  };
+
+  run();
 
   // Schedule daily summary at 20:00
   cron.schedule("0 20 * * *", () => {
@@ -115,4 +150,4 @@ const startMonitoring = (intervalMs = 120000) => {
   });
 };
 
-module.exports = { startMonitoring, pingIP, lastStatus };
+module.exports = { startMonitoring, pingIP };

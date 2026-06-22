@@ -18,6 +18,8 @@ function mapDeviceFromDB(row) {
     sto_id: row.sto_id,
     totalPort: row.total_port,
     idlePort: row.idle_port,
+    connectivityStatus: row.connectivity_status,
+    failureCount: row.failure_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

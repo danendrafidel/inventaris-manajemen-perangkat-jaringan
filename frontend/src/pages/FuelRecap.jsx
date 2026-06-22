@@ -76,6 +76,9 @@ export default function FuelRecap() {
     key: "maintenance_date",
     direction: "desc",
   });
+  const [page, setPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const role = user?.role?.toLowerCase();
   const isAdminOrSuper = role === "admin" || role === "super officer" || role === "root";
@@ -130,6 +133,7 @@ export default function FuelRecap() {
   const handleApplyFilters = () => {
     setFilters({ ...draftFilters });
     setSearch(draftSearch);
+    setPage(1);
   };
 
   const handleResetFilters = () => {
@@ -143,6 +147,7 @@ export default function FuelRecap() {
     setFilters(initial);
     setSearch("");
     setDraftSearch("");
+    setPage(1);
   };
 
   const handleDraftFilterChange = (key, value) => {
@@ -193,15 +198,12 @@ export default function FuelRecap() {
   };
 
   const handleExport = () => {
-    if (selectedIds.length === 0) {
-      showNotify("Pilih data yang akan diekspor", "warning");
+    if (sortedReports.length === 0) {
+      showNotify("Tidak ada data untuk diekspor", "warning");
       return;
     }
-    const selectedData = sortedReports.filter((r) =>
-      selectedIds.includes(r.id),
-    );
     const worksheet = XLSX.utils.json_to_sheet(
-      selectedData.map((r, idx) => ({
+      sortedReports.map((r, idx) => ({
         No: idx + 1,
         "Tanggal Maintenance": new Date(r.maintenance_date).toLocaleDateString(
           "id-ID",
@@ -258,6 +260,24 @@ export default function FuelRecap() {
     }
     return items;
   }, [reports, sortConfig]);
+
+  const totalPages = useMemo(
+    () => Math.ceil(sortedReports.length / limit) || 1,
+    [sortedReports.length, limit],
+  );
+
+  const paginatedReports = useMemo(() => {
+    const start = (page - 1) * limit;
+    return sortedReports.slice(start, start + limit);
+  }, [sortedReports, page, limit]);
+
+  useEffect(() => {
+    setJumpPage(page);
+  }, [page]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   const handleSort = (key) => {
     setSortConfig((prev) => ({
@@ -570,17 +590,22 @@ export default function FuelRecap() {
                         Memuat data...
                       </td>
                     </tr>
-                  ) : reports.length === 0 ? (
+                  ) : sortedReports.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={6}
-                        className="px-6 py-20 text-center text-slate-400 font-bold"
-                      >
-                        Tidak ada data untuk periode ini
+                      <td colSpan={6} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <HistoryIcon
+                            sx={{ fontSize: 48 }}
+                            className="text-slate-200"
+                          />
+                          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+                            Belum ada rekap BBM
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
-                    sortedReports.map((r) => (
+                    paginatedReports.map((r) => (
                       <tr
                         key={r.id}
                         className={`group hover:bg-slate-50/50 transition-colors ${selectedIds.includes(r.id) ? "bg-blue-50/30" : ""}`}
@@ -761,12 +786,12 @@ export default function FuelRecap() {
                 <div className="p-10 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest text-xs">
                   Memuat Data...
                 </div>
-              ) : reports.length === 0 ? (
+              ) : sortedReports.length === 0 ? (
                 <div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
                   Tidak ada laporan
                 </div>
               ) : (
-                sortedReports.map((r) => (
+                paginatedReports.map((r) => (
                   <div
                     key={r.id}
                     className={`p-4 space-y-4 ${selectedIds.includes(r.id) ? "bg-blue-50/30" : ""}`}
@@ -856,17 +881,93 @@ export default function FuelRecap() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(r)}
-                        className="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2"
-                      >
-                        <EditIcon sx={{ fontSize: 14 }} /> EDIT DATA
-                      </button>
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-50">
+                      <span className="inline-block px-2 py-1 rounded bg-slate-100 text-[9px] font-bold text-slate-600 font-mono">
+                        ID: {r.id}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(r)}
+                          className="h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                        >
+                          <EditIcon sx={{ fontSize: 18 }} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
               )}
+            </div>
+
+            <div className="p-4 md:p-5 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Page
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    className="w-10 h-7 text-center border border-slate-200 rounded-lg text-xs font-bold"
+                    placeholder={page}
+                    value={jumpPage}
+                    onChange={(e) => setJumpPage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const p = parseInt(jumpPage);
+                        if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                          setPage(p);
+                        } else {
+                          setJumpPage(page);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      const p = parseInt(jumpPage);
+                      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                        setPage(p);
+                      } else {
+                        setJumpPage(page);
+                      }
+                    }}
+                  />
+                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <select
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-black text-slate-600 outline-none cursor-pointer"
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-30 transition-all shadow-xs uppercase tracking-tighter cursor-pointer"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </main>

@@ -117,6 +117,11 @@ Untuk menjalankan dan mengembangkan aplikasi ini, pastikan perangkat Anda memili
 Pastikan menjalankan skrip berikut di database Anda untuk performa optimal:
 
 ```sql
+-- Kolom monitoring konektivitas perangkat (monitor service)
+ALTER TABLE inventory_devices ADD COLUMN IF NOT EXISTS connectivity_status VARCHAR(20) DEFAULT 'online';
+ALTER TABLE inventory_devices ADD COLUMN IF NOT EXISTS failure_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE inventory_devices ADD COLUMN IF NOT EXISTS last_notification_status VARCHAR(20);
+
 -- Index untuk pencarian cepat
 CREATE EXTENSION IF NOT EXISTS pg_trgm; 
 CREATE INDEX IF NOT EXISTS idx_devices_search ON inventory_devices USING gin (device_id gin_trgm_ops, name gin_trgm_ops, serial_number gin_trgm_ops);
