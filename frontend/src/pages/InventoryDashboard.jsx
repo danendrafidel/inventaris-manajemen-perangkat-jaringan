@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { getStoredUser } from "../services/authService";
@@ -78,12 +78,12 @@ export default function InventoryDashboard() {
   const [draftSearch, setDraftSearch] = useState("");
   const [filters, setFilters] = useState({
     sto_id: "",
-    area_id: "",
+    area_id: [],
     status: "",
   });
   const [draftFilters, setDraftFilters] = useState({
     sto_id: "",
-    area_id: "",
+    area_id: [],
     status: "",
   });
   const [page, setPage] = useState(1);
@@ -97,6 +97,8 @@ export default function InventoryDashboard() {
   const [connectionStatus, setConnectionStatus] = useState({});
   const [activeConnectivityFilter, setActiveConnectivityFilter] =
     useState(null);
+  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
+  const areaDropdownRef = useRef(null);
 
   const [formData, setFormData] = useState({
     deviceId: "",
@@ -119,10 +121,20 @@ export default function InventoryDashboard() {
     }
   }, [location.state]);
 
-  // Filtered STOs based on current Area selection
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (areaDropdownRef.current && !areaDropdownRef.current.contains(e.target)) {
+        setAreaDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filtered STOs based on current Area selection(s)
   const filteredStosForDraft = useMemo(() => {
-    if (!draftFilters.area_id) return options.stos;
-    return options.stos.filter((s) => s.area_id == draftFilters.area_id);
+    if (!draftFilters.area_id || draftFilters.area_id.length === 0) return options.stos;
+    return options.stos.filter((s) => draftFilters.area_id.includes(String(s.area_id)));
   }, [options.stos, draftFilters.area_id]);
 
   const filteredStosForForm = useMemo(() => {
@@ -144,14 +156,20 @@ export default function InventoryDashboard() {
   const fetchAllInventoryRowsForExport = async () => {
     const roleParams = {};
     if (role !== "admin" && role !== "super officer" && role !== "root") {
-      roleParams.area_id = user.area_id;
+      roleParams.area_id = [String(user.area_id)];
     }
+
+    const effectiveArea =
+      filters.area_id.length > 0
+        ? filters.area_id
+        : roleParams.area_id || [];
 
     const baseParams = {
       role,
       email: user.email,
       search,
       ...filters,
+      area_id: effectiveArea,
       connectivity_status: activeConnectivityFilter,
       ...roleParams,
     };
@@ -297,10 +315,10 @@ export default function InventoryDashboard() {
     if (
       role !== "admin" &&
       role !== "super officer" &&
-      !filters.area_id &&
+      filters.area_id.length === 0 &&
       user.area_id
     ) {
-      const defaultFilters = { ...filters, area_id: user.area_id };
+      const defaultFilters = { ...filters, area_id: [String(user.area_id)] };
       setFilters(defaultFilters);
       setDraftFilters(defaultFilters);
       return; // The next effect trigger will call loadData with the new filters
@@ -316,8 +334,13 @@ export default function InventoryDashboard() {
 
     const roleParams = {};
     if (role !== "admin" && role !== "super officer" && role !== "root") {
-      roleParams.area_id = user.area_id;
+      roleParams.area_id = [String(user.area_id)];
     }
+
+    const effectiveArea =
+      filters.area_id.length > 0
+        ? filters.area_id
+        : roleParams.area_id || [];
 
     try {
       const [s, o, d] = await Promise.all([
@@ -325,7 +348,7 @@ export default function InventoryDashboard() {
           role,
           email: user.email,
           ...roleParams,
-          area_id: filters.area_id || roleParams.area_id,
+          area_id: effectiveArea,
         }),
         fetchInventoryOptions({ role, email: user.email }),
         fetchInventoryDevices({
@@ -335,6 +358,7 @@ export default function InventoryDashboard() {
           page,
           limit,
           ...filters,
+          area_id: effectiveArea,
           connectivity_status: activeConnectivityFilter,
           ...roleParams,
         }),
@@ -497,6 +521,16 @@ export default function InventoryDashboard() {
     });
   };
 
+  const handleAreaToggle = (id) => {
+    setDraftFilters((prev) => {
+      const current = prev.area_id || [];
+      const next = current.includes(id)
+        ? current.filter((a) => a !== id)
+        : [...current, id];
+      return { ...prev, area_id: next, sto_id: "" };
+    });
+  };
+
   const handleApplyFilters = () => {
     setFilters({ ...draftFilters });
     setSearch(draftSearch);
@@ -512,7 +546,10 @@ export default function InventoryDashboard() {
   const handleResetFilters = () => {
     const initial = {
       sto_id: "",
-      area_id: role !== "admin" && role !== "super officer" ? user.area_id : "",
+      area_id:
+        role !== "admin" && role !== "super officer" && user.area_id
+          ? [String(user.area_id)]
+          : [],
       status: "",
     };
     setDraftFilters(initial);
@@ -648,78 +685,104 @@ export default function InventoryDashboard() {
             {/* Bottom Row: Dropdowns & Action Buttons */}
             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex items-center gap-3 flex-1">
-                <select
-                  className={`w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all appearance-none pr-10 ${
-                    role !== "admin" && role !== "super officer"
-                      ? "opacity-50 cursor-not-allowed bg-slate-100"
-                      : "cursor-pointer"
-                  }`}
-                  style={{
-                    backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 0.75rem center",
-                    backgroundSize: "0.85rem",
-                  }}
-                  value={
-                    role !== "admin" && role !== "super officer"
-                      ? user.area_id
-                      : draftFilters.area_id
-                  }
-                  disabled={role !== "admin" && role !== "super officer"}
-                  onChange={(e) =>
-                    handleDraftFilterChange("area_id", e.target.value)
-                  }
-                >
-                  <option value="">Area</option>
-                  {options.areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
-                  style={{
-                    backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 0.75rem center",
-                    backgroundSize: "0.85rem",
-                  }}
-                  value={draftFilters.sto_id}
-                  onChange={(e) =>
-                    handleDraftFilterChange("sto_id", e.target.value)
-                  }
-                >
-                  <option value="">STO</option>
-                  {filteredStosForDraft.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
-                  style={{
-                    backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 0.75rem center",
-                    backgroundSize: "0.85rem",
-                  }}
-                  value={draftFilters.status}
-                  onChange={(e) =>
-                    handleDraftFilterChange("status", e.target.value)
-                  }
-                >
-                  <option value="">Status</option>
-                  {DEVICE_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>{" "}
+                <div className="xl:flex-1 relative" ref={areaDropdownRef}>
+                  <button
+                    type="button"
+                    disabled={role !== "admin" && role !== "super officer"}
+                    onClick={() => setAreaDropdownOpen((v) => !v)}
+                    className={`w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all appearance-none pr-10 text-left truncate ${
+                      role !== "admin" && role !== "super officer"
+                        ? "opacity-50 cursor-not-allowed bg-slate-100"
+                        : "cursor-pointer"
+                    }`}
+                    style={{
+                      backgroundImage:
+                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 0.75rem center",
+                      backgroundSize: "0.85rem",
+                    }}
+                  >
+                    {draftFilters.area_id.length === 0
+                      ? "Area"
+                      : draftFilters.area_id.length === 1
+                        ? options.areas.find((a) => String(a.id) === draftFilters.area_id[0])?.name || "Area"
+                        : `${draftFilters.area_id.length} Area`}
+                  </button>
+                  {areaDropdownOpen && (role === "admin" || role === "super officer") ? (
+                    <div
+                      className={`absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl max-h-60 overflow-y-auto ${
+                        areaDropdownOpen ? "" : "hidden"
+                      }`}
+                    >
+                      {options.areas.map((a) => {
+                        const checked = draftFilters.area_id.includes(String(a.id));
+                        return (
+                          <label
+                            key={a.id}
+                            className={`flex items-center gap-3 px-4 py-2.5 text-xs font-bold cursor-pointer hover:bg-slate-50 transition-colors ${
+                              checked ? "bg-blue-50 text-blue-700" : "text-slate-600"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              checked={checked}
+                              onChange={() => handleAreaToggle(String(a.id))}
+                            />
+                            {a.name}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="xl:flex-1">
+                  <select
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
+                    style={{
+                      backgroundImage:
+                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 0.75rem center",
+                      backgroundSize: "0.85rem",
+                    }}
+                    value={draftFilters.sto_id}
+                    onChange={(e) =>
+                      handleDraftFilterChange("sto_id", e.target.value)
+                    }
+                  >
+                    <option value="">STO</option>
+                    {filteredStosForDraft.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="xl:flex-1">
+                  <select
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all cursor-pointer appearance-none pr-10"
+                    style={{
+                      backgroundImage:
+                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 0.75rem center",
+                      backgroundSize: "0.85rem",
+                    }}
+                    value={draftFilters.status}
+                    onChange={(e) =>
+                      handleDraftFilterChange("status", e.target.value)
+                    }
+                  >
+                    <option value="">Status</option>
+                    {DEVICE_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">

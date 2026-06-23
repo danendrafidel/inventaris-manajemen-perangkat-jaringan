@@ -66,8 +66,11 @@ exports.getInventoryStats = async (req, res) => {
     let params = [];
     let whereClause = "";
     if (area_id) {
-      params.push(area_id);
-      whereClause = "WHERE area_id = $1";
+      const areaIds = area_id.split(",").map(Number).filter((n) => !isNaN(n));
+      if (areaIds.length > 0) {
+        params.push(areaIds);
+        whereClause = "WHERE area_id = ANY($1::int[])";
+      }
     }
 
     const [
@@ -145,8 +148,11 @@ exports.fetchInventoryDevices = async (req, res) => {
       where.push(`i.sto_id = $${params.length}`);
     }
     if (area_id) {
-      params.push(area_id);
-      where.push(`i.area_id = $${params.length}`);
+      const areaIds = area_id.split(",").map(Number).filter((n) => !isNaN(n));
+      if (areaIds.length > 0) {
+        params.push(areaIds);
+        where.push(`i.area_id = ANY($${params.length}::int[])`);
+      }
     }
     if (status) {
       params.push(status);

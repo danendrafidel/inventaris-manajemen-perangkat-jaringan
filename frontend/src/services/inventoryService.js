@@ -39,7 +39,10 @@ export async function fetchInventoryStats({ role, email, area_id }) {
   const params = new URLSearchParams();
   if (role) params.set("role", role);
   if (email) params.set("email", email);
-  if (area_id) params.set("area_id", area_id);
+  if (area_id) {
+    const val = Array.isArray(area_id) ? area_id.join(",") : area_id;
+    if (val) params.set("area_id", val);
+  }
 
   const response = await fetch(
     `${API_BASE}/api/inventory/stats?${params.toString()}`,
@@ -69,7 +72,10 @@ export async function fetchInventoryDevices({
   if (email) params.set("email", email);
   params.set("search", search);
   if (sto_id) params.set("sto_id", sto_id);
-  if (area_id) params.set("area_id", area_id);
+  if (area_id) {
+    const val = Array.isArray(area_id) ? area_id.join(",") : area_id;
+    if (val) params.set("area_id", val);
+  }
   if (status) params.set("status", status);
   if (connectivity_status) params.set("connectivity_status", connectivity_status);
   params.set("page", String(toInt(page, 1)));
@@ -228,7 +234,10 @@ export async function fetchFuelRecap({
   }
   
   if (user_id) params.set("user_id", user_id);
-  if (area_id) params.set("area_id", area_id);
+  if (area_id) {
+    const val = Array.isArray(area_id) ? area_id.join(",") : area_id;
+    if (val) params.set("area_id", val);
+  }
   if (sto_id) params.set("sto_id", sto_id);
   if (search) params.set("search", search);
 
@@ -262,7 +271,10 @@ export async function fetchPmrReports({
   end_date = "",
 } = {}) {
   const params = new URLSearchParams();
-  if (area_id) params.set("area_id", area_id);
+  if (area_id) {
+    const val = Array.isArray(area_id) ? area_id.join(",") : area_id;
+    if (val) params.set("area_id", val);
+  }
   if (role) params.set("role", role);
   if (user_id) params.set("user_id", user_id);
   if (search) params.set("search", search);

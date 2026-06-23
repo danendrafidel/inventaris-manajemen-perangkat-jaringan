@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Alert, AlertTitle } from "@mui/material";
 import { getStoredUser } from "../services/authService";
@@ -35,17 +35,19 @@ export default function PrintBarcode() {
   const [search, setSearch] = useState("");
   const [draftSearch, setDraftSearch] = useState("");
   const [filters, setFilters] = useState({
-    area_id: "",
+    area_id: [],
     sto_id: "",
   });
   const [draftFilters, setDraftFilters] = useState({
-    area_id: "",
+    area_id: [],
     sto_id: "",
   });
 
   const [page, setPage] = useState(1);
   const [jumpPage, setJumpPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
+  const areaDropdownRef = useRef(null);
 
   const [notification, setNotification] = useState({
     open: false,
@@ -75,10 +77,10 @@ export default function PrintBarcode() {
       const o = await fetchInventoryOptions({ role, email: user.email });
       setOptions(o);
       // Auto-select area if only one available (for non-superusers)
-      if (!isSuperUser && o.areas.length === 1 && !filters.area_id) {
-        const areaId = o.areas[0].id;
-        setFilters((prev) => ({ ...prev, area_id: areaId }));
-        setDraftFilters((prev) => ({ ...prev, area_id: areaId }));
+      if (!isSuperUser && o.areas.length === 1 && filters.area_id.length === 0) {
+        const areaId = String(o.areas[0].id);
+        setFilters((prev) => ({ ...prev, area_id: [areaId] }));
+        setDraftFilters((prev) => ({ ...prev, area_id: [areaId] }));
       }
     } catch (err) {
       console.error("Failed to load options", err);
@@ -91,8 +93,8 @@ export default function PrintBarcode() {
 
     // Enforce area filter for non-superusers
     const effectiveFilters = { ...filters };
-    if (!isSuperUser && user?.area_id) {
-      effectiveFilters.area_id = user.area_id;
+    if (!isSuperUser && user?.area_id && filters.area_id.length === 0) {
+      effectiveFilters.area_id = [String(user.area_id)];
     }
 
     try {
@@ -135,6 +137,26 @@ export default function PrintBarcode() {
     });
   };
 
+  const handleAreaToggle = (id) => {
+    setDraftFilters((prev) => {
+      const current = prev.area_id || [];
+      const next = current.includes(id)
+        ? current.filter((a) => a !== id)
+        : [...current, id];
+      return { ...prev, area_id: next, sto_id: "" };
+    });
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (areaDropdownRef.current && !areaDropdownRef.current.contains(e.target)) {
+        setAreaDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleApplyFilters = () => {
     setFilters({ ...draftFilters });
     setSearch(draftSearch);
@@ -143,7 +165,7 @@ export default function PrintBarcode() {
 
   const handleResetFilters = () => {
     const initialFilters = {
-      area_id: !isSuperUser ? user?.area_id || "" : "",
+      area_id: !isSuperUser && user?.area_id ? [String(user.area_id)] : [],
       sto_id: "",
     };
     setDraftFilters(initialFilters);
@@ -155,10 +177,12 @@ export default function PrintBarcode() {
   };
 
   const filteredStos = useMemo(() => {
-    const targetAreaId =
-      !isSuperUser && user?.area_id ? user.area_id : draftFilters.area_id;
-    if (!targetAreaId) return options.stos;
-    return options.stos.filter((s) => s.area_id == targetAreaId);
+    const areaIds =
+      !isSuperUser && user?.area_id
+        ? [String(user.area_id)]
+        : draftFilters.area_id;
+    if (!areaIds || areaIds.length === 0) return options.stos;
+    return options.stos.filter((s) => areaIds.includes(String(s.area_id)));
   }, [options.stos, draftFilters.area_id, isSuperUser, user?.area_id]);
 
   const totalPages = useMemo(
@@ -322,23 +346,43 @@ export default function PrintBarcode() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_max-content] gap-3">
-                <select
-                  className="h-11 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={draftFilters.area_id}
-                  onChange={(e) =>
-                    handleDraftFilterChange("area_id", e.target.value)
-                  }
-                  disabled={!isSuperUser}
-                >
-                  <option value="">
-                    {isSuperUser ? "Semua Area" : user?.area || "Area Saya"}
-                  </option>
-                  {options.areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative" ref={areaDropdownRef}>
+                  <button
+                    type="button"
+                    disabled={!isSuperUser}
+                    onClick={() => setAreaDropdownOpen((v) => !v)}
+                    className="h-11 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none disabled:opacity-50 disabled:cursor-not-allowed text-left truncate"
+                  >
+                    {draftFilters.area_id.length === 0
+                      ? (isSuperUser ? "Semua Area" : user?.area || "Area Saya")
+                      : draftFilters.area_id.length === 1
+                        ? options.areas.find((a) => String(a.id) === draftFilters.area_id[0])?.name || "Area"
+                        : `${draftFilters.area_id.length} Area`}
+                  </button>
+                  {areaDropdownOpen && isSuperUser ? (
+                    <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl max-h-60 overflow-y-auto">
+                      {options.areas.map((a) => {
+                        const checked = draftFilters.area_id.includes(String(a.id));
+                        return (
+                          <label
+                            key={a.id}
+                            className={`flex items-center gap-3 px-4 py-2.5 text-xs font-bold cursor-pointer hover:bg-slate-50 transition-colors ${
+                              checked ? "bg-blue-50 text-blue-700" : "text-slate-600"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              checked={checked}
+                              onChange={() => handleAreaToggle(String(a.id))}
+                            />
+                            {a.name}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
                 <select
                   className="h-11 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none"
                   value={draftFilters.sto_id}
