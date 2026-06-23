@@ -3,8 +3,7 @@ const { exec } = require("child_process");
 const { sendTelegramMessage } = require("../utils/telegram");
 const cron = require("node-cron");
 
-// Store last status in memory to detect changes
-const lastStatus = new Map();
+const OFFLINE_THRESHOLD = 10;
 
 const pingIP = (ip) => {
   return new Promise((resolve) => {
@@ -51,7 +50,6 @@ const sendDailyPMRSummary = async () => {
   }
 };
 
-// Global flag to prevent concurrent executions
 let isChecking = false;
 
 const checkDevices = async () => {
@@ -63,7 +61,6 @@ const checkDevices = async () => {
       "SELECT id, device_id, name, ip, area, sto, connectivity_status, failure_count, last_notification_status FROM inventory_devices WHERE ip IS NOT NULL AND ip != ''",
     );
 
-    // Process all devices in parallel
     await Promise.all(
       devices.map(async (device) => {
         try {
@@ -76,7 +73,8 @@ const checkDevices = async () => {
 
           if (pingResult === "offline") {
             newFailureCount++;
-            if (newFailureCount >= 5) {
+
+            if (newFailureCount >= OFFLINE_THRESHOLD || previousStatus === "offline") {
               currentStatus = "offline";
 
               if (lastNotif !== "offline") {
@@ -86,10 +84,12 @@ const checkDevices = async () => {
                   `<b>ID:</b> ${device.device_id}\n` +
                   `<b>IP:</b> <code>${device.ip}</code>\n` +
                   `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
-                  `⚠️ Segera lakukan pengecekan! (Terdeteksi RTO 5x)`;
+                  `⚠️ Segera lakukan pengecekan! (Terdeteksi RTO ${OFFLINE_THRESHOLD}x)`;
 
-                await sendTelegramMessage(message);
-                currentNotif = "offline";
+                const sent = await sendTelegramMessage(message, device.area);
+                if (sent) {
+                  currentNotif = "offline";
+                }
               }
             }
           } else {
@@ -105,8 +105,10 @@ const checkDevices = async () => {
                 `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
                 `🕒 Perangkat sudah dapat diakses kembali.`;
 
-              await sendTelegramMessage(message);
-              currentNotif = "online";
+              const sent = await sendTelegramMessage(message, device.area);
+              if (sent) {
+                currentNotif = "online";
+              }
             } else if (!lastNotif) {
               currentNotif = "online";
             }
@@ -144,7 +146,6 @@ const startMonitoring = (intervalMs = 1000) => {
 
   run();
 
-  // Schedule daily summary at 20:00
   cron.schedule("0 20 * * *", () => {
     sendDailyPMRSummary();
   });

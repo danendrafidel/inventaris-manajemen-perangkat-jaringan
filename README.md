@@ -12,6 +12,7 @@ Sistem terpadu untuk mengelola inventaris perangkat jaringan, mencakup manajemen
 Berikut adalah daftar library pihak ketiga yang digunakan dalam proyek:
 
 ### Frontend
+
 - **Komunikasi Data**: `axios`
 - **UI/Visualisasi**: `recharts` (Chart), `leaflet` & `react-leaflet` (Peta)
 - **Utility**: `xlsx` (Excel), `@yudiel/react-qr-scanner` & `qrcode.react` (QR/Barcode)
@@ -19,10 +20,10 @@ Berikut adalah daftar library pihak ketiga yang digunakan dalam proyek:
 - **Icons**: `@mui/icons-material`
 
 ### Backend
+
 - **Framework API**: `express`, `compression`, `helmet` (Security), `cors`
 - **Database**: `pg` (PostgreSQL client)
 - **Utility**: `axios` (Telegram API), `dotenv` (Environment variables), `multer` (File upload), `nodemailer` (Email)
-
 
 ---
 
@@ -30,13 +31,13 @@ Berikut adalah daftar library pihak ketiga yang digunakan dalam proyek:
 
 Sistem ini dirancang dengan arsitektur **Client-Server** untuk pemisahan logika yang rapi:
 
-1.  **Backend (Express API)**: Menggunakan pola *Controller-Route* untuk memisahkan *endpoint* API dari logika bisnis.
-    - **Config Layer**: Menangani koneksi database (`pg`), *caching* (in-memory `Map` dengan TTL), *file upload* (`multer`), dan pengiriman email (`nodemailer`).
-2.  **Frontend (React SPA)**: Menggunakan arsitektur berbasis *service* untuk komunikasi data.
+1.  **Backend (Express API)**: Menggunakan pola _Controller-Route_ untuk memisahkan _endpoint_ API dari logika bisnis.
+    - **Config Layer**: Menangani koneksi database (`pg`), _caching_ (in-memory `Map` dengan TTL), _file upload_ (`multer`), dan pengiriman email (`nodemailer`).
+2.  **Frontend (React SPA)**: Menggunakan arsitektur berbasis _service_ untuk komunikasi data.
     - **Service Layer**: Mengabstraksi panggilan API untuk menjaga komponen tetap bersih.
-    - **State Management**: Mengelola alur kerja pengguna (seperti otentikasi) dan sinkronisasi data *real-time*.
+    - **State Management**: Mengelola alur kerja pengguna (seperti otentikasi) dan sinkronisasi data _real-time_.
 3.  **Alur Data**:
-    - **PMR Reporting**: Mendukung verifikasi geolokasi (*geofencing*), *multi-file upload* untuk foto kegiatan/nota, dan sinkronisasi zona waktu (WIB/Asia-Jakarta).
+    - **PMR Reporting**: Mendukung verifikasi geolokasi (_geofencing_), _multi-file upload_ untuk foto kegiatan/nota, dan sinkronisasi zona waktu (WIB/Asia-Jakarta).
     - **Export**: Pemrosesan data laporan yang diformat secara dinamis untuk PDF dan Excel.
 
 ---
@@ -60,18 +61,21 @@ Sistem ini dirancang dengan arsitektur **Client-Server** untuk pemisahan logika 
 Untuk menjalankan dan mengembangkan aplikasi ini, pastikan perangkat Anda memiliki:
 
 ### 1. Lingkungan Pengembangan
+
 - **Node.js**: Versi 18 LTS atau 20 LTS (disarankan menggunakan [nvm](https://github.com/nvm-sh/nvm) untuk mengelola versi Node).
 - **Package Manager**: `npm` (versi 9+) atau `yarn`.
-- **Git**: Untuk manajemen *version control*.
-- **Code Editor**: VS Code (disarankan) dengan *extension* pendukung (ESLint, Tailwind CSS IntelliSense).
+- **Git**: Untuk manajemen _version control_.
+- **Code Editor**: VS Code (disarankan) dengan _extension_ pendukung (ESLint, Tailwind CSS IntelliSense).
 
 ### 2. Infrastruktur Database
-- **PostgreSQL**: Server database lokal atau layanan *managed database* (contoh: Neon, Supabase, atau AWS RDS).
+
+- **PostgreSQL**: Server database lokal atau layanan _managed database_ (contoh: Neon, Supabase, atau AWS RDS).
 - **Tools**: `psql` CLI atau GUI seperti pgAdmin/DBeaver untuk memantau data.
 
 ### 3. Konfigurasi Sistem
+
 - **Zona Waktu**: Sistem harus disinkronkan ke zona waktu yang benar (WIB/Asia-Jakarta) agar timestamp pencatatan PMR akurat.
-- **Environment**: Akses ke layanan SMTP (seperti Gmail App Password atau Mailgun) jika fitur *reset password* ingin diaktifkan.
+- **Environment**: Akses ke layanan SMTP (seperti Gmail App Password atau Mailgun) jika fitur _reset password_ ingin diaktifkan.
 
 ---
 
@@ -109,28 +113,6 @@ Untuk menjalankan dan mengembangkan aplikasi ini, pastikan perangkat Anda memili
    ```bash
    npm run dev
    ```
-
----
-
-## 🗄️ Database & Optimasi
-
-Pastikan menjalankan skrip berikut di database Anda untuk performa optimal:
-
-```sql
--- Kolom monitoring konektivitas perangkat (monitor service)
-ALTER TABLE inventory_devices ADD COLUMN IF NOT EXISTS connectivity_status VARCHAR(20) DEFAULT 'online';
-ALTER TABLE inventory_devices ADD COLUMN IF NOT EXISTS failure_count INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE inventory_devices ADD COLUMN IF NOT EXISTS last_notification_status VARCHAR(20);
-
--- Index untuk pencarian cepat
-CREATE EXTENSION IF NOT EXISTS pg_trgm; 
-CREATE INDEX IF NOT EXISTS idx_devices_search ON inventory_devices USING gin (device_id gin_trgm_ops, name gin_trgm_ops, serial_number gin_trgm_ops);
-
--- Index referensi
-CREATE INDEX IF NOT EXISTS idx_devices_area ON inventory_devices(area);
-CREATE INDEX IF NOT EXISTS idx_devices_sto ON inventory_devices(sto);
-CREATE INDEX IF NOT EXISTS idx_devices_status ON inventory_devices(status);
-```
 
 ---
 

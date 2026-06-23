@@ -95,7 +95,8 @@ export default function InventoryDashboard() {
     setJumpPage(page);
   }, [page]);
   const [connectionStatus, setConnectionStatus] = useState({});
-  const [activeConnectivityFilter, setActiveConnectivityFilter] = useState(null);
+  const [activeConnectivityFilter, setActiveConnectivityFilter] =
+    useState(null);
 
   const [formData, setFormData] = useState({
     deviceId: "",
@@ -223,13 +224,25 @@ export default function InventoryDashboard() {
 
   const role = user?.role?.toLowerCase();
   const canEdit =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
   const canDelete =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
   const canAdd =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
   const canPrint =
-    role === "admin" || role === "super officer" || role === "root" || role === "officer";
+    role === "admin" ||
+    role === "super officer" ||
+    role === "root" ||
+    role === "officer";
 
   const totalPages = useMemo(
     () => Math.ceil(total / limit) || 1,
@@ -1125,10 +1138,12 @@ export default function InventoryDashboard() {
                       }
                     }}
                   />
-                  <span className="text-[10px] text-slate-400 font-bold">/ {totalPages}</span>
+                  <span className="text-[10px] text-slate-400 font-bold">
+                    / {totalPages}
+                  </span>
                 </div>
               </div>
-              
+
               {/* Limit Selector + Navigation Buttons */}
               <div className="flex items-center gap-4">
                 {/* Limit Selector */}
@@ -1314,7 +1329,11 @@ export default function InventoryDashboard() {
                     <select
                       className={`w-full rounded-xl md:rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold outline-none transition-all ${role !== "admin" && role !== "super officer" && role !== "root" ? "opacity-70 cursor-not-allowed" : ""}`}
                       value={formData.area_id}
-                      disabled={role !== "admin" && role !== "super officer" && role !== "root"}
+                      disabled={
+                        role !== "admin" &&
+                        role !== "super officer" &&
+                        role !== "root"
+                      }
                       onChange={(e) =>
                         setFormData({
                           ...formData,

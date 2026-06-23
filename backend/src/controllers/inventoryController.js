@@ -70,33 +70,36 @@ exports.getInventoryStats = async (req, res) => {
       whereClause = "WHERE area_id = $1";
     }
 
-    const [totalDevices, statusBaik, perluPerhatian, areaTercover, onlineDevices, offlineDevices] =
-      await Promise.all([
-        db.query(
-          `SELECT COUNT(*) FROM inventory_devices ${whereClause}`,
-          params,
-        ),
-        db.query(
-          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status = 'OPERATED'`,
-          params,
-        ),
-        db.query(
-          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status IN ('MAINTENANCE', 'PROBLEM')`,
-          params,
-        ),
-        db.query(
-          `SELECT COUNT(DISTINCT area_id) FROM inventory_devices ${whereClause}`,
-          params,
-        ),
-        db.query(
-          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} connectivity_status = 'online'`,
-          params,
-        ),
-        db.query(
-          `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} connectivity_status = 'offline'`,
-          params,
-        ),
-      ]);
+    const [
+      totalDevices,
+      statusBaik,
+      perluPerhatian,
+      areaTercover,
+      onlineDevices,
+      offlineDevices,
+    ] = await Promise.all([
+      db.query(`SELECT COUNT(*) FROM inventory_devices ${whereClause}`, params),
+      db.query(
+        `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status = 'OPERATED'`,
+        params,
+      ),
+      db.query(
+        `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} status IN ('MAINTENANCE', 'PROBLEM')`,
+        params,
+      ),
+      db.query(
+        `SELECT COUNT(DISTINCT area_id) FROM inventory_devices ${whereClause}`,
+        params,
+      ),
+      db.query(
+        `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} connectivity_status = 'online'`,
+        params,
+      ),
+      db.query(
+        `SELECT COUNT(*) FROM inventory_devices ${whereClause} ${area_id ? "AND" : "WHERE"} connectivity_status = 'offline'`,
+        params,
+      ),
+    ]);
 
     const data = {
       stats: {
@@ -118,7 +121,15 @@ exports.getInventoryStats = async (req, res) => {
 
 exports.fetchInventoryDevices = async (req, res) => {
   try {
-    const { search, sto_id, area_id, status, connectivity_status, page, limit } = req.query;
+    const {
+      search,
+      sto_id,
+      area_id,
+      status,
+      connectivity_status,
+      page,
+      limit,
+    } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
     let where = [];
     let params = [];

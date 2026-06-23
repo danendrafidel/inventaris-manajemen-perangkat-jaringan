@@ -41,13 +41,16 @@ bot.command("info", async (ctx) => {
     }
 
     const device = rows[0];
+
+    const statusIcon = device.connectivity_status === "online" ? "✅" : "🔴";
     const message =
       `ℹ️ <b>INFORMASI PERANGKAT</b> ℹ️\n\n` +
       `<b>ID:</b> ${device.device_id}\n` +
       `<b>Nama:</b> ${device.name}\n` +
       `<b>IP:</b> <code>${device.ip}</code>\n` +
       `<b>SN:</b> <code>${device.serial_number}</code>\n` +
-      `<b>Status:</b> ${device.status}\n` +
+      `<b>Status Perangkat:</b> ${device.status}\n` +
+      `${statusIcon} <b>Koneksi:</b> ${device.connectivity_status || "belum diperiksa"}\n` +
       `<b>Lokasi:</b> ${device.area} - ${device.sto}`;
 
     ctx.replyWithHTML(message);
