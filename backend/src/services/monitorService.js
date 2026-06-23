@@ -74,7 +74,10 @@ const checkDevices = async () => {
           if (pingResult === "offline") {
             newFailureCount++;
 
-            if (newFailureCount >= OFFLINE_THRESHOLD || previousStatus === "offline") {
+            if (
+              newFailureCount >= OFFLINE_THRESHOLD ||
+              previousStatus === "offline"
+            ) {
               currentStatus = "offline";
 
               if (lastNotif !== "offline") {
