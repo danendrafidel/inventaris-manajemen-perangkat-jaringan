@@ -1,9 +1,9 @@
 const db = require("../config/db");
 const { exec } = require("child_process");
-const { sendTelegramMessage } = require("../utils/telegram");
+const { sendTelegramMessage, escapeHTML } = require("../utils/telegram");
 const cron = require("node-cron");
 
-const OFFLINE_THRESHOLD = 10;
+const OFFLINE_THRESHOLD = 20;
 
 const pingIP = (ip) => {
   return new Promise((resolve) => {
@@ -81,38 +81,44 @@ const checkDevices = async () => {
               currentStatus = "offline";
 
               if (lastNotif !== "offline") {
+                console.log(`[MONITOR] Sending DOWN notif for ${device.name} (${device.ip}) area=${device.area} failureCount=${newFailureCount}`);
                 const message =
                   `🚨 <b>PERANGKAT DOWN</b> 🚨\n\n` +
-                  `<b>Nama:</b> ${device.name}\n` +
-                  `<b>ID:</b> ${device.device_id}\n` +
-                  `<b>IP:</b> <code>${device.ip}</code>\n` +
-                  `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
+                  `<b>Nama:</b> ${escapeHTML(device.name)}\n` +
+                  `<b>ID:</b> ${escapeHTML(device.device_id)}\n` +
+                  `<b>IP:</b> <code>${escapeHTML(device.ip)}</code>\n` +
+                  `<b>Lokasi:</b> ${escapeHTML(device.area)} - ${escapeHTML(device.sto)}\n\n` +
                   `⚠️ Segera lakukan pengecekan! (Terdeteksi RTO ${OFFLINE_THRESHOLD}x)`;
 
                 const sent = await sendTelegramMessage(message, device.area);
+                console.log(`[MONITOR] DOWN notif result for ${device.name}: sent=${sent}`);
                 if (sent) {
                   currentNotif = "offline";
                 }
               }
             }
+
+            if (newFailureCount > OFFLINE_THRESHOLD) {
+              newFailureCount = OFFLINE_THRESHOLD;
+            }
           } else {
             newFailureCount = 0;
             currentStatus = "online";
 
-            if (lastNotif === "offline") {
+            if (previousStatus === "offline" || lastNotif === "offline") {
               const message =
                 `✅ <b>PERANGKAT KEMBALI ONLINE</b> ✅\n\n` +
-                `<b>Nama:</b> ${device.name}\n` +
-                `<b>ID:</b> ${device.device_id}\n` +
-                `<b>IP:</b> <code>${device.ip}</code>\n` +
-                `<b>Lokasi:</b> ${device.area} - ${device.sto}\n\n` +
+                `<b>Nama:</b> ${escapeHTML(device.name)}\n` +
+                `<b>ID:</b> ${escapeHTML(device.device_id)}\n` +
+                `<b>IP:</b> <code>${escapeHTML(device.ip)}</code>\n` +
+                `<b>Lokasi:</b> ${escapeHTML(device.area)} - ${escapeHTML(device.sto)}\n\n` +
                 `🕒 Perangkat sudah dapat diakses kembali.`;
 
               const sent = await sendTelegramMessage(message, device.area);
               if (sent) {
                 currentNotif = "online";
               }
-            } else if (!lastNotif) {
+            } else if (!previousStatus) {
               currentNotif = "online";
             }
           }
@@ -139,6 +145,24 @@ const checkDevices = async () => {
   }
 };
 
+const cleanupOldPmrReports = async () => {
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const { rowCount } = await db.query(
+      "DELETE FROM pmr_reports WHERE created_at < $1",
+      [sixMonthsAgo.toISOString()],
+    );
+
+    if (rowCount > 0) {
+      console.log(`[CLEANUP] Deleted ${rowCount} PMR report(s) older than 6 months`);
+    }
+  } catch (error) {
+    console.error("[CLEANUP] Error cleaning old PMR reports:", error);
+  }
+};
+
 const startMonitoring = (intervalMs = 1000) => {
   console.log(`Starting background monitoring every ${intervalMs / 1000}s...`);
 
@@ -151,6 +175,10 @@ const startMonitoring = (intervalMs = 1000) => {
 
   cron.schedule("0 20 * * *", () => {
     sendDailyPMRSummary();
+  });
+
+  cron.schedule("0 3 * * *", () => {
+    cleanupOldPmrReports();
   });
 };
 

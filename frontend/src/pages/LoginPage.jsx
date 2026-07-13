@@ -209,7 +209,7 @@ export default function LoginPage() {
           )}
 
           <div className="mt-auto pt-12 text-center">
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4">© 2026 PT Telkom Indonesia Tbk.</p>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4">© ISCYS Telkom Landmark Tower Surabaya</p>
           </div>
         </div>
       </div>

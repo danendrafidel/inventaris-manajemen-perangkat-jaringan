@@ -182,7 +182,7 @@ export default function FormPMR() {
         }
       } catch (err) {
         const message =
-          "The server returned an unexpected response. Please try again later.";
+          "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
         setError(message);
         showNotify(message, "error");
       } finally {
@@ -206,10 +206,10 @@ export default function FormPMR() {
 
         if (data.code === "Ok" && data.routes.length > 0) {
           const route = data.routes[0];
-          const dist = route.distance / 1000;
+          const dist = (route.distance / 1000) * 2;
           setDistance(dist.toFixed(2));
 
-          // Fuel calc: (Distance / Ratio) * Price per Liter
+          // Fuel calc: (Distance / Ratio) * Price per Liter (Pulang Pergi)
           const fuel = (dist / fuelSettings.fuel_ratio) * fuelSettings.fuel_price_per_liter;
           setFuelCost(Math.round(fuel));
 
@@ -340,7 +340,7 @@ export default function FormPMR() {
   const handleSearchDevice = async (term = searchTerm) => {
     if (!searchTerm) return;
     try {
-      const params = { search: searchTerm };
+      const params = { search: searchTerm, limit: 10000 };
       if (user.role !== "admin") {
         params.area_id = user.area_id;
       }
@@ -450,7 +450,7 @@ export default function FormPMR() {
     } catch (err) {
       const message =
         err.message ||
-        "The server returned an unexpected response. Please try again later.";
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     } finally {
       setSubmitting(false);
@@ -542,7 +542,7 @@ export default function FormPMR() {
                   </div>
                 </div>
                 {searchResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto border border-slate-100 rounded-xl divide-y">
+                  <div className="overflow-y-auto border border-slate-100 rounded-xl divide-y">
                     {searchResults.map((d) => (
                       <button
                         key={d.id}
@@ -643,7 +643,7 @@ export default function FormPMR() {
                   <div className="pt-4 border-t border-slate-100 space-y-3 px-1">
                     <div className="flex justify-between items-center">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        Jarak Estimasi
+                        Jarak (Pulang Pergi)
                       </span>
                       <span className="text-xs font-black text-blue-600">
                         {distance} KM
@@ -651,7 +651,7 @@ export default function FormPMR() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        Estimasi BBM
+                        Estimasi BBM (Pulang Pergi)
                       </span>
                       <span className="text-xs font-black text-emerald-600 uppercase">
                         Rp {fuelCost.toLocaleString()}

@@ -4,17 +4,17 @@ async function handleResponse(response) {
   const text = await response.text();
   try {
     const data = JSON.parse(text);
-    if (!response.ok) throw new Error(data.message || "Request failed");
+    if (!response.ok) throw new Error(data.message || "Permintaan gagal");
     return data;
   } catch (e) {
-    throw new Error("The server returned an unexpected response. Please try again later.");
+    throw new Error("Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.");
   }
 }
 
 export async function fetchAllUsers() {
   const response = await fetch(`${API_BASE}/api/users`);
   const data = await handleResponse(response);
-  if (!data.success) throw new Error(data.message || 'Failed to load users');
+  if (!data.success) throw new Error(data.message || 'Gagal memuat data user');
   return data.data;
 }
 
@@ -26,7 +26,7 @@ export async function createUser(userData) {
     body: JSON.stringify(userData),
   });
   const data = await handleResponse(response);
-  if (!data.success) throw new Error(data.message || 'Failed to create user');
+  if (!data.success) throw new Error(data.message || 'Gagal membuat user');
   return data.data;
 }
 
@@ -38,7 +38,7 @@ export async function updateUser(id, userData) {
     body: JSON.stringify(userData),
   });
   const data = await handleResponse(response);
-  if (!data.success) throw new Error(data.message || 'Failed to update user');
+  if (!data.success) throw new Error(data.message || 'Gagal memperbarui user');
   return data.data;
 }
 
@@ -49,7 +49,7 @@ export async function changeUserPassword(id, password) {
     body: JSON.stringify({ password }),
   });
   const data = await handleResponse(response);
-  if (!data.success) throw new Error(data.message || 'Failed to change password');
+  if (!data.success) throw new Error(data.message || 'Gagal mengganti password');
   return data.data;
 }
 
@@ -58,14 +58,14 @@ export async function toggleUserStatus(id) {
     method: 'PATCH',
   });
   const data = await handleResponse(response);
-  if (!data.success) throw new Error(data.message || 'Failed to update user status');
+  if (!data.success) throw new Error(data.message || 'Gagal mengubah status user');
   return data.data;
 }
 
 export async function fetchProfile(id) {
   const response = await fetch(`${API_BASE}/api/profile/${id}`);
   const data = await handleResponse(response);
-  if (!data.success) throw new Error(data.message || 'Failed to load profile');
+  if (!data.success) throw new Error(data.message || 'Gagal memuat profil');
   return data.data;
 }
 
@@ -77,6 +77,6 @@ export async function updateProfile(id, profileData) {
     body: JSON.stringify(profileData),
   });
   const data = await handleResponse(response);
-  if (!data.success) throw new Error(data.message || 'Failed to update profile');
+  if (!data.success) throw new Error(data.message || 'Gagal memperbarui profil');
   return data.data;
 }

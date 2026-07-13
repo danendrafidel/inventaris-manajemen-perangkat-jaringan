@@ -4,10 +4,10 @@ async function handleResponse(response) {
   const text = await response.text();
   try {
     const data = JSON.parse(text);
-    if (!response.ok) throw new Error(data.message || "Request failed");
+    if (!response.ok) throw new Error(data.message || "Permintaan gagal");
     return data;
   } catch (e) {
-    throw new Error("The server returned an unexpected response. Please try again later.");
+    throw new Error("Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.");
   }
 }
 
@@ -16,7 +16,7 @@ export async function fetchDashboardSummary(queryParams = "") {
   const response = await fetch(url);
   const data = await handleResponse(response);
   if (!data.success) {
-    throw new Error(data.message || "Failed to load dashboard data");
+    throw new Error(data.message || "Gagal memuat data dashboard");
   }
   return data.data;
 }

@@ -139,7 +139,7 @@ export default function MappingOffice() {
       setOffices(officeData);
       setAreas(areaData.filter(a => a.status === 'active'));
     } catch (err) {
-      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      const message = err.message || "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       setError(message);
       showNotify(message, "error");
     } finally {
@@ -167,7 +167,7 @@ export default function MappingOffice() {
       setShowModal(false);
       loadData();
     } catch (err) {
-      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      const message = err.message || "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -181,7 +181,7 @@ export default function MappingOffice() {
       setSelectedOffice(null);
       loadData();
     } catch (err) {
-      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      const message = err.message || "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };
@@ -195,7 +195,7 @@ export default function MappingOffice() {
       showNotify("Status kantor berhasil diubah");
       loadData();
     } catch (err) {
-      const message = err.message || "The server returned an unexpected response. Please try again later.";
+      const message = err.message || "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       showNotify(message, "error");
     }
   };

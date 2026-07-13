@@ -19,6 +19,7 @@ import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RouterIcon from "@mui/icons-material/Router";
 
+
 export default function PrintBarcode() {
   const navigate = useNavigate();
   const [user] = useState(() => getStoredUser());
@@ -103,7 +104,7 @@ export default function PrintBarcode() {
         email: user.email,
         search,
         ...effectiveFilters,
-        limit: 100, // Load more for bulk printing
+        limit: 10000, // Load all for bulk printing
       });
       setItems(d.items);
       setSelectedIds([]);
@@ -351,13 +352,16 @@ export default function PrintBarcode() {
                     type="button"
                     disabled={!isSuperUser}
                     onClick={() => setAreaDropdownOpen((v) => !v)}
-                    className="h-11 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none disabled:opacity-50 disabled:cursor-not-allowed text-left truncate"
+                    className="h-11 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-600 outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between gap-1"
                   >
-                    {draftFilters.area_id.length === 0
-                      ? (isSuperUser ? "Semua Area" : user?.area || "Area Saya")
-                      : draftFilters.area_id.length === 1
-                        ? options.areas.find((a) => String(a.id) === draftFilters.area_id[0])?.name || "Area"
-                        : `${draftFilters.area_id.length} Area`}
+                    <span className="truncate">
+                      {draftFilters.area_id.length === 0
+                        ? (isSuperUser ? "Semua Area" : user?.area || "Area Saya")
+                        : draftFilters.area_id.length === 1
+                          ? options.areas.find((a) => String(a.id) === draftFilters.area_id[0])?.name || "Area"
+                          : `${draftFilters.area_id.length} Area`}
+                    </span>
+                    <svg className="shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6L8 10L12 6" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                   {areaDropdownOpen && isSuperUser ? (
                     <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl max-h-60 overflow-y-auto">

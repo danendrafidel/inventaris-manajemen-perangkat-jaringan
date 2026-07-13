@@ -4,11 +4,11 @@ async function handleResponse(response) {
   const text = await response.text();
   try {
     const data = JSON.parse(text);
-    if (!response.ok) throw new Error(data.message || "Request failed");
+    if (!response.ok) throw new Error(data.message || "Permintaan gagal");
     return data;
   } catch (e) {
     throw new Error(
-      "The server returned an unexpected response. Please try again later.",
+      "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.",
     );
   }
 }
@@ -29,7 +29,7 @@ export async function fetchInventoryOptions({ role, email }) {
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to load filter options");
+    throw new Error(data.message || "Gagal memuat opsi filter");
   }
 
   return data.data;
@@ -50,7 +50,7 @@ export async function fetchInventoryStats({ role, email, area_id }) {
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to load inventory statistics");
+    throw new Error(data.message || "Gagal memuat statistik inventaris");
   }
 
   return data.data;
@@ -87,7 +87,7 @@ export async function fetchInventoryDevices({
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to load device list");
+    throw new Error(data.message || "Gagal memuat daftar perangkat");
   }
 
   return data.data;
@@ -104,7 +104,7 @@ export async function createInventoryDevice(deviceData) {
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to add new device");
+    throw new Error(data.message || "Gagal menambahkan perangkat");
   }
 
   return data.data;
@@ -121,7 +121,7 @@ export async function updateInventoryDevice(id, deviceData) {
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to update device");
+    throw new Error(data.message || "Gagal memperbarui perangkat");
   }
 
   return data.data;
@@ -134,7 +134,7 @@ export async function deleteInventoryDevice(id) {
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to delete device");
+    throw new Error(data.message || "Gagal menghapus perangkat");
   }
 
   return data.data;
@@ -175,7 +175,7 @@ export async function createPmrReport(formData) {
   const result = await handleResponse(response);
 
   if (!result.success) {
-    throw new Error(result.message || "Failed to send PMR report");
+    throw new Error(result.message || "Gagal mengirim laporan PMR");
   }
 
   return result.data;
@@ -204,7 +204,7 @@ export async function updatePmrReportImages(id, { maintenance_photo, fuel_receip
   const result = await handleResponse(response);
 
   if (!result.success) {
-    throw new Error(result.message || "Failed to update images");
+    throw new Error(result.message || "Gagal memperbarui gambar");
   }
 
   return result.data;
@@ -287,7 +287,7 @@ export async function fetchPmrReports({
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to load PMR log");
+    throw new Error(data.message || "Gagal memuat laporan PMR");
   }
 
   return data.data;
@@ -304,7 +304,7 @@ export async function pingInventoryDevices(ips) {
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to ping devices");
+    throw new Error(data.message || "Gagal melakukan pengecekan perangkat");
   }
 
   return data.data;

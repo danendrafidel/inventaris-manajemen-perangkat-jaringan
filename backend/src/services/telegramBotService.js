@@ -26,18 +26,27 @@ const setBotCommands = async () => {
 bot.command("info", async (ctx) => {
   const args = ctx.message.text.split(" ");
   if (args.length < 2) {
-    return ctx.reply("Gunakan format: /info <IP/SN Device>");
+    return ctx.reply("Gunakan format: /info <IP/SN/Nama Perangkat>");
   }
 
   const query = args[1];
   try {
     const { rows } = await db.query(
-      "SELECT * FROM inventory_devices WHERE ip = $1 OR serial_number = $1",
+      "SELECT * FROM inventory_devices WHERE ip = $1 OR serial_number = $1 OR name ILIKE '%' || $1 || '%'",
       [query],
     );
 
     if (rows.length === 0) {
-      return ctx.reply(`Perangkat dengan IP atau SN ${query} tidak ditemukan.`);
+      return ctx.reply(`Perangkat dengan IP, SN, atau Nama "${query}" tidak ditemukan.`);
+    }
+
+    if (rows.length > 1) {
+      let message = `Ditemukan ${rows.length} perangkat dengan nama "${query}":\n\n`;
+      rows.forEach((d, i) => {
+        message += `${i + 1}. <b>${d.name}</b> — IP: <code>${d.ip}</code> | SN: <code>${d.serial_number}</code>\n`;
+      });
+      message += `\nGunakan /info dengan IP atau SN untuk detail yang lebih spesifik.`;
+      return ctx.replyWithHTML(message);
     }
 
     const device = rows[0];

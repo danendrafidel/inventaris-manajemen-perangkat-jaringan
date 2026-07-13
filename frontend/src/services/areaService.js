@@ -4,10 +4,10 @@ async function readJsonSafe(response) {
   const text = await response.text();
   try {
     const data = JSON.parse(text);
-    if (!response.ok) throw new Error(data.message || "Request failed");
+    if (!response.ok) throw new Error(data.message || "Permintaan gagal");
     return data;
   } catch (e) {
-    throw new Error("The server returned an unexpected response. Please try again later.");
+    throw new Error("Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.");
   }
 }
 
@@ -16,7 +16,7 @@ export async function fetchAllAreas() {
   const response = await fetch(`${API_BASE}/api/area/areas`);
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to load areas");
+    throw new Error(data.message || "Gagal memuat data Area");
   return data.data;
 }
 
@@ -28,7 +28,7 @@ export async function createArea(areaData) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to create area");
+    throw new Error(data.message || "Gagal menambahkan Area");
   return data.data;
 }
 
@@ -40,7 +40,7 @@ export async function updateArea(id, areaData) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to update area");
+    throw new Error(data.message || "Gagal memperbarui Area");
   return data.data;
 }
 
@@ -50,7 +50,7 @@ export async function deleteArea(id) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to delete area");
+    throw new Error(data.message || "Gagal menghapus Area");
   return data.data;
 }
 
@@ -60,7 +60,7 @@ export async function toggleAreaStatus(id) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to update area status");
+    throw new Error(data.message || "Gagal mengubah status Area");
   return data.data;
 }
 
@@ -69,7 +69,7 @@ export async function fetchAllStos() {
   const response = await fetch(`${API_BASE}/api/area/stos`);
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to load STOs");
+    throw new Error(data.message || "Gagal memuat data STO");
   return data.data;
 }
 
@@ -79,7 +79,7 @@ export async function toggleStoStatus(id) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to update STO status");
+    throw new Error(data.message || "Gagal mengubah status STO");
   return data.data;
 }
 
@@ -91,7 +91,7 @@ export async function createSto(stoData) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to create STO");
+    throw new Error(data.message || "Gagal menambahkan STO");
   return data.data;
 }
 
@@ -103,7 +103,7 @@ export async function updateSto(id, stoData) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to update STO");
+    throw new Error(data.message || "Gagal memperbarui STO");
   return data.data;
 }
 
@@ -113,7 +113,7 @@ export async function deleteSto(id) {
   });
   const data = await response.json();
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to delete STO");
+    throw new Error(data.message || "Gagal menghapus STO");
   return data.data;
 }
 
@@ -122,7 +122,7 @@ export async function fetchAllOffices() {
   const response = await fetch(`${API_BASE}/api/area/offices`);
   const data = await readJsonSafe(response);
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to load offices");
+    throw new Error(data.message || "Gagal memuat data Kantor");
   return data.data;
 }
 
@@ -134,7 +134,7 @@ export async function createOffice(payload) {
   });
   const data = await readJsonSafe(response);
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to create office");
+    throw new Error(data.message || "Gagal menambahkan Kantor");
   return data.data;
 }
 
@@ -146,7 +146,7 @@ export async function updateOffice(id, payload) {
   });
   const data = await readJsonSafe(response);
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to update office");
+    throw new Error(data.message || "Gagal memperbarui Kantor");
   return data.data;
 }
 
@@ -156,7 +156,7 @@ export async function deleteOffice(id) {
   });
   const data = await readJsonSafe(response);
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to delete office");
+    throw new Error(data.message || "Gagal menghapus Kantor");
   return data.data;
 }
 
@@ -166,6 +166,6 @@ export async function toggleOfficeStatus(id) {
   });
   const data = await readJsonSafe(response);
   if (!response.ok || !data.success)
-    throw new Error(data.message || "Failed to update office status");
+    throw new Error(data.message || "Gagal mengubah status Kantor");
   return data.data;
 }

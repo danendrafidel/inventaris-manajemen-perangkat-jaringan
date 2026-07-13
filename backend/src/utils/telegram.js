@@ -12,10 +12,22 @@ const GROUP2_AREAS = [
   "Witel SOLO JATENG TIMUR", "Witel YOGYA JATENG SELATAN",
 ];
 
+const normalizeArea = (area) => (area || "").trim().toLowerCase();
+
 const getTargetChatIds = (area) => {
-  if (!area) return [process.env.TELEGRAM_CHAT_ID_1, process.env.TELEGRAM_CHAT_ID_2].filter(Boolean);
-  if (GROUP2_AREAS.includes(area)) return [process.env.TELEGRAM_CHAT_ID_2].filter(Boolean);
+  const normalized = normalizeArea(area);
+  if (!normalized) return [process.env.TELEGRAM_CHAT_ID_1, process.env.TELEGRAM_CHAT_ID_2].filter(Boolean);
+  if (GROUP2_AREAS.some((a) => normalizeArea(a) === normalized)) return [process.env.TELEGRAM_CHAT_ID_2].filter(Boolean);
   return [process.env.TELEGRAM_CHAT_ID_1].filter(Boolean);
+};
+
+const escapeHTML = (text) => {
+  if (!text) return "";
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 };
 
 const sendTelegramMessage = async (message, area = null) => {
@@ -25,24 +37,27 @@ const sendTelegramMessage = async (message, area = null) => {
   }
 
   const chatIds = getTargetChatIds(area);
+  console.log(`[TELEGRAM] sendTelegramMessage called area="${area}" chatIds=${JSON.stringify(chatIds)}`);
   if (chatIds.length === 0) {
     console.warn("No Telegram Chat IDs configured for area:", area);
     return false;
   }
 
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  let success = true;
+  let anySuccess = false;
 
   for (const chat_id of chatIds) {
     try {
+      console.log(`[TELEGRAM] Posting to chat_id=${chat_id}...`);
       await axios.post(url, { chat_id, text: message, parse_mode: "HTML" });
+      console.log(`[TELEGRAM] Success for chat_id=${chat_id}`);
+      anySuccess = true;
     } catch (error) {
-      console.error(`Telegram send error to ${chat_id}:`, error.response?.data || error.message);
-      success = false;
+      console.error(`[TELEGRAM] Error to ${chat_id}:`, error.response?.data || error.message);
     }
   }
 
-  return success;
+  return anySuccess;
 };
 
-module.exports = { sendTelegramMessage };
+module.exports = { sendTelegramMessage, escapeHTML };

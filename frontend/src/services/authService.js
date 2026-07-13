@@ -4,10 +4,10 @@ async function handleResponse(response) {
   const text = await response.text();
   try {
     const data = JSON.parse(text);
-    if (!response.ok) throw new Error(data.message || "Request failed");
+    if (!response.ok) throw new Error(data.message || "Permintaan gagal");
     return data;
   } catch (e) {
-    throw new Error("The server returned an unexpected response. Please try again later.");
+    throw new Error("Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.");
   }
 }
 
@@ -25,7 +25,7 @@ export async function login(identity, password) {
   const data = await handleResponse(response);
 
   if (!data.success) {
-    throw new Error(data.message || "Invalid credentials");
+    throw new Error(data.message || "Username/Email atau password salah");
   }
 
   return data.user;

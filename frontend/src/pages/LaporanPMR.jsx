@@ -405,7 +405,7 @@ export default function LaporanPMR() {
     } catch (err) {
       const message =
         err.message ||
-        "The server returned an unexpected response. Please try again later.";
+        "Server memberikan respon yang tidak terduga. Silakan coba lagi nanti.";
       setError(message);
       showNotify(message, "error");
     } finally {
